@@ -46,18 +46,19 @@ pub fn init_state(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         std::fs::create_dir_all(&app_dir)
             .map_err(|e| format!("Failed to create app data directory: {}", e))?;
     }
-    let commands_path = app_dir.join("commands.json");
-    let config_path = app_dir.join("config.json");
-
     // ConfigManagerを初期化
     let config_manager = ConfigManager::new(app_dir.to_string_lossy().to_string());
+
+    // 正しい設定ファイルパスを取得 (Devモードでは target/debug 内になる可能性があるため)
+    let commands_path = config_manager.get_commands_path();
+    let config_path = config_manager.get_config_path();
 
     // CommandManagerを初期化
     let command_manager = CommandManager::new();
 
     // ファイルウォッチャー
-    let commands_file_watcher = FileWatcher::new(&commands_path, app.handle().clone()).ok();
-    let config_file_watcher = FileWatcher::new(&config_path, app.handle().clone()).ok();
+    let commands_file_watcher = FileWatcher::new(commands_path, app.handle().clone()).ok();
+    let config_file_watcher = FileWatcher::new(config_path, app.handle().clone()).ok();
 
     // State管理登録
     app.manage(AppState::new(

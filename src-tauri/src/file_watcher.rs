@@ -1,25 +1,26 @@
-use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 use tauri::Emitter;
 
+/// ファイルウォッチャーの構造体
 pub struct FileWatcher {
     _watcher: RecommendedWatcher,
     #[allow(dead_code)]
     file_path: PathBuf,
 }
 
+/// ファイルウォッチャー
 impl FileWatcher {
-    pub fn new<P: AsRef<Path>>(
-        file_path: P,
-        app_handle: tauri::AppHandle,
-    ) -> Result<Self, String> {
+    pub fn new<P: AsRef<Path>>(file_path: P, app_handle: tauri::AppHandle) -> Result<Self, String> {
+        // チャンネルを生成
         let (tx, rx) = mpsc::channel();
-
+        // ファイルウォッチャーを生成
         let mut watcher = RecommendedWatcher::new(
             move |res: Result<Event, notify::Error>| {
+                // イベントを受け取ったらチャンネルに送信
                 if let Ok(event) = res {
                     if let Err(e) = tx.send(event) {
                         log::error!("Failed to send file watcher event: {}", e);
@@ -31,8 +32,8 @@ impl FileWatcher {
         .map_err(|e| format!("Failed to create file watcher: {}", e))?;
 
         let file_path = file_path.as_ref().to_path_buf();
-        
-        // ファイルの親ディレクトリを監視（ファイル自体の監視だと削除・再作成時に問題が起きる可能性があるため）
+
+        // 対象ファイルの親ディレクトリを取得
         let watch_path = if let Some(parent) = file_path.parent() {
             parent
         } else {
@@ -52,7 +53,7 @@ impl FileWatcher {
 
         thread::spawn(move || {
             let mut last_event_time = std::time::Instant::now();
-            
+
             while let Ok(event) = rx.recv() {
                 // 短時間での重複イベントを防ぐ（デバウンス）
                 let now = std::time::Instant::now();
@@ -69,38 +70,23 @@ impl FileWatcher {
                 });
 
                 if is_target_file {
-                    match event.kind {
-                        EventKind::Modify(_) | EventKind::Create(_) => {
-                            log::info!("Config file changed: {:?}", event.paths);
-                            
-                            // ファイル変更イベントをフロントエンドに通知
-                            if let Err(e) = app_handle.emit("config-file-changed", ()) {
-                                log::error!("Failed to emit config file changed event: {}", e);
-                            }
-                            
-                            // バックエンドにも設定再読み込みを通知
-                            if let Err(e) = app_handle.emit("request-reload", ()) {
-                                log::error!("Failed to emit reload config event: {}", e);
-                            }
-                        }
-                        EventKind::Remove(_) => {
-                            log::warn!("Config file removed: {:?}", event.paths);
-                            
-                            // ファイル削除イベントを通知
-                            if let Err(e) = app_handle.emit("config-file-removed", ()) {
-                                log::error!("Failed to emit config file removed event: {}", e);
-                            }
-                        }
-                        _ => {
-                            // その他のイベントはデバッグログのみ
-                            log::debug!("Config file event: {:?} - {:?}", event.kind, event.paths);
-                        }
+                    // イベントの種類に関わらず、対象ファイルに関連するイベントであればリロードを試みる
+                    // (Modify, Create, Rename, Removeなど)
+                    // Removeの場合はConfigManagerがデフォルト値を再生成する挙動になる
+                    log::info!("Config file event ({:?}): {:?}", event.kind, event.paths);
+
+                    if let Err(e) = app_handle.emit("config-file-changed", ()) {
+                        log::error!("Failed to emit config file changed event: {}", e);
+                    }
+
+                    if let Err(e) = app_handle.emit("request-reload", ()) {
+                        log::error!("Failed to emit reload config event: {}", e);
                     }
                 }
             }
         });
 
-        Ok(Self { 
+        Ok(Self {
             _watcher: watcher,
             file_path: file_path.clone(),
         })
@@ -136,10 +122,10 @@ mod tests {
     fn test_file_watcher_creation() {
         let temp_dir = TempDir::new().unwrap();
         let file_path = temp_dir.path().join("test.json");
-        
+
         // ファイルを作成
         fs::write(&file_path, "{}").unwrap();
-        
+
         // モックのAppHandleが必要なため、実際のファイルウォッチャーのテストは統合テストで行う
         assert!(file_path.exists());
     }
@@ -148,13 +134,13 @@ mod tests {
     fn test_file_path_operations() {
         let temp_dir = TempDir::new().unwrap();
         let file_path = temp_dir.path().join("test.json");
-        
+
         // ファイルを作成
         fs::write(&file_path, "{}").unwrap();
-        
+
         // ファイルが存在することを確認
         assert!(file_path.exists());
-        
+
         // ファイルを削除
         fs::remove_file(&file_path).unwrap();
         assert!(!file_path.exists());

@@ -68,7 +68,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                             <a onClick={onAddCommand}>Add Command</a>
                         </li>
                         <li>
-                            <a onClick={onReloadCommands}>Reload Commands</a>
+                            <a onClick={onReloadCommands}>Reload</a>
                         </li>
                         <li></li>
                         <li>

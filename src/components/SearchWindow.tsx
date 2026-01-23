@@ -87,7 +87,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     resetState();
 
     // 内部ビュー切り替えを伴うコマンドの場合はウィンドウを隠さない
-    if (selectedResult.command.command === 'scoot://add-command') {
+    if (selectedResult.command.command === 'scoot://add-command' || selectedResult.command.command === 'scoot://reload') {
       return;
     }
 

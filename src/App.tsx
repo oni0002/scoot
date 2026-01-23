@@ -128,7 +128,7 @@ const AppContent = ({
     try {
       await TauriAPI.reloadConfig();
       await loadCommands();
-      showSuccess("Commands and config reloaded", 2000);
+      // showSuccess("Commands and config reloaded", 2000); // Handled by event listener
     } catch (err) {
       console.error("Failed to reload:", err);
       showError("Could not reload configuration");

@@ -290,7 +290,7 @@ impl CommandManager {
             },
             Command {
                 id: "scoot-reload".to_string(),
-                name: "Reload Commands".to_string(),
+                name: "Reload".to_string(),
                 category: "scoot".to_string(),
                 command: "scoot://reload".to_string(),
                 description: "Reload commands and configuration".to_string(),
