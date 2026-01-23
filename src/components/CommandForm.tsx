@@ -72,6 +72,11 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             newErrors.command = 'Command is required';
         }
 
+        const hasPlaceholders = /\{\$(\d+|\*)\}/.test(formData.command);
+        if (hasPlaceholders && !formData.prompt.trim()) {
+            newErrors.prompt = 'Required for args';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -98,7 +103,18 @@ export const CommandForm: React.FC<CommandFormProps> = ({
     };
 
     const handleInputChange = (field: keyof typeof formData, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData(prev => {
+            const newData = { ...prev, [field]: value };
+
+            // Auto-clear prompt if command no longer has placeholders
+            if (field === 'command') {
+                const hasPlaceholders = /\{\$(\d+|\*)\}/.test(value);
+                if (!hasPlaceholders) {
+                    newData.prompt = '';
+                }
+            }
+            return newData;
+        });
 
         // Clear error when user starts typing
         if (errors[field]) {
@@ -158,7 +174,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                 <button onClick={onCancel} className="btn btn-ghost btn-sm btn-square" title="Back">
                     <LuArrowLeft />
                 </button>
-                <h3>{command ? 'Edit Command' : 'Add New Command'}</h3>
+                <h3>{command ? 'Edit command' : 'Add new command'}</h3>
             </div>
 
             <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
@@ -275,7 +291,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
 
                         <div className="form-control w-32">
                             <label className="label">
-                                <span className="label-text">Prompt (opt)</span>
+                                <span className="label-text">Prompt {/\{\$(\d+|\*)\}/.test(formData.command) ? '*' : ''}</span>
                             </label>
                             <input
                                 type="text"
@@ -283,8 +299,14 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 onChange={(e) => handleInputChange('prompt', e.target.value)}
                                 placeholder="e.g., g"
                                 maxLength={10}
-                                className="input input-bordered input-sm w-full"
+                                className={`input input-bordered input-sm w-full ${errors.prompt ? 'input-error' : ''}`}
+                                disabled={!/\{\$(\d+|\*)\}/.test(formData.command)}
                             />
+                            {errors.prompt && (
+                                <label className="label">
+                                    <span className="label-text-alt text-error">{errors.prompt}</span>
+                                </label>
+                            )}
                         </div>
                     </div>
 
