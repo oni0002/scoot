@@ -52,12 +52,10 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
         }
 
         // {$1}, {$2}... replacement
-        let hasNumbered = false;
         args.forEach((arg, index) => {
             const placeholder = `{$${index + 1}}`;
             if (cmd.includes(placeholder)) {
                 cmd = cmd.replace(placeholder, arg);
-                hasNumbered = true;
             }
         });
         return cmd;
