@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Scoot",
+  "productName": "scoot",
   "version": "0.1.0",
-  "identifier": "oni.scoot",
+  "identifier": "scoot",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -38,6 +38,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "resources": [
+      "../README.md"
     ]
   },
   "plugins": {

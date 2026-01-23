@@ -54,7 +54,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                 let _ = crate::app_setup::open_config_json(&app_handle);
             }
             "readme" => {
-                let _ = crate::app_setup::open_readme();
+                let _ = crate::app_setup::open_readme(&app_handle);
             }
             "open_log" => {
                 let _ = crate::app_setup::open_log_directory(&app_handle);

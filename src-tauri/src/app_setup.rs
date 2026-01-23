@@ -219,9 +219,18 @@ pub fn open_config_json(app_handle: &tauri::AppHandle) -> Result<(), String> {
 }
 
 /// README.mdを開く
-pub fn open_readme() -> Result<(), String> {
-    let readme_path = "README.md";
-    tauri_plugin_opener::open_path(readme_path, None::<&str>)
+pub fn open_readme(app_handle: &tauri::AppHandle) -> Result<(), String> {
+    let resource_path = app_handle
+        .path()
+        .resolve("README.md", tauri::path::BaseDirectory::Resource)
+        .map_err(|e| format!("Failed to resolve README.md path: {}", e))?;
+
+    if !resource_path.exists() {
+        return Err("README.md not found in resources".to_string());
+    }
+
+    let path_str = resource_path.to_string_lossy().to_string();
+    tauri_plugin_opener::open_path(&path_str, None::<&str>)
         .map_err(|e| format!("Failed to open README.md: {}", e))
 }
 

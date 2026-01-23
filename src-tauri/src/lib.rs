@@ -203,8 +203,8 @@ async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), String> {
 
 /// tauri command: READMEを開く
 #[tauri::command]
-async fn open_readme() -> Result<(), String> {
-    crate::app_setup::open_readme()
+async fn open_readme(app_handle: tauri::AppHandle) -> Result<(), String> {
+    crate::app_setup::open_readme(&app_handle)
 }
 
 /// tauri command: アプリを終了

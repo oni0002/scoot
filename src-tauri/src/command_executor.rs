@@ -59,7 +59,7 @@ async fn execute_scoot_command(
             Ok("Opened config.json".to_string())
         }
         "scoot://open-readme" => {
-            crate::app_setup::open_readme()?;
+            crate::app_setup::open_readme(app_handle)?;
             Ok("Opened README.md".to_string())
         }
         "scoot://open-log" => {
