@@ -1,0 +1,26 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <mask id="gapMask">
+      <rect width="512" height="512" fill="white"/>
+      <g transform="translate(256, 256) rotate(-45)">
+         <!-- Gap size ~20px. -->
+         <!-- Inner Rect Height 160 -> Mask Height 200 (100*2) -->
+         <!-- Inner Rect Width 320 -> Mask Width 350+ (Let's use 360 to be sure) -->
+         <rect x="-24" y="-100" width="360" height="200" rx="44" fill="black"/>
+         <!-- Inner Circle Radius 140 -> Mask Radius 160 -->
+         <circle cx="0" cy="0" r="160" fill="black"/>
+      </g>
+    </mask>
+  </defs>
+
+  <!-- Tire -->
+  <circle cx="256" cy="256" r="240" fill="#222222" mask="url(#gapMask)"/>
+
+  <!-- Inner Shape -->
+  <g transform="translate(256, 256) rotate(-45)">
+      <!-- Rectangle: Width 320, Height 160 -->
+      <rect x="-24" y="-80" width="320" height="160" rx="30" fill="#69F0AE"/>
+      <!-- Circle: Radius 140 -->
+      <circle cx="0" cy="0" r="140" fill="#69F0AE"/>
+  </g>
+</svg>

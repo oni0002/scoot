@@ -1,0 +1,96 @@
+import { useState, useCallback } from 'react';
+import { TauriAPI } from '../api/tauri';
+import { Command } from '../types';
+import { NOTIFICATION_DURATION } from '../constants';
+
+interface NotificationHandlers {
+    showSuccess: (message: string) => void;
+    showError: (message: string, duration?: number) => void;
+    showInfo: (message: string) => void;
+}
+
+export function useCommands({ showSuccess, showError, showInfo }: NotificationHandlers) {
+    const [commands, setCommands] = useState<Command[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const loadCommands = useCallback(async () => {
+        try {
+            setLoading(true);
+            const loadedCommands = await TauriAPI.getAllCommands();
+            setCommands(loadedCommands);
+            setError(null);
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to load commands';
+            setError(errorMessage);
+            showError("Could not load commands from configuration.", NOTIFICATION_DURATION.VERY_LONG);
+        } finally {
+            setLoading(false);
+        }
+    }, [showError]);
+
+    const addCommand = useCallback(async (command: Command) => {
+        try {
+            await TauriAPI.addCommand(command);
+            showSuccess(`"${command.name}" added successfully.`);
+            await loadCommands();
+            return true;
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to add command';
+            // 個別の操作エラーは全体のエラー状態に影響させない
+            showError(errorMessage, NOTIFICATION_DURATION.LONG);
+            return false;
+        }
+    }, [loadCommands, showSuccess, showError]);
+
+    const updateCommand = useCallback(async (command: Command) => {
+        try {
+            await TauriAPI.updateCommand(command);
+            showSuccess(`"${command.name}" updated successfully.`);
+            await loadCommands();
+            return true;
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to update command';
+            showError(errorMessage, NOTIFICATION_DURATION.LONG);
+            return false;
+        }
+    }, [loadCommands, showSuccess, showError]);
+
+    const deleteCommand = useCallback(async (id: string, name: string) => {
+        try {
+            await TauriAPI.deleteCommand(id);
+            showSuccess(`"${name}" deleted successfully.`);
+            await loadCommands();
+            return true;
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to delete command';
+            showError(`Could not delete "${name}": ${errorMessage}`, NOTIFICATION_DURATION.LONG);
+            return false;
+        }
+    }, [loadCommands, showSuccess, showError]);
+
+    const executeCommand = useCallback(async (command: Command, args: string[] = []) => {
+        try {
+            await TauriAPI.executeCommand(command, args);
+            // 成功時にエラーをクリアする必要もない（ロードエラーとは無関係のため）
+            return true;
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to execute command';
+            // 実行エラーはトースト通知のみとし、アプリ全体のエラー画面には遷移させない
+            showError(`Failed to execute "${command.name}": ${errorMessage}`, NOTIFICATION_DURATION.LONG);
+            return false;
+        }
+    }, [showInfo, showError]);
+
+    return {
+        commands,
+        loading,
+        error,
+        setError,
+        loadCommands,
+        addCommand,
+        updateCommand,
+        deleteCommand,
+        executeCommand
+    };
+}

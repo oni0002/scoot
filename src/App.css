@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fix for DaisyUI modal scrollbar-gutter issue */
+/* https://github.com/saadeghi/daisyui/issues/3726 */
+.modal {
+  scrollbar-gutter: auto !important;
+}
+
+.modal-box {
+  scrollbar-gutter: auto !important;
+}
+
+/* Alternative fix: completely remove scrollbar-gutter */
+html, body, * {
+  scrollbar-gutter: auto !important;
+}
+
+/* Ensure dialog element also doesn't have scrollbar-gutter */
+dialog {
+  scrollbar-gutter: auto !important;
+}
+
+/* Override any DaisyUI scrollbar-gutter settings */
+@layer utilities {
+  .scrollbar-gutter-auto {
+    scrollbar-gutter: auto !important;
+  }
+}
