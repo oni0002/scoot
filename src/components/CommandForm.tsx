@@ -212,7 +212,6 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 <option value="url">URL</option>
                                 <option value="command">Cmd</option>
                                 <option value="file">File</option>
-                                <option value="custom">Custom</option>
                             </select>
                             {errors.category && (
                                 <label className="label">
@@ -310,7 +309,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                         </div>
                     </div>
 
-                    {(formData.category === 'command' || formData.category === 'custom') && (
+                    {formData.category === 'command' && (
                         <div className="form-control w-full">
                             <label className="label">
                                 <span className="label-text">Working Dir</span>

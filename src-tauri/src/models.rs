@@ -5,7 +5,7 @@ pub const CATEGORY_URL: &str = "url";
 pub const CATEGORY_FILE: &str = "file";
 pub const CATEGORY_BOOKMARK: &str = "bookmark";
 pub const CATEGORY_COMMAND: &str = "command";
-pub const CATEGORY_CUSTOM: &str = "custom";
+// pub const CATEGORY_CUSTOM: &str = "custom"; // Deprecated
 pub const CATEGORY_SCOOT: &str = "scoot";
 pub const CATEGORY_APPLICATION: &str = "application";
 pub const DEFAULT_THEME: &str = "dark";
@@ -114,7 +114,6 @@ impl Command {
                 | CATEGORY_FILE
                 | CATEGORY_BOOKMARK
                 | CATEGORY_COMMAND
-                | CATEGORY_CUSTOM
                 | CATEGORY_SCOOT
                 | CATEGORY_APPLICATION
         );

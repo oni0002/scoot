@@ -156,7 +156,6 @@ async fn execute_shell_command(
             "start",
             "Scoot Execution",
             "powershell",
-            "-NoExit",
             "-Command",
             command,
         ]);
