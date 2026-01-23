@@ -57,8 +57,9 @@ const AppContent = ({
     }
   }, []);
 
-  const handleAddCommand = useCallback(() => {
+  const handleAddCommand = useCallback(async () => {
     console.log('App: handleAddCommand called');
+    await TauriAPI.setPreventHide(true);
     setEditingCommand(undefined);
     setCurrentView('form');
   }, []);
@@ -100,8 +101,9 @@ const AppContent = ({
     }
   }, [showDeleteDialog]);
 
-  const handleEditCommandFromSearch = useCallback((command: Command) => {
+  const handleEditCommandFromSearch = useCallback(async (command: Command) => {
     console.log('App: handleEditCommandFromSearch called', command);
+    await TauriAPI.setPreventHide(true);
     setEditingCommand(command);
     setCurrentView('form');
   }, []);

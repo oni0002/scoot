@@ -53,6 +53,11 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
       const args = argsString ? argsString.split(/\s+/) : [];
       executeContextCommand(promptMode.command, args);
       resetState();
+
+      if (promptMode.command.command === 'scoot://add-command') {
+        return;
+      }
+
       TauriAPI.hideWindow();
       return;
     }
@@ -80,6 +85,11 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     const parsed = promptProcessor.current.parseInput(query);
     executeContextCommand(selectedResult.command, parsed.args);
     resetState();
+
+    // 内部ビュー切り替えを伴うコマンドの場合はウィンドウを隠さない
+    if (selectedResult.command.command === 'scoot://add-command') {
+      return;
+    }
 
     TauriAPI.hideWindow();
   }, [results, selectedIndex, query, executeContextCommand, promptMode, resetState, setPromptMode, setQuery, setResults, setSelectedIndex, promptProcessor]);
