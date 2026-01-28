@@ -3721,7 +3721,7 @@ dependencies = [
 
 [[package]]
 name = "scoot"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "dirs",
@@ -3729,6 +3729,7 @@ dependencies = [
  "log",
  "md5",
  "notify",
+ "regex",
  "schemars 0.8.22",
  "serde",
  "serde_json",
@@ -3739,6 +3740,7 @@ dependencies = [
  "tauri-plugin-global-shortcut",
  "tauri-plugin-log",
  "tauri-plugin-opener",
+ "tauri-plugin-single-instance",
  "tempfile",
  "tokio",
  "uuid",
@@ -4474,6 +4476,21 @@ dependencies = [
  "thiserror 2.0.17",
  "url",
  "windows",
+ "zbus",
+]
+
+[[package]]
+name = "tauri-plugin-single-instance"
+version = "2.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "acba6b5ca527a96cdfcc96ae09b09ccb91ddff5e33978ca6873b96ea16bb404c"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "thiserror 2.0.17",
+ "tracing",
+ "windows-sys 0.60.2",
  "zbus",
 ]
 

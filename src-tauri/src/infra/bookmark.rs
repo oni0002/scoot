@@ -1,4 +1,6 @@
-use crate::models::Command;
+use crate::domain::command::Command;
+use crate::domain::config::BookmarkConfig;
+
 use serde::Deserialize;
 use std::path::PathBuf;
 use tokio::fs;
@@ -25,27 +27,31 @@ struct ChromiumBookmarkRoots {
 }
 
 /// ブックマークを読み込む
-pub async fn load_bookmarks(
-    config: &crate::models::BookmarkConfig,
-) -> Result<Vec<Command>, String> {
+pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, String> {
     let bookmark_path = get_bookmark_path(&config.browser)?;
 
+    // ブックマークファイルがなければエラー
     if !bookmark_path.exists() {
         return Err(format!("Bookmark file not found: {:?}", bookmark_path));
     }
 
+    // ブックマークファイルを読み込む
     let content = fs::read_to_string(&bookmark_path)
         .await
         .map_err(|e| format!("Failed to read bookmark file: {}", e))?;
 
-    let root: ChromiumBookmarkRoot = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse bookmark file: {}", e))?;
+    // JSONパース (ワーカースレッドで実行)
+    let root: ChromiumBookmarkRoot =
+        tokio::task::spawn_blocking(move || serde_json::from_str(&content))
+            .await
+            .map_err(|e| format!("Failed to spawn blocking task: {}", e))?
+            .map_err(|e| format!("Failed to parse bookmark file: {}", e))?;
 
     let mut commands = Vec::new();
     let mut seen_urls = std::collections::HashSet::new();
 
     // ブックマークバーから読み込み
-    extract_bookmarks(
+    collect_commands(
         &root.roots.bookmark_bar,
         &mut commands,
         &mut seen_urls,
@@ -53,7 +59,7 @@ pub async fn load_bookmarks(
     );
 
     // その他のブックマークから読み込み
-    extract_bookmarks(
+    collect_commands(
         &root.roots.other,
         &mut commands,
         &mut seen_urls,
@@ -62,13 +68,14 @@ pub async fn load_bookmarks(
 
     // 同期されたブックマークから読み込み（存在する場合）
     if let Some(synced) = &root.roots.synced {
-        extract_bookmarks(synced, &mut commands, &mut seen_urls, &config.prompt);
+        collect_commands(synced, &mut commands, &mut seen_urls, &config.prompt);
     }
 
     Ok(commands)
 }
 
 /// ブックマークファイルのパスを取得
+/// brave, chrome, edgeのみ対応
 fn get_bookmark_path(browser: &str) -> Result<PathBuf, String> {
     let home_dir = dirs::home_dir().ok_or_else(|| "Could not find home directory".to_string())?;
     let bookmark_path = match browser {
@@ -84,8 +91,8 @@ fn get_bookmark_path(browser: &str) -> Result<PathBuf, String> {
     Ok(bookmark_path)
 }
 
-/// ブックマークを抽出
-fn extract_bookmarks(
+/// ブックマークからコマンドを収集
+fn collect_commands(
     bookmark: &ChromiumBookmark,
     commands: &mut Vec<Command>,
     seen_urls: &mut std::collections::HashSet<String>,
@@ -93,7 +100,7 @@ fn extract_bookmarks(
 ) {
     if bookmark.bookmark_type == "url" {
         if let Some(url) = &bookmark.url {
-            // Check if URL has already been added
+            // 重複URLは無視
             if seen_urls.contains(url) {
                 return;
             }
@@ -114,7 +121,7 @@ fn extract_bookmarks(
     } else if bookmark.bookmark_type == "folder" {
         if let Some(children) = &bookmark.children {
             for child in children {
-                extract_bookmarks(child, commands, seen_urls, prompt);
+                collect_commands(child, commands, seen_urls, prompt);
             }
         }
     }

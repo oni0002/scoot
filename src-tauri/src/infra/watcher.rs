@@ -13,6 +13,7 @@ pub struct FileWatcher {
 }
 
 /// ファイルウォッチャー
+/// ファイルを監視し、変更があった場合にイベントを発行する
 impl FileWatcher {
     pub fn new<P: AsRef<Path>>(file_path: P, app_handle: tauri::AppHandle) -> Result<Self, String> {
         // チャンネルを生成
@@ -40,28 +41,22 @@ impl FileWatcher {
             file_path.as_path()
         };
 
+        // 対象ファイルを監視
         watcher
             .watch(watch_path, RecursiveMode::NonRecursive)
             .map_err(|e| format!("Failed to watch file: {}", e))?;
 
-        // 別スレッドでファイル変更イベントを処理
         let file_name = file_path
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("")
             .to_string();
 
+        // 別スレッドでファイル変更イベントを処理
         thread::spawn(move || {
             let mut last_event_time = std::time::Instant::now();
 
             while let Ok(event) = rx.recv() {
-                // 短時間での重複イベントを防ぐ（デバウンス）
-                let now = std::time::Instant::now();
-                if now.duration_since(last_event_time) < Duration::from_millis(100) {
-                    continue;
-                }
-                last_event_time = now;
-
                 // 監視対象ファイルの変更かチェック
                 let is_target_file = event.paths.iter().any(|path| {
                     path.file_name()
@@ -70,17 +65,19 @@ impl FileWatcher {
                 });
 
                 if is_target_file {
-                    // イベントの種類に関わらず、対象ファイルに関連するイベントであればリロードを試みる
-                    // (Modify, Create, Rename, Removeなど)
+                    // 500ms以内の重複イベントを防ぐ (デバウンス)
+                    let now = std::time::Instant::now();
+                    if now.duration_since(last_event_time) < Duration::from_millis(500) {
+                        continue;
+                    }
+                    last_event_time = now;
+
+                    // 対象ファイルに関連するイベント(Modify, Create, Rename, Removeなど)であればリロードを試みる
                     // Removeの場合はConfigManagerがデフォルト値を再生成する挙動になる
                     log::info!("Config file event ({:?}): {:?}", event.kind, event.paths);
 
                     if let Err(e) = app_handle.emit("config-file-changed", ()) {
                         log::error!("Failed to emit config file changed event: {}", e);
-                    }
-
-                    if let Err(e) = app_handle.emit("request-reload", ()) {
-                        log::error!("Failed to emit reload config event: {}", e);
                     }
                 }
             }

@@ -3,13 +3,12 @@ import { TauriAPI } from '../api/tauri';
 import { Command } from '../types';
 import { NOTIFICATION_DURATION } from '../constants';
 
-interface NotificationHandlers {
-    showSuccess: (message: string) => void;
-    showError: (message: string, duration?: number) => void;
-    showInfo: (message: string) => void;
-}
 
-export function useCommands({ showSuccess, showError, showInfo }: NotificationHandlers) {
+
+import { useNotificationContext } from '../context/NotificationContext';
+
+export function useCommands() {
+    const { showSuccess, showError, showInfo } = useNotificationContext();
     const [commands, setCommands] = useState<Command[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

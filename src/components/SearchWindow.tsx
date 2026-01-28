@@ -10,6 +10,7 @@ import { useWindowEvents } from '../hooks/useWindowEvents';
 
 interface SearchWindowProps {
   fuzzyThreshold?: number;
+  maxResults?: number;
   onEditCommand?: (command: Command) => void;
   onDeleteCommand?: (command: Command) => void;
   onAddCommand?: () => void;
@@ -20,6 +21,7 @@ interface SearchWindowProps {
 
 export const SearchWindow: React.FC<SearchWindowProps> = ({
   fuzzyThreshold = 0.5,
+  maxResults = 10,
   onEditCommand,
   onDeleteCommand,
   onAddCommand,
@@ -30,7 +32,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
   const { commands, executeCommand: executeContextCommand } = useCommandContext();
 
   // Search Logic & State
-  const searchState = useSearchState(commands, fuzzyThreshold);
+  const searchState = useSearchState(commands, fuzzyThreshold, maxResults);
   const {
     query, setQuery, results, setResults, selectedIndex, setSelectedIndex,
     promptMode, setPromptMode, resetState, inputRef, promptProcessor
@@ -167,10 +169,19 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     }
   }, []);
 
-  const handleShowAbout = useCallback((event: React.MouseEvent) => {
+  const handleShowAbout = useCallback(async (event: React.MouseEvent) => {
     event.stopPropagation();
-    // TODO: Implement show About dialog
-    alert('Scoot - Command Launcher\nVersion 1.0\nA fast and efficient command launcher for your desktop.');
+    try {
+      const version = await TauriAPI.getVersion();
+      await TauriAPI.showMessage(
+        `Scoot - Command Launcher\nVersion ${version}\n\nA fast and efficient command launcher for your desktop.`,
+        'About Scoot'
+      );
+    } catch (error) {
+      console.error('Failed to show About dialog:', error);
+      // Fallback
+      alert('Scoot - Command Launcher\n(Version info unavailable)');
+    }
   }, []);
 
   const handleOpenSettings = useCallback((event: React.MouseEvent) => {

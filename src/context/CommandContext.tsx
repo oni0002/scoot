@@ -18,18 +18,10 @@ const CommandContext = createContext<CommandContextType | undefined>(undefined);
 
 interface CommandProviderProps {
     children: ReactNode;
-    showSuccess: (message: string) => void;
-    showError: (message: string, duration?: number) => void;
-    showInfo: (message: string) => void;
 }
 
-export const CommandProvider: React.FC<CommandProviderProps> = ({
-    children,
-    showSuccess,
-    showError,
-    showInfo
-}) => {
-    const commandLogic = useCommands({ showSuccess, showError, showInfo });
+export const CommandProvider: React.FC<CommandProviderProps> = ({ children }) => {
+    const commandLogic = useCommands();
 
     return (
         <CommandContext.Provider value={commandLogic}>

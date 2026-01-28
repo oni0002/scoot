@@ -1,5 +1,4 @@
-use crate::state::AppState;
-use crate::window_manager::show_window_with_focus;
+use crate::store::state::AppState;
 use tauri::{
     menu::{MenuBuilder, MenuItem},
     tray::{TrayIconBuilder, TrayIconEvent},
@@ -42,29 +41,30 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         .tooltip("Scoot - Command Launcher")
         .on_menu_event(move |app_handle, event| match event.id().as_ref() {
             "show" => {
-                let _ = show_window_with_focus(&app_handle);
+                let _ = crate::services::window::show(app_handle);
             }
             "add_command" => {
-                let _ = crate::app_setup::open_add_command_dialog(&app_handle);
+                let _ = crate::services::system::open_add_command_dialog(app_handle);
             }
             "open_commands" => {
-                let _ = crate::app_setup::open_commands_json(&app_handle);
+                let _ = crate::services::system::open_commands_json(app_handle);
             }
             "open_config" => {
-                let _ = crate::app_setup::open_config_json(&app_handle);
+                let _ = crate::services::system::open_config_json(app_handle);
             }
             "readme" => {
-                let _ = crate::app_setup::open_readme(&app_handle);
+                let _ = crate::services::system::open_readme(app_handle);
             }
             "open_log" => {
-                let _ = crate::app_setup::open_log_directory(&app_handle);
+                let _ = crate::services::system::open_log_directory(app_handle);
             }
             "quit" => {
-                crate::app_setup::quit_application(&app_handle);
+                crate::services::system::quit_app(app_handle);
             }
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {
+            // 左クリックを検出(右クリックは無視)
             if let TrayIconEvent::Click {
                 button: tauri::tray::MouseButton::Left,
                 ..
@@ -72,7 +72,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
             {
                 let app_handle = tray.app_handle();
 
-                // デバウンス処理: 前回のクリックから一定時間経過していない場合は無視
+                // 300ミリ秒以内の重複クリックを無視(デバウンス)
                 if let Some(state) = app_handle.try_state::<AppState>() {
                     if let Ok(mut last_click) = state.last_tray_click.lock() {
                         if let Some(instant) = *last_click {
@@ -84,13 +84,9 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
 
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    let is_visible = window.is_visible().unwrap_or(false);
-                    if is_visible {
-                        let _ = crate::window_manager::hide_window_sync(&app_handle);
-                    } else {
-                        let _ = show_window_with_focus(&app_handle);
-                    }
+                // ウィンドウの表示/非表示を切り替える
+                if let Err(e) = crate::services::window::toggle_visibility(&app_handle) {
+                    log::error!("Failed to toggle window visibility from tray: {}", e);
                 }
             }
         })

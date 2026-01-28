@@ -1,30 +1,35 @@
-use crate::models::Command;
+use crate::domain::command::Command;
 use std::path::Path;
 use walkdir::WalkDir;
 
 /// 指定されたディレクトリリストからアプリケーションをスキャンする
-pub async fn scan_applications(directories: &[String]) -> Result<Vec<Command>, String> {
+pub async fn scan(directories: &[String], extensions: &[String]) -> Result<Vec<Command>, String> {
     let directories_clone = directories.to_vec();
+    let extensions = extensions
+        .iter()
+        .map(|e| e.to_lowercase())
+        .collect::<Vec<_>>();
 
     // 重いI/O処理をワーカースレッドで実行
     let commands = tokio::task::spawn_blocking(move || {
         let mut commands = Vec::new();
 
         for dir_path in directories_clone {
-            let expanded_path = crate::utils::expand_env_vars(&dir_path);
+            let expanded_path = crate::infra::env::expand_env_vars(&dir_path);
             let path = Path::new(&expanded_path);
 
             if !path.exists() {
                 continue;
             }
 
-            // walkdirを使用して再帰的にスキャン
+            // 再帰的にスキャン
             for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
                 let path = entry.path();
 
-                // .lnk ファイルのみを対象とする
+                // 指定された拡張子のみを対象とする
                 if let Some(extension) = path.extension() {
-                    if extension.to_string_lossy().to_lowercase() == "lnk" {
+                    let ext_str = extension.to_string_lossy().to_lowercase();
+                    if extensions.contains(&ext_str) {
                         if let Some(command) = create_command_from_path(path) {
                             commands.push(command);
                         }
@@ -61,7 +66,7 @@ fn create_command_from_path(path: &Path) -> Option<Command> {
         id,
         name: file_stem,
         category: "application".to_string(), // 専用カテゴリ
-        command: full_path,                  // パスそのものをコマンドとする（Windowsが解決）
+        command: full_path,                  // パスそのものをコマンドとする (Windowsが解決)
         description: format!("Application in {}", parent),
         prompt: None,
         working_dir: None,

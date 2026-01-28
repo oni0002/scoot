@@ -2,32 +2,25 @@ import { useState, useEffect, useCallback } from "react";
 import { SearchWindow } from "./components/SearchWindow";
 import { CommandForm } from "./components/CommandForm";
 import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
-import { NotificationToast } from "./components/NotificationToast";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { TauriAPI } from "./api/tauri";
 import { Command } from "./types";
-import { useNotifications } from "./hooks/useNotifications";
 import { useAppEvents } from "./hooks/useAppEvents";
 import { CommandProvider, useCommandContext } from "./context/CommandContext";
-import { NOTIFICATION_DURATION } from "./constants";
 import "./App.css";
 
+import { NotificationProvider, useNotificationContext } from "./context/NotificationContext";
+
 // 内部コンポーネント: Contextを使用するために分離する
-const AppContent = ({
-  notifications,
-  showSuccess,
-  showError,
-  showWarning,
-  showInfo,
-  removeNotification
-}: {
-  notifications: any[];
-  showSuccess: (msg: string, duration?: number) => void;
-  showError: (msg: string, duration?: number) => void;
-  showWarning: (msg: string) => void;
-  showInfo: (msg: string) => void;
-  removeNotification: (id: string) => void;
-}) => {
+const AppContent = () => {
+  const {
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo,
+    // removeNotification is handled by Provider internally now
+  } = useNotificationContext();
+
   const {
     loading,
     error: commandsError,
@@ -44,16 +37,19 @@ const AppContent = ({
   const [deletingCommand, setDeletingCommand] = useState<Command | undefined>(undefined);
   const [theme, setTheme] = useState<string>("dark");
   const [fuzzyThreshold, setFuzzyThreshold] = useState<number>(0.5);
+  const [maxResults, setMaxResults] = useState<number>(10);
 
   const loadConfig = useCallback(async () => {
     try {
       const config = await TauriAPI.getConfig();
       setTheme(config.theme || "dark");
       setFuzzyThreshold(config.fuzzy_threshold || 0.5);
+      setMaxResults(config.max_results || 10);
     } catch (err) {
       console.warn("Failed to load config, using default values:", err);
       setTheme("dark");
       setFuzzyThreshold(0.5);
+      setMaxResults(10);
     }
   }, []);
 
@@ -184,6 +180,7 @@ const AppContent = ({
       {currentView === 'search' ? (
         <SearchWindow
           fuzzyThreshold={fuzzyThreshold}
+          maxResults={maxResults}
           onEditCommand={handleEditCommandFromSearch}
           onDeleteCommand={handleDeleteCommandFromSearch}
           onAddCommand={handleAddCommand}
@@ -205,38 +202,23 @@ const AppContent = ({
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDialog}
       />
-
-      <NotificationToast
-        notifications={notifications}
-        onRemove={removeNotification}
-      />
     </div>
   );
 };
 
 function App() {
-  const { notifications, removeNotification, showSuccess, showError, showWarning, showInfo } = useNotifications();
-
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {
         console.error("React Error Boundary caught error:", error, errorInfo);
-        showError(
-          "An unexpected error occurred. Please try restarting the application.",
-          NOTIFICATION_DURATION.CRITICAL
-        );
+        alert("An unexpected error occurred. Please try restarting the application.");
       }}
     >
-      <CommandProvider showSuccess={showSuccess} showError={showError} showInfo={showInfo}>
-        <AppContent
-          notifications={notifications}
-          showSuccess={showSuccess}
-          showError={showError}
-          showWarning={showWarning}
-          showInfo={showInfo}
-          removeNotification={removeNotification}
-        />
-      </CommandProvider>
+      <NotificationProvider>
+        <CommandProvider>
+          <AppContent />
+        </CommandProvider>
+      </NotificationProvider>
     </ErrorBoundary>
   );
 }

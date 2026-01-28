@@ -1,4 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
+import { message } from '@tauri-apps/plugin-dialog';
+import { getVersion } from '@tauri-apps/api/app';
 import { Command, Config, Commands } from '../types';
 
 export class TauriAPI {
@@ -101,5 +103,13 @@ export class TauriAPI {
 
   static async validateCommandsConfig(config: any): Promise<{ valid: boolean; errors: string[] }> {
     return await invoke('validate_commands', { config });
+  }
+
+  static async getVersion(): Promise<string> {
+    return await getVersion();
+  }
+
+  static async showMessage(msg: string, title: string = 'Scoot'): Promise<void> {
+    await message(msg, { title, kind: 'info' });
   }
 }

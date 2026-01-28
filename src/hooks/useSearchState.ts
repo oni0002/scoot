@@ -4,7 +4,7 @@ import { SearchEngine } from '../services/SearchEngine';
 import { PromptProcessor } from '../services/PromptProcessor';
 
 
-export const useSearchState = (commands: Command[], fuzzyThreshold: number) => {
+export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxResults: number) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -79,7 +79,7 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number) => {
                 setResults([]);
                 setSelectedIndex(0);
             } else {
-                const searchResults = promptProcessor.current.processSearch(newQuery, 30);
+                const searchResults = promptProcessor.current.processSearch(newQuery, maxResults);
                 setResults(searchResults);
                 setSelectedIndex(0);
             }
