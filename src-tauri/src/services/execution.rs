@@ -84,17 +84,9 @@ async fn execute_scoot_command(
 async fn execute_url(app_handle: &tauri::AppHandle, url: &str) -> Result<String, String> {
     log::info!("Opening URL: {}", url);
 
-    // URL形式の基本的な検証
-    if !url.starts_with("http://") && !url.starts_with("https://") {
-        return Err(format!(
-            "Invalid URL format: '{}'. URLs must start with http:// or https://",
-            url
-        ));
-    }
-
     crate::infra::system::open_url(app_handle, url).map_err(|e| {
         let error_msg = format!(
-            "Failed to open URL '{}' in default browser: {}. Please check if a web browser is installed.",
+            "Failed to open URL '{}': {}. Please check if a web browser or associated application is installed.",
             url, e
         );
         log::error!("Error: {}", error_msg);
