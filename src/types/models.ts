@@ -6,6 +6,7 @@ export interface Command {
     description: string;
     prompt?: string;
     working_dir?: string;
+    show_window?: boolean;
     is_editable: boolean;
 }
 

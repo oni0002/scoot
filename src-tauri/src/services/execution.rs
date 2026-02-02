@@ -32,11 +32,21 @@ pub async fn execute_command(
         }
         // シェルコマンド
         crate::domain::command::CATEGORY_COMMAND => {
-            crate::infra::system::execute_shell_command(&final_command, &command.working_dir).await
+            crate::infra::system::execute_shell_command(
+                &final_command,
+                &command.working_dir,
+                command.show_window.unwrap_or(false),
+            )
+            .await
         }
         // その他のカテゴリはシェルコマンドとして扱うデフォルト挙動
         _ => {
-            crate::infra::system::execute_shell_command(&final_command, &command.working_dir).await
+            crate::infra::system::execute_shell_command(
+                &final_command,
+                &command.working_dir,
+                command.show_window.unwrap_or(false),
+            )
+            .await
         }
     }
 }

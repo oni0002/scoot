@@ -24,6 +24,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
         description: '',
         prompt: '',
         working_dir: '',
+        show_window: false,
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -41,17 +42,19 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                 description: command.description,
                 prompt: command.prompt || '',
                 working_dir: command.working_dir || '',
+                show_window: command.show_window || false,
             });
         } else {
             // Adding new command
             setFormData({
                 id: '',
                 name: '',
-                category: '',
+                category: 'url',
                 command: '',
                 description: '',
                 prompt: '',
                 working_dir: '',
+                show_window: false,
             });
         }
         setErrors({});
@@ -96,18 +99,19 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             description: formData.description.trim(),
             prompt: formData.prompt.trim() || undefined,
             working_dir: formData.working_dir.trim() || undefined,
+            show_window: formData.show_window,
             is_editable: true,
         };
 
         onSave(commandToSave);
     };
 
-    const handleInputChange = (field: keyof typeof formData, value: string) => {
+    const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
         setFormData(prev => {
             const newData = { ...prev, [field]: value };
 
             // Auto-clear prompt if command no longer has placeholders
-            if (field === 'command') {
+            if (field === 'command' && typeof value === 'string') {
                 const hasPlaceholders = /\{\$(\d+|\*)\}/.test(value);
                 if (!hasPlaceholders) {
                     newData.prompt = '';
@@ -208,7 +212,6 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 onChange={(e) => handleInputChange('category', e.target.value)}
                                 className={`select select-bordered select-sm w-full ${errors.category ? 'select-error' : ''}`}
                             >
-                                <option value="">Select</option>
                                 <option value="url">URL</option>
                                 <option value="command">Cmd</option>
                                 <option value="file">File</option>
@@ -221,71 +224,58 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                         </div>
                     </div>
 
-                    <div className="form-control w-full">
-                        <label className="label">
-                            <span className="label-text">
-                                {formData.category === 'url' ? 'URL *' :
-                                    formData.category === 'file' ? 'Path *' :
-                                        'Command *'}
-                            </span>
-                        </label>
-                        <div className="flex gap-2 w-full">
-                            <input
-                                type="text"
-                                value={formData.command}
-                                onChange={(e) => handleInputChange('command', e.target.value)}
-                                placeholder={
-                                    formData.category === 'url' ? 'https://example.com' :
-                                        formData.category === 'file' ? 'C:\\path\\to\\file.txt' :
-                                            'Command line'
-                                }
-                                className={`input input-bordered input-sm flex-1 ${errors.command ? 'input-error' : ''}`}
-                            />
-                            {formData.category === 'file' && (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={handleBrowseFile}
-                                        className="btn btn-square btn-sm btn-ghost"
-                                        title="Select File"
-                                    >
-                                        <LuFile />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleBrowseFolder}
-                                        className="btn btn-square btn-sm btn-ghost"
-                                        title="Select Directory"
-                                    >
-                                        <LuFolder />
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                        {errors.command && (
-                            <label className="label">
-                                <span className="label-text-alt text-error">{errors.command}</span>
-                            </label>
-                        )}
-                        <label className="label">
-                            <span className="label-text-alt">
-                                Use {'{$1}'}, {'{$2}'} or {'{$*}'} for arguments
-                            </span>
-                        </label>
-                    </div>
-
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-start">
                         <div className="form-control flex-1">
                             <label className="label">
-                                <span className="label-text">Description</span>
+                                <span className="label-text">
+                                    {formData.category === 'url' ? 'URL *' :
+                                        formData.category === 'file' ? 'Path *' :
+                                            'Command *'}
+                                </span>
                             </label>
-                            <input
-                                type="text"
-                                value={formData.description}
-                                onChange={(e) => handleInputChange('description', e.target.value)}
-                                placeholder="Brief description"
-                                className={`input input-bordered input-sm w-full ${errors.description ? 'input-error' : ''}`}
-                            />
+                            <div className="flex gap-2 w-full">
+                                <input
+                                    type="text"
+                                    value={formData.command}
+                                    onChange={(e) => handleInputChange('command', e.target.value)}
+                                    placeholder={
+                                        formData.category === 'url' ? 'https://example.com' :
+                                            formData.category === 'file' ? 'C:\\path\\to\\file.txt' :
+                                                'Command line'
+                                    }
+                                    className={`input input-bordered input-sm flex-1 ${errors.command ? 'input-error' : ''}`}
+                                />
+                                {formData.category === 'file' && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={handleBrowseFile}
+                                            className="btn btn-square btn-sm btn-ghost"
+                                            title="Select File"
+                                        >
+                                            <LuFile />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleBrowseFolder}
+                                            className="btn btn-square btn-sm btn-ghost"
+                                            title="Select Directory"
+                                        >
+                                            <LuFolder />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                            {errors.command && (
+                                <label className="label">
+                                    <span className="label-text-alt text-error">{errors.command}</span>
+                                </label>
+                            )}
+                            <label className="label">
+                                <span className="label-text-alt">
+                                    Use {'{$1}'}, {'{$2}'} or {'{$*}'} for arguments
+                                </span>
+                            </label>
                         </div>
 
                         <div className="form-control w-32">
@@ -310,19 +300,46 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                     </div>
 
                     {formData.category === 'command' && (
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text">Working Dir</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={formData.working_dir}
-                                onChange={(e) => handleInputChange('working_dir', e.target.value)}
-                                placeholder="C:\path\to\working_dir"
-                                className="input input-bordered input-sm w-full"
-                            />
-                        </div>
+                        <>
+                            <div className="form-control w-full">
+                                <label className="label">
+                                    <span className="label-text">Working Dir</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.working_dir}
+                                    onChange={(e) => handleInputChange('working_dir', e.target.value)}
+                                    placeholder="C:\path\to\working_dir"
+                                    className="input input-bordered input-sm w-full"
+                                />
+                            </div>
+
+                            <div className="form-control w-full">
+                                <label className="label cursor-pointer justify-start gap-4">
+                                    <span className="label-text">Show Window</span>
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.show_window}
+                                        onChange={(e) => handleInputChange('show_window', e.target.checked)}
+                                        className="checkbox checkbox-sm"
+                                    />
+                                </label>
+                            </div>
+                        </>
                     )}
+
+                    <div className="form-control w-full">
+                        <label className="label">
+                            <span className="label-text">Description</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={formData.description}
+                            onChange={(e) => handleInputChange('description', e.target.value)}
+                            placeholder="Brief description"
+                            className={`input input-bordered input-sm w-full ${errors.description ? 'input-error' : ''}`}
+                        />
+                    </div>
                 </div>
 
                 <div className="flex-none flex justify-end gap-2 p-4">
@@ -333,7 +350,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                         {command ? 'Update' : 'Add'}
                     </button>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 };

@@ -13,6 +13,7 @@ pub fn get_scoot_commands() -> Vec<Command> {
             description: "Add a new command to the launcher".to_string(),
             prompt: None,
             working_dir: None,
+            show_window: None,
             is_editable: false,
         },
         Command {
@@ -23,6 +24,7 @@ pub fn get_scoot_commands() -> Vec<Command> {
             description: "Open commands.json configuration file".to_string(),
             prompt: None,
             working_dir: None,
+            show_window: None,
             is_editable: false,
         },
         Command {
@@ -33,6 +35,7 @@ pub fn get_scoot_commands() -> Vec<Command> {
             description: "Open config.json configuration file".to_string(),
             prompt: None,
             working_dir: None,
+            show_window: None,
             is_editable: false,
         },
         Command {
@@ -43,6 +46,7 @@ pub fn get_scoot_commands() -> Vec<Command> {
             description: "Open application README".to_string(),
             prompt: None,
             working_dir: None,
+            show_window: None,
             is_editable: false,
         },
         Command {
@@ -53,6 +57,7 @@ pub fn get_scoot_commands() -> Vec<Command> {
             description: "Open application log directory".to_string(),
             prompt: None,
             working_dir: None,
+            show_window: None,
             is_editable: false,
         },
         Command {
@@ -63,6 +68,7 @@ pub fn get_scoot_commands() -> Vec<Command> {
             description: "Reload commands and configuration".to_string(),
             prompt: None,
             working_dir: None,
+            show_window: None,
             is_editable: false,
         },
         Command {
@@ -73,6 +79,7 @@ pub fn get_scoot_commands() -> Vec<Command> {
             description: "Terminate the application".to_string(),
             prompt: None,
             working_dir: None,
+            show_window: None,
             is_editable: false,
         },
     ]

@@ -231,6 +231,7 @@ mod tests {
             description: "Test".to_string(),
             prompt: prompt.map(|s| s.to_string()),
             working_dir: None,
+            show_window: None,
             is_editable: true,
         }
     }

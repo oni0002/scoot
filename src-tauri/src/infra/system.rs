@@ -68,6 +68,7 @@ pub fn get_log_dir(_app_handle: &AppHandle) -> Result<PathBuf, String> {
 pub async fn execute_shell_command(
     command: &str,
     working_dir: &Option<String>,
+    show_window: bool,
 ) -> Result<String, String> {
     use std::process::Command as StdCommand;
     log::info!("Executing shell command: {}", command);
@@ -80,17 +81,27 @@ pub async fn execute_shell_command(
     // コマンドを構築
     let mut cmd_builder = if cfg!(target_os = "windows") {
         use std::os::windows::process::CommandExt;
-        let mut cmd = StdCommand::new("cmd");
-        cmd.args([
-            "/C",
-            "start",           // 新しいウィンドウを開く
-            "Scoot Execution", // タイトル
-            "powershell",      // PowerShellを使用
-            "-Command",        // コマンドを実行
-            command,           // 実行するコマンド
-        ]);
-        // ウィンドウを表示しない (CREATE_NO_WINDOW)
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        // PowerShellを直接呼び出す
+        let mut cmd = StdCommand::new("powershell");
+        // プロファイル読み込みをスキップして高速化
+        let mut args = vec!["-NoProfile"];
+        // show_windowがtrueの場合 -NoExit を追加 (ウィンドウを閉じないようにする)
+        if show_window {
+            args.push("-NoExit");
+        }
+
+        args.push("-Command");
+        args.push(command);
+
+        cmd.args(args);
+
+        if show_window {
+            // 新しいコンソールウィンドウを作成 (CREATE_NEW_CONSOLE)
+            cmd.creation_flags(0x00000010);
+        } else {
+            // ウィンドウを表示しない (CREATE_NO_WINDOW)
+            cmd.creation_flags(0x08000000);
+        }
         cmd
     } else {
         let mut cmd = StdCommand::new("sh");

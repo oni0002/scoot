@@ -70,6 +70,7 @@ fn create_command_from_path(path: &Path) -> Option<Command> {
         description: format!("Application in {}", parent),
         prompt: None,
         working_dir: None,
+        show_window: None,
         is_editable: false,
     })
 }

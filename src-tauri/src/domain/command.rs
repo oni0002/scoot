@@ -30,6 +30,8 @@ pub struct Command {
     pub prompt: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub working_dir: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub show_window: Option<bool>,
     #[serde(default = "default_editable")]
     pub is_editable: bool,
 }
@@ -199,6 +201,7 @@ mod tests {
             description: "Test command".to_string(),
             prompt: None,
             working_dir: None,
+            show_window: None,
             is_editable: true,
         }
     }

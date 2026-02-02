@@ -113,6 +113,7 @@ fn collect_commands(
                 description: format!("Bookmark: {}", url),
                 prompt: prompt.clone(),
                 working_dir: None,
+                show_window: None,
                 is_editable: false,
             };
             commands.push(command);
