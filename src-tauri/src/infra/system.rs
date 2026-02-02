@@ -79,6 +79,7 @@ pub async fn execute_shell_command(
 
     // コマンドを構築
     let mut cmd_builder = if cfg!(target_os = "windows") {
+        use std::os::windows::process::CommandExt;
         let mut cmd = StdCommand::new("cmd");
         cmd.args([
             "/C",
@@ -88,6 +89,8 @@ pub async fn execute_shell_command(
             "-Command",        // コマンドを実行
             command,           // 実行するコマンド
         ]);
+        // ウィンドウを表示しない (CREATE_NO_WINDOW)
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         cmd
     } else {
         let mut cmd = StdCommand::new("sh");
@@ -97,14 +100,24 @@ pub async fn execute_shell_command(
 
     // ワークディレクトリを設定
     if let Some(dir) = working_dir {
-        if !dir.trim().is_empty() {
-            if std::path::Path::new(dir).exists() {
-                cmd_builder.current_dir(dir);
+        // ダブルクォートで囲まれている場合は除去する
+        let trimmed_dir = dir.trim();
+        let clean_dir =
+            if trimmed_dir.starts_with('"') && trimmed_dir.ends_with('"') && trimmed_dir.len() >= 2
+            {
+                &trimmed_dir[1..trimmed_dir.len() - 1]
+            } else {
+                trimmed_dir
+            };
+
+        if !clean_dir.is_empty() {
+            if std::path::Path::new(clean_dir).exists() {
+                cmd_builder.current_dir(clean_dir);
             } else {
                 // ワークディレクトリが存在しない場合は警告
                 log::warn!(
                     "Warning: Working directory '{}' does not exist. Ignoring.",
-                    dir
+                    clean_dir
                 );
             }
         }
