@@ -92,9 +92,9 @@ impl Config {
 
     /// JSON文字列をスキーマ検証してからデシリアライズ
     pub fn from_json_with_validation(json_str: &str) -> Result<Self, String> {
-        // JSONパース
+        // json5を使用してパース (コメントと末尾カンマを許容)
         let json_value: serde_json::Value =
-            serde_json::from_str(json_str).map_err(|e| format!("Invalid JSON: {}", e))?;
+            json5::from_str(json_str).map_err(|e| format!("Invalid JSON5: {}", e))?;
 
         // スキーマ検証
         let schema = Self::generate_schema();
@@ -125,9 +125,9 @@ pub fn generate_commands_schema() -> serde_json::Value {
 
 /// JSON文字列をスキーマ検証してからデシリアライズ
 pub fn commands_from_json_with_validation(json_str: &str) -> Result<Commands, String> {
-    // JSONパース
+    // json5を使用してパース (コメントと末尾カンマを許容)
     let json_value: serde_json::Value =
-        serde_json::from_str(json_str).map_err(|e| format!("Invalid JSON: {}", e))?;
+        json5::from_str(json_str).map_err(|e| format!("Invalid JSON5: {}", e))?;
 
     // スキーマ検証
     let schema = generate_commands_schema();

@@ -96,7 +96,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 
   return (
     <div
-      className={`alert ${getAlertClass()} rounded-lg transition-all duration-300 max-w-sm p-3 gap-2 shadow-lg flex items-center text-left ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
+      className={`alert ${getAlertClass()} rounded-lg transition-all duration-300 max-w-sm py-2 px-3 gap-2 shadow-lg flex items-center text-left ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
         }`}
     >
       {getIcon()}
