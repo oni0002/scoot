@@ -3,7 +3,7 @@ use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_THEME: &str = "dark";
-pub const DEFAULT_SHORTCUT: &str = "alt+space";
+pub const DEFAULT_SHORTCUT: &str = "Alt+Space";
 
 /// 設定構造体
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -19,7 +19,7 @@ pub struct Config {
     ))]
     pub theme: String,
     #[schemars(regex(
-        pattern = r"^((Cmd|Command|Ctrl|Control|Alt|Shift|Super|Option)\+)+([A-Z0-9a-z]|Space|Enter|Tab|F[1-9]|F1[0-2])$"
+        pattern = r"^((Cmd|Command|Ctrl|Control|Alt|Shift|Super|Option|cmd|command|ctrl|control|alt|shift|super|option)\+)+([A-Z0-9a-z]|Space|Enter|Tab|F[1-9]|F1[0-2]|space|enter|tab|f[1-9]|f1[0-2])$"
     ))]
     pub hotkey: String,
 }

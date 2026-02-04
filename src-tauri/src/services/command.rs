@@ -34,11 +34,16 @@ pub async fn reload(
 
     // コマンドの読み込み
     log::info!("Loading commands.");
-    let commands = state
-        .config_manager
-        .load_commands()
-        .await
-        .map_err(|e| e.to_string())?;
+    let commands = match state.config_manager.load_commands().await {
+        Ok(cmds) => cmds,
+        Err(e) => {
+            log::error!(
+                "Failed to load commands.json: {}. Proceeding with empty commands.",
+                e
+            );
+            crate::domain::command::Commands::new()
+        }
+    };
 
     // ブックマークの読み込み
     log::info!("Loading bookmarks.");
