@@ -62,7 +62,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::domain::
     if let Err(e) = app_handle.emit("config-reloaded", ()) {
         log::error!("Failed to emit config-reloaded: {}", e);
     } else {
-        log::debug!("Config reloaded successfully, event emitted.");
+        log::info!("Config reloaded successfully, event emitted.");
     }
 
     Ok(())
@@ -122,12 +122,16 @@ pub fn get_file_watcher_status(state: &State<'_, AppState>) -> bool {
     state._commands_file_watcher.is_some() || state._config_file_watcher.is_some()
 }
 
-/// ログディレクトリを開く
+/// ログ(またはログディレクトリ)を開く
 pub fn open_log_directory(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
-    let log_path = crate::infra::system::get_log_dir(app_handle)?;
-    crate::infra::system::ensure_directory_exists(&log_path)?;
-    let path_str = log_path.to_string_lossy().to_string();
-    log::debug!("Opening log directory: {}", path_str);
+    let log_dir = crate::infra::system::get_log_dir(app_handle)?;
+    crate::infra::system::ensure_directory_exists(&log_dir)?;
+
+    let log_file = log_dir.join("scoot.log");
+    let target_path = if log_file.exists() { log_file } else { log_dir };
+
+    let path_str = target_path.to_string_lossy().to_string();
+    log::debug!("Opening log path: {}", path_str);
     crate::infra::system::open_path(app_handle, &path_str)
 }
 

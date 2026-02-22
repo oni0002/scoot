@@ -80,7 +80,7 @@ pub fn resolve_resource(
 pub fn get_log_dir(_app_handle: &AppHandle) -> Result<PathBuf, crate::domain::error::AppError> {
     std::env::current_exe()
         .ok()
-        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .and_then(|p| p.parent().map(|p| p.join("logs")))
         .ok_or_else(|| {
             crate::domain::error::AppError::System("Failed to determine log directory".to_string())
         })
