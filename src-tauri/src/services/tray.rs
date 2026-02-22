@@ -71,8 +71,18 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
             {
                 let app_handle = tray.app_handle();
 
-                // 300ミリ秒以内の重複クリックを無視(デバウンス)
                 if let Some(state) = app_handle.try_state::<AppState>() {
+                    // デスクトップでフォーカスが外れて隠れた直後のクリックを無視
+                    if let Ok(hidden) = state.last_window_hidden.lock() {
+                        if let Some(instant) = *hidden {
+                            if instant.elapsed().as_millis() < 300 {
+                                log::debug!("tray click ignored due to recent focus loss hide");
+                                return;
+                            }
+                        }
+                    }
+
+                    // 300ミリ秒以内の重複クリックを無視
                     if let Ok(mut last_click) = state.last_tray_click.lock() {
                         if let Some(instant) = *last_click {
                             if instant.elapsed().as_millis() < 300 {

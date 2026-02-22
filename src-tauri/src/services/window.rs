@@ -44,6 +44,7 @@ pub fn handle_focus_change(
     focused: bool,
     last_window_shown: &std::sync::Mutex<Option<std::time::Instant>>,
     prevent_hide: &std::sync::Mutex<bool>,
+    last_window_hidden: &std::sync::Mutex<Option<std::time::Instant>>,
 ) {
     // フォーカスが得られた場合は何もしない
     if focused {
@@ -67,6 +68,9 @@ pub fn handle_focus_change(
     }
 
     // 上記以外はウィンドウを隠す
+    if let Ok(mut hidden) = last_window_hidden.lock() {
+        *hidden = Some(std::time::Instant::now());
+    }
     let _ = window.hide();
 }
 
@@ -75,6 +79,7 @@ pub fn setup_window_events(
     app: &tauri::App,
     last_window_shown: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
     prevent_hide: std::sync::Arc<std::sync::Mutex<bool>>,
+    last_window_hidden: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
 ) {
     if let Some(window) = app.get_webview_window("main") {
         let window_clone = window.clone();
@@ -87,7 +92,13 @@ pub fn setup_window_events(
                 }
                 // フォーカスが変わったとき
                 tauri::WindowEvent::Focused(focused) => {
-                    handle_focus_change(&window_clone, *focused, &last_window_shown, &prevent_hide);
+                    handle_focus_change(
+                        &window_clone,
+                        *focused,
+                        &last_window_shown,
+                        &prevent_hide,
+                        &last_window_hidden,
+                    );
                 }
                 _ => {}
             }

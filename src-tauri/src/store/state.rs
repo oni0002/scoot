@@ -12,6 +12,7 @@ pub struct AppState {
     pub _config_file_watcher: Option<FileWatcher>,
     pub shortcut: Mutex<Option<String>>,
     pub last_window_shown: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
+    pub last_window_hidden: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
     pub last_tray_click: Mutex<Option<std::time::Instant>>,
     pub prevent_hide: std::sync::Arc<std::sync::Mutex<bool>>,
 }
@@ -32,6 +33,7 @@ impl AppState {
             _config_file_watcher: config_file_watcher,
             shortcut: Mutex::new(None),
             last_window_shown: std::sync::Arc::new(std::sync::Mutex::new(None)),
+            last_window_hidden: std::sync::Arc::new(std::sync::Mutex::new(None)),
             last_tray_click: Mutex::new(None),
             prevent_hide: std::sync::Arc::new(std::sync::Mutex::new(false)),
         }

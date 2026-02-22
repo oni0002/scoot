@@ -70,7 +70,7 @@ where
                 }
             }
             let _ = app_handle.emit("shortcut-registered", hotkey);
-            log::info!("Global shortcut registered: {}", hotkey);
+            log::debug!("Global shortcut registered: {}", hotkey);
             Ok(())
         }
         Err(e) => {
@@ -99,7 +99,7 @@ pub fn unregister(app_handle: &AppHandle) {
     if let Some(state) = app_handle.try_state::<AppState>() {
         if let Ok(mut reg) = state.shortcut.lock() {
             if let Some(hotkey) = reg.as_ref() {
-                log::info!("Unregistering shortcut: {}", hotkey);
+                log::debug!("Unregistering shortcut: {}", hotkey);
                 let _ = app_handle.global_shortcut().unregister(hotkey.as_str());
             }
             *reg = None;

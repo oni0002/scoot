@@ -93,7 +93,7 @@ pub async fn execute_shell_command(
     show_window: bool,
 ) -> Result<String, crate::domain::error::AppError> {
     use std::process::Command as StdCommand;
-    log::info!("Executing shell command: {}", command);
+    log::debug!("Executing shell command: {}", command);
 
     // コマンドが空の場合はエラー
     if command.trim().is_empty() {
@@ -162,7 +162,7 @@ pub async fn execute_shell_command(
     match cmd_builder.spawn() {
         Ok(_) => {
             let success_msg = "Command launched successfully (background).".to_string();
-            log::info!("{}", success_msg);
+            log::debug!("{}", success_msg);
             Ok(success_msg)
         }
         Err(e) => {

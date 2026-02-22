@@ -56,7 +56,7 @@ async fn execute_scoot_command(
     app_handle: &tauri::AppHandle,
     command: &str,
 ) -> Result<String, crate::domain::error::AppError> {
-    log::info!("Executing scoot command: {}", command);
+    log::debug!("Executing scoot command: {}", command);
 
     match command {
         "scoot://add-command" => {
@@ -98,7 +98,7 @@ async fn execute_url(
     app_handle: &tauri::AppHandle,
     url: &str,
 ) -> Result<String, crate::domain::error::AppError> {
-    log::info!("Opening URL: {}", url);
+    log::debug!("Opening URL: {}", url);
 
     crate::infra::system::open_url(app_handle, url).map_err(|e| {
         let error_msg = format!(
@@ -110,7 +110,7 @@ async fn execute_url(
     })?;
 
     let success_msg = format!("Successfully opened URL: {}", url);
-    log::info!("{}", success_msg);
+    log::debug!("{}", success_msg);
     Ok(success_msg)
 }
 
@@ -119,11 +119,11 @@ async fn execute_local_file(
     app_handle: &tauri::AppHandle,
     file_path: &str,
 ) -> Result<String, crate::domain::error::AppError> {
-    log::info!("Opening file: {}", file_path);
+    log::debug!("Opening file: {}", file_path);
 
     // 環境変数の展開
     let expanded_path = crate::infra::env::expand_env_vars(file_path);
-    log::info!("Opening file (expanded): {}", expanded_path);
+    log::debug!("Opening file (expanded): {}", expanded_path);
 
     // ファイルの存在確認
     if !std::path::Path::new(&expanded_path).exists() {
@@ -143,6 +143,6 @@ async fn execute_local_file(
     })?;
 
     let success_msg = format!("Successfully opened file: {}", expanded_path);
-    log::info!("{}", success_msg);
+    log::debug!("{}", success_msg);
     Ok(success_msg)
 }

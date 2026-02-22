@@ -81,7 +81,7 @@ impl FileWatcher {
 
                     // 対象ファイルに関連するイベント(Modify, Create, Rename, Removeなど)であればリロードを試みる
                     // Removeの場合はConfigManagerがデフォルト値を再生成する挙動になる
-                    log::info!("Config file event ({:?}): {:?}", event.kind, event.paths);
+                    log::debug!("Config file event ({:?}): {:?}", event.kind, event.paths);
 
                     if let Err(e) = app_handle.emit("config-file-changed", ()) {
                         log::error!("Failed to emit config file changed event: {}", e);

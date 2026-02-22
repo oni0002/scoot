@@ -76,6 +76,7 @@ pub fn run() {
             // ウィンドウイベントリスナーに渡すためにArcをクローンしておく
             let last_window_shown = app_state.last_window_shown.clone();
             let prevent_hide = app_state.prevent_hide.clone();
+            let last_window_hidden = app_state.last_window_hidden.clone();
 
             // State登録
             app.manage(app_state);
@@ -87,7 +88,12 @@ pub fn run() {
                 }
             });
             // ウィンドウイベントの設定
-            crate::services::window::setup_window_events(app, last_window_shown, prevent_hide);
+            crate::services::window::setup_window_events(
+                app,
+                last_window_shown,
+                prevent_hide,
+                last_window_hidden,
+            );
             // イベントリスナーとバックグラウンドタスクの設定
             crate::services::system::setup_event_listeners(app)?;
             crate::services::system::start_bookmark_update_task(app.handle().clone());

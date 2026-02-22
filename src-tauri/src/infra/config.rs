@@ -20,7 +20,7 @@ impl ConfigManager {
             .map(|p| p.to_string_lossy().to_string())
             .unwrap_or_else(|| ".".to_string());
 
-        log::info!("Using config: {}", target_dir);
+        log::debug!("Using config: {}", target_dir);
 
         let config_path = format!("{}/config.json", target_dir);
         let commands_path = format!("{}/commands.json", target_dir);

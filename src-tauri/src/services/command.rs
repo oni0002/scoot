@@ -37,7 +37,7 @@ pub async fn reload(
     config: &crate::domain::config::Config,
 ) -> Result<(), crate::domain::error::AppError> {
     // コマンドの読み込み
-    log::info!("Loading commands.");
+    log::debug!("Loading commands.");
     let commands = match config_manager.load_commands().await {
         Ok(cmds) => cmds,
         Err(e) => {
@@ -50,7 +50,7 @@ pub async fn reload(
     };
 
     // ブックマークの読み込み
-    log::info!("Loading bookmarks.");
+    log::debug!("Loading bookmarks.");
     let bookmarks = if config.bookmarks.enabled {
         match crate::infra::bookmark::load(&config.bookmarks).await {
             Ok(bm_commands) => bm_commands,
@@ -64,7 +64,7 @@ pub async fn reload(
     };
 
     // アプリケーションスキャン
-    log::info!("Loading applications.");
+    log::debug!("Loading applications.");
     let app_commands = if config.applications.enabled {
         crate::infra::application::scan(
             &config.applications.directories,
@@ -93,7 +93,7 @@ pub async fn reload_bookmarks(
     config: &crate::domain::config::Config,
 ) -> Result<(), crate::domain::error::AppError> {
     // ブックマークの読み込み
-    log::info!("Loading bookmarks.");
+    log::debug!("Loading bookmarks.");
     let bookmarks = if config.bookmarks.enabled {
         match crate::infra::bookmark::load(&config.bookmarks).await {
             Ok(bm_commands) => bm_commands,

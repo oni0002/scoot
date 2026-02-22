@@ -62,7 +62,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::domain::
     if let Err(e) = app_handle.emit("config-reloaded", ()) {
         log::error!("Failed to emit config-reloaded: {}", e);
     } else {
-        log::info!("Config reloaded successfully, event emitted.");
+        log::debug!("Config reloaded successfully, event emitted.");
     }
 
     Ok(())
@@ -127,7 +127,7 @@ pub fn open_log_directory(app_handle: &AppHandle) -> Result<(), crate::domain::e
     let log_path = crate::infra::system::get_log_dir(app_handle)?;
     crate::infra::system::ensure_directory_exists(&log_path)?;
     let path_str = log_path.to_string_lossy().to_string();
-    log::info!("Opening log directory: {}", path_str);
+    log::debug!("Opening log directory: {}", path_str);
     crate::infra::system::open_path(app_handle, &path_str)
 }
 
@@ -150,7 +150,7 @@ pub fn open_add_command_dialog(
 pub fn start_bookmark_update_task(app_handle: AppHandle) {
     // use tauri::Manager; // This is now at file scope
     tauri::async_runtime::spawn(async move {
-        log::info!("Starting bookmark auto-refresh task");
+        log::debug!("Starting bookmark auto-refresh task");
         loop {
             // 現在の設定からリフレッシュ間隔を取得
             let interval_minutes = if let Some(state) = app_handle.try_state::<AppState>() {
@@ -167,7 +167,7 @@ pub fn start_bookmark_update_task(app_handle: AppHandle) {
             // 指定時間待機
             tokio::time::sleep(tokio::time::Duration::from_secs(interval_minutes * 60)).await;
 
-            log::info!("Executing scheduled bookmark refresh...");
+            log::debug!("Executing scheduled bookmark refresh...");
 
             // Configを取得してリロード
             let config_opt = if let Some(state) = app_handle.try_state::<AppState>() {

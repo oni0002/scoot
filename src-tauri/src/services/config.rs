@@ -38,7 +38,7 @@ pub async fn reload(
     state_config: &std::sync::Mutex<Config>,
 ) -> Result<Config, crate::domain::error::AppError> {
     // 設定の読み込み
-    log::info!("Loading configuration.");
+    log::debug!("Loading configuration.");
     let new_config = config_manager
         .load()
         .await
