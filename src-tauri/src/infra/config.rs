@@ -32,7 +32,7 @@ impl ConfigManager {
     }
 
     /// Configを読み込む
-    pub async fn load(&self) -> Result<Config, String> {
+    pub async fn load(&self) -> Result<Config, crate::domain::error::AppError> {
         // config.jsonが存在しない場合、デフォルト値を保存して返す
         if !tokio::fs::try_exists(&self.config_path)
             .await
@@ -47,10 +47,10 @@ impl ConfigManager {
         let content = tokio::fs::read_to_string(&self.config_path)
             .await
             .map_err(|e| {
-                format!(
+                crate::domain::error::AppError::System(format!(
                     "Failed to read app config file '{}': {}",
                     self.config_path, e
-                )
+                ))
             })?;
 
         // config.jsonが空の場合、デフォルト値を保存して返す
@@ -62,10 +62,10 @@ impl ConfigManager {
 
         // config.jsonをパースして返す
         let mut config: Config = Config::from_json_with_validation(&content).map_err(|e| {
-            format!(
+            crate::domain::error::AppError::System(format!(
                 "App config file '{}' validation failed: {}",
                 self.config_path, e
-            )
+            ))
         })?;
 
         // fuzzy_thresholdを検証して必要なら修正
@@ -75,7 +75,7 @@ impl ConfigManager {
     }
 
     /// Commandsを読み込む
-    pub async fn load_commands(&self) -> Result<Commands, String> {
+    pub async fn load_commands(&self) -> Result<Commands, crate::domain::error::AppError> {
         // commands.jsonが存在しない場合、デフォルト値を保存して返す
         if !tokio::fs::try_exists(&self.commands_path)
             .await
@@ -90,10 +90,10 @@ impl ConfigManager {
         let content = tokio::fs::read_to_string(&self.commands_path)
             .await
             .map_err(|e| {
-                format!(
+                crate::domain::error::AppError::System(format!(
                     "Failed to read commands file '{}': {}",
                     self.commands_path, e
-                )
+                ))
             })?;
 
         // commands.jsonが空の場合、デフォルト値を保存して返す
@@ -109,7 +109,9 @@ impl ConfigManager {
             crate::domain::config::commands_from_json_with_validation(&content)
         })
         .await
-        .map_err(|e| format!("Failed to spawn blocking task: {}", e))?
+        .map_err(|e| {
+            crate::domain::error::AppError::System(format!("Failed to spawn blocking task: {}", e))
+        })?
         .unwrap_or_else(|e| {
             log::error!("Failed to parse commands.json: {}", e);
             Vec::new()
@@ -119,7 +121,10 @@ impl ConfigManager {
     }
 
     /// Configを保存
-    pub async fn save(&self, config: &crate::domain::config::Config) -> Result<(), String> {
+    pub async fn save(
+        &self,
+        config: &crate::domain::config::Config,
+    ) -> Result<(), crate::domain::error::AppError> {
         self.save_to_json(&self.config_path, config).await
     }
 
@@ -127,18 +132,23 @@ impl ConfigManager {
     pub async fn save_commands(
         &self,
         commands: &crate::domain::command::Commands,
-    ) -> Result<(), String> {
+    ) -> Result<(), crate::domain::error::AppError> {
         self.save_to_json(&self.commands_path, commands).await
     }
 
     /// JSONで保存
-    async fn save_to_json<T: serde::Serialize>(&self, path: &str, data: &T) -> Result<(), String> {
-        let content = serde_json::to_string_pretty(data)
-            .map_err(|e| format!("Failed to serialize data: {}", e))?;
+    async fn save_to_json<T: serde::Serialize>(
+        &self,
+        path: &str,
+        data: &T,
+    ) -> Result<(), crate::domain::error::AppError> {
+        let content = serde_json::to_string_pretty(data).map_err(|e| {
+            crate::domain::error::AppError::System(format!("Failed to serialize data: {}", e))
+        })?;
 
-        tokio::fs::write(path, content)
-            .await
-            .map_err(|e| format!("Failed to write to file: {}", e))
+        tokio::fs::write(path, content).await.map_err(|e| {
+            crate::domain::error::AppError::System(format!("Failed to write to file: {}", e))
+        })
     }
 
     /// 設定ファイルのパスを取得

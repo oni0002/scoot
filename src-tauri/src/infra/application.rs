@@ -3,7 +3,10 @@ use std::path::Path;
 use walkdir::WalkDir;
 
 /// 指定されたディレクトリリストからアプリケーションをスキャンする
-pub async fn scan(directories: &[String], extensions: &[String]) -> Result<Vec<Command>, String> {
+pub async fn scan(
+    directories: &[String],
+    extensions: &[String],
+) -> Result<Vec<Command>, crate::domain::error::AppError> {
     let directories_clone = directories.to_vec();
     let extensions = extensions
         .iter()
@@ -41,7 +44,9 @@ pub async fn scan(directories: &[String], extensions: &[String]) -> Result<Vec<C
         commands
     })
     .await
-    .map_err(|e| format!("Failed to scan applications: {}", e))?;
+    .map_err(|e| {
+        crate::domain::error::AppError::System(format!("Failed to scan applications: {}", e))
+    })?;
 
     Ok(commands)
 }

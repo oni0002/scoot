@@ -20,8 +20,9 @@ export function useCommands() {
             setCommands(loadedCommands);
             setError(null);
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to load commands';
-            setError(errorMessage);
+            const errorMessage = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
+            console.error('Failed to load commands:', errorMessage);
+            setError('Failed to load commands');
             showError("Could not load commands from configuration.", NOTIFICATION_DURATION.VERY_LONG);
         } finally {
             setLoading(false);
@@ -35,9 +36,10 @@ export function useCommands() {
             await loadCommands();
             return true;
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to add command';
+            const errorMessage = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
+            console.error('Failed to add command:', errorMessage);
             // 個別の操作エラーは全体のエラー状態に影響させない
-            showError(errorMessage, NOTIFICATION_DURATION.LONG);
+            showError('Failed to add command.', NOTIFICATION_DURATION.LONG);
             return false;
         }
     }, [loadCommands, showSuccess, showError]);
@@ -49,8 +51,9 @@ export function useCommands() {
             await loadCommands();
             return true;
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to update command';
-            showError(errorMessage, NOTIFICATION_DURATION.LONG);
+            const errorMessage = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
+            console.error('Failed to update command:', errorMessage);
+            showError('Failed to update command.', NOTIFICATION_DURATION.LONG);
             return false;
         }
     }, [loadCommands, showSuccess, showError]);
@@ -62,8 +65,9 @@ export function useCommands() {
             await loadCommands();
             return true;
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to delete command';
-            showError(`Could not delete "${name}": ${errorMessage}`, NOTIFICATION_DURATION.LONG);
+            const errorMessage = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
+            console.error(`Failed to delete command "${name}":`, errorMessage);
+            showError(`Could not delete "${name}".`, NOTIFICATION_DURATION.LONG);
             return false;
         }
     }, [loadCommands, showSuccess, showError]);
@@ -74,9 +78,10 @@ export function useCommands() {
             // 成功時にエラーをクリアする必要もない（ロードエラーとは無関係のため）
             return true;
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to execute command';
+            const errorMessage = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
+            console.error(`Failed to execute command "${command.name}":`, errorMessage);
             // 実行エラーはトースト通知のみとし、アプリ全体のエラー画面には遷移させない
-            showError(`Failed to execute "${command.name}": ${errorMessage}`, NOTIFICATION_DURATION.LONG);
+            showError(`Failed to execute "${command.name}".`, NOTIFICATION_DURATION.LONG);
             return false;
         }
     }, [showInfo, showError]);

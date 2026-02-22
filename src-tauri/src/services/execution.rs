@@ -5,7 +5,7 @@ pub async fn execute_command(
     app_handle: &tauri::AppHandle,
     command: &Command,
     args: &[String],
-) -> Result<String, String> {
+) -> Result<String, crate::domain::error::AppError> {
     // コマンドを構築 (引数があれば展開)
     let final_command = if command.has_placeholders() {
         command.substitute_args(args)
@@ -55,7 +55,7 @@ pub async fn execute_command(
 async fn execute_scoot_command(
     app_handle: &tauri::AppHandle,
     command: &str,
-) -> Result<String, String> {
+) -> Result<String, crate::domain::error::AppError> {
     log::info!("Executing scoot command: {}", command);
 
     match command {
@@ -86,12 +86,18 @@ async fn execute_scoot_command(
             crate::services::system::quit_app(app_handle);
             Ok("Application terminated".to_string())
         }
-        _ => Err(format!("Unknown scoot command: {}", command)),
+        _ => Err(crate::domain::error::AppError::CommandExecution(format!(
+            "Unknown scoot command: {}",
+            command
+        ))),
     }
 }
 
 /// URLカテゴリのコマンドを実行
-async fn execute_url(app_handle: &tauri::AppHandle, url: &str) -> Result<String, String> {
+async fn execute_url(
+    app_handle: &tauri::AppHandle,
+    url: &str,
+) -> Result<String, crate::domain::error::AppError> {
     log::info!("Opening URL: {}", url);
 
     crate::infra::system::open_url(app_handle, url).map_err(|e| {
@@ -100,7 +106,7 @@ async fn execute_url(app_handle: &tauri::AppHandle, url: &str) -> Result<String,
             url, e
         );
         log::error!("Error: {}", error_msg);
-        error_msg
+        crate::domain::error::AppError::CommandExecution(error_msg)
     })?;
 
     let success_msg = format!("Successfully opened URL: {}", url);
@@ -112,7 +118,7 @@ async fn execute_url(app_handle: &tauri::AppHandle, url: &str) -> Result<String,
 async fn execute_local_file(
     app_handle: &tauri::AppHandle,
     file_path: &str,
-) -> Result<String, String> {
+) -> Result<String, crate::domain::error::AppError> {
     log::info!("Opening file: {}", file_path);
 
     // 環境変数の展開
@@ -126,14 +132,14 @@ async fn execute_local_file(
             expanded_path, file_path
         );
         log::error!("Error: {}", error_msg);
-        return Err(error_msg);
+        return Err(crate::domain::error::AppError::CommandExecution(error_msg));
     }
 
     // ファイルを開く
     crate::infra::system::open_path(app_handle, &expanded_path).map_err(|e| {
         let error_msg = format!("Failed to open file '{}': {}. Please check file permissions and ensure a default application is set for this file type.", expanded_path, e);
         log::error!("Error: {}", error_msg);
-        error_msg
+        crate::domain::error::AppError::CommandExecution(error_msg)
     })?;
 
     let success_msg = format!("Successfully opened file: {}", expanded_path);

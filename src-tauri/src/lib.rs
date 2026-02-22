@@ -9,7 +9,6 @@ use crate::infra::watcher::FileWatcher;
 use crate::store::commands::CommandManager;
 use crate::store::state::AppState;
 use tauri::Manager;
-use tauri_plugin_opener;
 
 // エントリーポイント
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -65,14 +64,22 @@ pub fn run() {
             let commands_file_watcher = FileWatcher::new(commands_path, app.handle().clone()).ok();
             let config_file_watcher = FileWatcher::new(config_path, app.handle().clone()).ok();
 
-            // State登録
-            app.manage(AppState::new(
+            // State生成
+            let app_state = AppState::new(
                 command_manager,
                 config,
                 config_manager,
                 commands_file_watcher,
                 config_file_watcher,
-            ));
+            );
+
+            // ウィンドウイベントリスナーに渡すためにArcをクローンしておく
+            let last_window_shown = app_state.last_window_shown.clone();
+            let prevent_hide = app_state.prevent_hide.clone();
+
+            // State登録
+            app.manage(app_state);
+
             // 共通のデータロード処理を実行
             tauri::async_runtime::block_on(async {
                 if let Err(e) = crate::services::system::reload(app.handle()).await {
@@ -80,7 +87,7 @@ pub fn run() {
                 }
             });
             // ウィンドウイベントの設定
-            crate::services::window::setup_window_events(app);
+            crate::services::window::setup_window_events(app, last_window_shown, prevent_hide);
             // イベントリスナーとバックグラウンドタスクの設定
             crate::services::system::setup_event_listeners(app)?;
             crate::services::system::start_bookmark_update_task(app.handle().clone());

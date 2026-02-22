@@ -91,28 +91,34 @@ impl Config {
     }
 
     /// JSON文字列をスキーマ検証してからデシリアライズ
-    pub fn from_json_with_validation(json_str: &str) -> Result<Self, String> {
+    pub fn from_json_with_validation(
+        json_str: &str,
+    ) -> Result<Self, crate::domain::error::AppError> {
         // json5を使用してパース (コメントと末尾カンマを許容)
-        let json_value: serde_json::Value =
-            json5::from_str(json_str).map_err(|e| format!("Invalid JSON5: {}", e))?;
+        let json_value: serde_json::Value = json5::from_str(json_str).map_err(|e| {
+            crate::domain::error::AppError::Validation(format!("Invalid JSON5: {}", e))
+        })?;
 
         // スキーマ検証
         let schema = Self::generate_schema();
-        let compiled_schema = jsonschema::JSONSchema::compile(&schema)
-            .map_err(|e| format!("Failed to compile schema: {}", e))?;
+        let compiled_schema = jsonschema::JSONSchema::compile(&schema).map_err(|e| {
+            crate::domain::error::AppError::Validation(format!("Failed to compile schema: {}", e))
+        })?;
 
         if let Err(errors) = compiled_schema.validate(&json_value) {
             let error_messages: Vec<String> = errors
                 .map(|error| format!("Validation error at {}: {}", error.instance_path, error))
                 .collect();
-            return Err(format!(
+            return Err(crate::domain::error::AppError::Validation(format!(
                 "Schema validation failed: {}",
                 error_messages.join(", ")
-            ));
+            )));
         }
 
         // デシリアライゼーション
-        serde_json::from_value(json_value).map_err(|e| format!("Failed to deserialize: {}", e))
+        serde_json::from_value(json_value).map_err(|e| {
+            crate::domain::error::AppError::Validation(format!("Failed to deserialize: {}", e))
+        })
     }
 }
 
@@ -124,33 +130,38 @@ pub fn generate_commands_schema() -> serde_json::Value {
 }
 
 /// JSON文字列をスキーマ検証してからデシリアライズ
-pub fn commands_from_json_with_validation(json_str: &str) -> Result<Commands, String> {
+pub fn commands_from_json_with_validation(
+    json_str: &str,
+) -> Result<Commands, crate::domain::error::AppError> {
     // json5を使用してパース (コメントと末尾カンマを許容)
-    let json_value: serde_json::Value =
-        json5::from_str(json_str).map_err(|e| format!("Invalid JSON5: {}", e))?;
+    let json_value: serde_json::Value = json5::from_str(json_str)
+        .map_err(|e| crate::domain::error::AppError::Validation(format!("Invalid JSON5: {}", e)))?;
 
     // スキーマ検証
     let schema = generate_commands_schema();
-    let compiled_schema = jsonschema::JSONSchema::compile(&schema)
-        .map_err(|e| format!("Failed to compile schema: {}", e))?;
+    let compiled_schema = jsonschema::JSONSchema::compile(&schema).map_err(|e| {
+        crate::domain::error::AppError::Validation(format!("Failed to compile schema: {}", e))
+    })?;
 
     if let Err(errors) = compiled_schema.validate(&json_value) {
         let error_messages: Vec<String> = errors
             .map(|error| format!("Validation error at {}: {}", error.instance_path, error))
             .collect();
-        return Err(format!(
+        return Err(crate::domain::error::AppError::Validation(format!(
             "Schema validation failed: {}",
             error_messages.join(", ")
-        ));
+        )));
     }
 
     // デシリアライゼーション
-    serde_json::from_value(json_value).map_err(|e| format!("Failed to deserialize: {}", e))
+    serde_json::from_value(json_value).map_err(|e| {
+        crate::domain::error::AppError::Validation(format!("Failed to deserialize: {}", e))
+    })
 }
 
 impl Config {
     /// 設定の値を検証し、不正な値があれば修正する
-    pub fn validate_and_fix(&mut self) -> Result<(), String> {
+    pub fn validate_and_fix(&mut self) -> Result<(), crate::domain::error::AppError> {
         // fuzzy_threshold (0.0 - 1.0)
         if self.fuzzy_threshold < 0.0 || self.fuzzy_threshold > 1.0 {
             log::warn!(

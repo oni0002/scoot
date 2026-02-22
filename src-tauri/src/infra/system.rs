@@ -3,30 +3,38 @@ use tauri::{AppHandle, Manager};
 use tauri_plugin_opener::OpenerExt;
 
 /// 指定されたパス(ファイル、ディレクトリ、URL)をデフォルトのアプリケーションで開く
-pub fn open_path(app_handle: &AppHandle, path: &str) -> Result<(), String> {
+pub fn open_path(app_handle: &AppHandle, path: &str) -> Result<(), crate::domain::error::AppError> {
     app_handle
         .opener()
         .open_path(path, None::<&str>)
-        .map_err(|e| format!("Failed to open path '{}': {}", path, e))
+        .map_err(|e| {
+            crate::domain::error::AppError::System(format!("Failed to open path '{}': {}", path, e))
+        })
 }
 
 /// 指定されたURLをデフォルトのブラウザで開く
-pub fn open_url(app_handle: &AppHandle, url: &str) -> Result<(), String> {
+pub fn open_url(app_handle: &AppHandle, url: &str) -> Result<(), crate::domain::error::AppError> {
     app_handle
         .opener()
         .open_url(url, None::<&str>)
-        .map_err(|e| format!("Failed to open URL '{}': {}", url, e))
+        .map_err(|e| {
+            crate::domain::error::AppError::System(format!("Failed to open URL '{}': {}", url, e))
+        })
 }
 
 /// ファイルが存在することを確認し、なければデフォルトの内容で作成する
-pub fn ensure_file_exists<F>(path: &Path, create_content: F) -> Result<(), String>
+pub fn ensure_file_exists<F>(
+    path: &Path,
+    create_content: F,
+) -> Result<(), crate::domain::error::AppError>
 where
-    F: FnOnce() -> Result<(), String>,
+    F: FnOnce() -> Result<(), crate::domain::error::AppError>,
 {
     if !path.exists() {
         if let Some(parent) = path.parent() {
             if !parent.exists() {
-                std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| crate::domain::error::AppError::System(e.to_string()))?;
             }
         }
         create_content()?;
@@ -35,33 +43,47 @@ where
 }
 
 /// ディレクトリが存在することを確認し、なければ作成する
-pub fn ensure_directory_exists(path: &Path) -> Result<(), String> {
+pub fn ensure_directory_exists(path: &Path) -> Result<(), crate::domain::error::AppError> {
     if !path.exists() {
-        std::fs::create_dir_all(path).map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(path)
+            .map_err(|e| crate::domain::error::AppError::System(e.to_string()))?;
     }
     Ok(())
 }
 
 /// リソースファイルのパスを解決する
-pub fn resolve_resource(app_handle: &AppHandle, path: &str) -> Result<PathBuf, String> {
+pub fn resolve_resource(
+    app_handle: &AppHandle,
+    path: &str,
+) -> Result<PathBuf, crate::domain::error::AppError> {
     let resource_path = app_handle
         .path()
         .resolve(path, tauri::path::BaseDirectory::Resource)
-        .map_err(|e| format!("Failed to resolve resource path '{}': {}", path, e))?;
+        .map_err(|e| {
+            crate::domain::error::AppError::System(format!(
+                "Failed to resolve resource path '{}': {}",
+                path, e
+            ))
+        })?;
 
     if !resource_path.exists() {
-        return Err(format!("Resource not found: {}", path));
+        return Err(crate::domain::error::AppError::NotFound(format!(
+            "Resource not found: {}",
+            path
+        )));
     }
 
     Ok(resource_path)
 }
 
 /// ログディレクトリのパスを取得する
-pub fn get_log_dir(_app_handle: &AppHandle) -> Result<PathBuf, String> {
+pub fn get_log_dir(_app_handle: &AppHandle) -> Result<PathBuf, crate::domain::error::AppError> {
     std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-        .ok_or_else(|| "Failed to determine log directory".to_string())
+        .ok_or_else(|| {
+            crate::domain::error::AppError::System("Failed to determine log directory".to_string())
+        })
 }
 
 /// シェルコマンドを実行
@@ -69,13 +91,15 @@ pub async fn execute_shell_command(
     command: &str,
     working_dir: &Option<String>,
     show_window: bool,
-) -> Result<String, String> {
+) -> Result<String, crate::domain::error::AppError> {
     use std::process::Command as StdCommand;
     log::info!("Executing shell command: {}", command);
 
     // コマンドが空の場合はエラー
     if command.trim().is_empty() {
-        return Err("System command cannot be empty.".to_string());
+        return Err(crate::domain::error::AppError::Validation(
+            "System command cannot be empty.".to_string(),
+        ));
     }
 
     // コマンドを構築
@@ -144,7 +168,7 @@ pub async fn execute_shell_command(
         Err(e) => {
             let error_msg = format!("Failed to spawn system command '{}': {}.", command, e);
             log::error!("Error: {}", error_msg);
-            Err(error_msg)
+            Err(crate::domain::error::AppError::CommandExecution(error_msg))
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::store::state::AppState;
 use tauri::{AppHandle, Emitter, Manager};
 
 /// ウィンドウを表示
-pub fn show(app_handle: &AppHandle) -> Result<(), String> {
+pub fn show(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
     if let Some(window) = app_handle.get_webview_window("main") {
         let _ = window.show();
         let _ = window.set_focus();
@@ -19,7 +19,7 @@ pub fn show(app_handle: &AppHandle) -> Result<(), String> {
 }
 
 /// ウィンドウを非表示
-pub fn hide(app_handle: &AppHandle) -> Result<(), String> {
+pub fn hide(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
     if let Some(window) = app_handle.get_webview_window("main") {
         let _ = window.hide();
     }

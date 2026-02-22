@@ -35,9 +35,8 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         .item(&quit_item)
         .build()?;
 
-    let _tray = TrayIconBuilder::with_id("scoot-main")
+    let mut builder = TrayIconBuilder::with_id("scoot-main")
         .menu(&menu)
-        .icon(app.default_window_icon().unwrap().clone())
         .tooltip("Scoot - Command Launcher")
         .on_menu_event(move |app_handle, event| match event.id().as_ref() {
             "show" => {
@@ -89,8 +88,13 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                     log::error!("Failed to toggle window visibility from tray: {}", e);
                 }
             }
-        })
-        .build(app)?;
+        });
+
+    if let Some(icon) = app.default_window_icon() {
+        builder = builder.icon(icon.clone());
+    }
+
+    let _tray = builder.build(app)?;
 
     Ok(())
 }

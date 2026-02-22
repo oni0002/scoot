@@ -15,7 +15,10 @@ pub struct FileWatcher {
 /// ファイルウォッチャー
 /// ファイルを監視し、変更があった場合にイベントを発行する
 impl FileWatcher {
-    pub fn new<P: AsRef<Path>>(file_path: P, app_handle: tauri::AppHandle) -> Result<Self, String> {
+    pub fn new<P: AsRef<Path>>(
+        file_path: P,
+        app_handle: tauri::AppHandle,
+    ) -> Result<Self, crate::domain::error::AppError> {
         // チャンネルを生成
         let (tx, rx) = mpsc::channel();
         // ファイルウォッチャーを生成
@@ -30,7 +33,9 @@ impl FileWatcher {
             },
             Config::default(),
         )
-        .map_err(|e| format!("Failed to create file watcher: {}", e))?;
+        .map_err(|e| {
+            crate::domain::error::AppError::System(format!("Failed to create file watcher: {}", e))
+        })?;
 
         let file_path = file_path.as_ref().to_path_buf();
 
@@ -44,7 +49,9 @@ impl FileWatcher {
         // 対象ファイルを監視
         watcher
             .watch(watch_path, RecursiveMode::NonRecursive)
-            .map_err(|e| format!("Failed to watch file: {}", e))?;
+            .map_err(|e| {
+                crate::domain::error::AppError::System(format!("Failed to watch file: {}", e))
+            })?;
 
         let file_name = file_path
             .file_name()

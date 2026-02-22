@@ -70,41 +70,41 @@ impl Command {
     }
 
     /// コマンドのフォーマット検証
-    pub fn validate(&self) -> Result<(), String> {
+    pub fn validate(&self) -> Result<(), crate::domain::error::AppError> {
         // 必須フィールドの検証
         if self.name.trim().is_empty() {
-            return Err(
+            return Err(crate::domain::error::AppError::Validation(
                 "Command name is required and cannot be empty or contain only whitespace."
                     .to_string(),
-            );
+            ));
         }
         if self.command.trim().is_empty() {
-            return Err(
+            return Err(crate::domain::error::AppError::Validation(
                 "Command content is required and cannot be empty or contain only whitespace."
                     .to_string(),
-            );
+            ));
         }
         if self.category.trim().is_empty() {
-            return Err(
+            return Err(crate::domain::error::AppError::Validation(
                 "Command category is required and cannot be empty or contain only whitespace."
                     .to_string(),
-            );
+            ));
         }
 
         // 名前の長さ制限
         if self.name.len() > 100 {
-            return Err(format!(
+            return Err(crate::domain::error::AppError::Validation(format!(
                 "Command name is too long ({} characters). Maximum allowed is 100 characters.",
                 self.name.len()
-            ));
+            )));
         }
 
         // カテゴリの長さ制限
         if self.category.len() > 50 {
-            return Err(format!(
+            return Err(crate::domain::error::AppError::Validation(format!(
                 "Command category is too long ({} characters). Maximum allowed is 50 characters.",
                 self.category.len()
-            ));
+            )));
         }
 
         // カテゴリの有効性チェック
@@ -117,39 +117,39 @@ impl Command {
                 | CATEGORY_SCOOT
                 | CATEGORY_APPLICATION
         ) {
-            return Err(format!(
+            return Err(crate::domain::error::AppError::Validation(format!(
                 "Invalid category '{}'. Supported categories are: url, file, bookmark, command, scoot, application.",
                 self.category
-            ));
+            )));
         }
 
         // コマンド内容の長さ制限
         if self.command.len() > 1000 {
-            return Err(format!(
+            return Err(crate::domain::error::AppError::Validation(format!(
                 "Command content is too long ({} characters). Maximum allowed is 1000 characters.",
                 self.command.len()
-            ));
+            )));
         }
 
         // 説明の長さ制限
         if self.description.len() > 500 {
-            return Err(format!("Command description is too long ({} characters). Maximum allowed is 500 characters.", self.description.len()));
+            return Err(crate::domain::error::AppError::Validation(format!("Command description is too long ({} characters). Maximum allowed is 500 characters.", self.description.len())));
         }
 
         // プロンプトの検証
         if let Some(ref prompt) = self.prompt {
             if prompt.trim().is_empty() {
-                return Err("Prompt cannot be empty if specified. Either provide a valid prompt or leave it blank.".to_string());
+                return Err(crate::domain::error::AppError::Validation("Prompt cannot be empty if specified. Either provide a valid prompt or leave it blank.".to_string()));
             }
             if prompt.len() > 10 {
-                return Err(format!(
+                return Err(crate::domain::error::AppError::Validation(format!(
                     "Prompt is too long ({} characters). Maximum allowed is 10 characters.",
                     prompt.len()
-                ));
+                )));
             }
             // プロンプトに空白文字が含まれていないかチェック
             if prompt.contains(' ') || prompt.contains('\t') || prompt.contains('\n') {
-                return Err("Prompt cannot contain whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.".to_string());
+                return Err(crate::domain::error::AppError::Validation("Prompt cannot contain whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.".to_string()));
             }
 
             // 特殊文字のチェック
@@ -157,10 +157,10 @@ impl Command {
                 .chars()
                 .any(|c| !c.is_alphanumeric() && c != '-' && c != '_')
             {
-                return Err(
+                return Err(crate::domain::error::AppError::Validation(
                     "Prompt can only contain letters, numbers, hyphens (-), and underscores (_)."
                         .to_string(),
-                );
+                ));
             }
         }
 
@@ -176,11 +176,11 @@ impl Command {
                 CMD_SCOOT_KILL,
             ];
             if !valid_scoot_commands.contains(&self.command.as_str()) {
-                return Err(format!(
+                return Err(crate::domain::error::AppError::Validation(format!(
                     "Invalid scoot command '{}'. Valid commands are: {}",
                     self.command,
                     valid_scoot_commands.join(", ")
-                ));
+                )));
             }
         }
 

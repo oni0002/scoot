@@ -25,7 +25,16 @@ where
 
     // 既存の登録を確認
     if let Some(state) = app_handle.try_state::<AppState>() {
-        let lock = state.shortcut.lock().unwrap();
+        let lock = match state.shortcut.lock() {
+            Ok(l) => l,
+            Err(e) => {
+                log::error!("Failed to lock shortcut state: {}", e);
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    e.to_string(),
+                )));
+            }
+        };
         if let Some(current) = lock.as_ref() {
             if current == hotkey && app_handle.global_shortcut().is_registered(hotkey) {
                 log::debug!("Shortcut {} is already registered.", hotkey);

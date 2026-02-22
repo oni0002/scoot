@@ -30,14 +30,34 @@ pub fn quit_app(app_handle: &AppHandle) {
 }
 
 /// Config, Commandsをリロード
-pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), String> {
+pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::domain::error::AppError> {
     use tauri::Emitter;
 
     // Configリロード (Configオブジェクトを受け取る)
-    let config = crate::services::config::reload(app_handle).await?;
+    let config = if let Some(state) = app_handle.try_state::<AppState>() {
+        let new_config =
+            crate::services::config::reload(&state.config_manager, &state.config).await?;
+        // ホットキーを再登録
+        if let Err(e) =
+            crate::services::shortcut::setup_global_shortcuts(app_handle, &new_config.hotkey)
+        {
+            log::warn!("Failed to re-register hotkey: {}", e);
+        }
+        new_config
+    } else {
+        return Err(crate::domain::error::AppError::System(
+            "Failed to get AppState".to_string(),
+        ));
+    };
 
     // コマンドリロード (Configを渡す)
-    crate::services::command::reload(app_handle, &config).await?;
+    if let Some(state) = app_handle.try_state::<AppState>() {
+        crate::services::command::reload(&state.config_manager, &state.commands, &config).await?;
+    } else {
+        return Err(crate::domain::error::AppError::System(
+            "Failed to get AppState".to_string(),
+        ));
+    }
 
     if let Err(e) = app_handle.emit("config-reloaded", ()) {
         log::error!("Failed to emit config-reloaded: {}", e);
@@ -49,7 +69,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), String> {
 }
 
 /// commands.jsonを開く
-pub fn open_commands_json(app_handle: &AppHandle) -> Result<(), String> {
+pub fn open_commands_json(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
     if let Some(state) = app_handle.try_state::<AppState>() {
         let commands_path = state.config_manager.get_commands_path();
 
@@ -60,7 +80,7 @@ pub fn open_commands_json(app_handle: &AppHandle) -> Result<(), String> {
                     .config_manager
                     .save_commands(&default_commands)
                     .await
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| crate::domain::error::AppError::System(e.to_string()))
             })
         })?;
 
@@ -70,7 +90,7 @@ pub fn open_commands_json(app_handle: &AppHandle) -> Result<(), String> {
 }
 
 /// config.jsonを開く
-pub fn open_config_json(app_handle: &AppHandle) -> Result<(), String> {
+pub fn open_config_json(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
     if let Some(state) = app_handle.try_state::<AppState>() {
         let config_path = state.config_manager.get_config_path();
 
@@ -81,7 +101,7 @@ pub fn open_config_json(app_handle: &AppHandle) -> Result<(), String> {
                     .config_manager
                     .save(&default_config)
                     .await
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| crate::domain::error::AppError::System(e.to_string()))
             })
         })?;
 
@@ -91,7 +111,7 @@ pub fn open_config_json(app_handle: &AppHandle) -> Result<(), String> {
 }
 
 /// READMEを開く
-pub fn open_readme(app_handle: &AppHandle) -> Result<(), String> {
+pub fn open_readme(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
     let resource_path = crate::infra::system::resolve_resource(app_handle, "README.md")?;
     let path_str = resource_path.to_string_lossy().to_string();
     crate::infra::system::open_path(app_handle, &path_str)
@@ -103,7 +123,7 @@ pub fn get_file_watcher_status(state: &State<'_, AppState>) -> bool {
 }
 
 /// ログディレクトリを開く
-pub fn open_log_directory(app_handle: &AppHandle) -> Result<(), String> {
+pub fn open_log_directory(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
     let log_path = crate::infra::system::get_log_dir(app_handle)?;
     crate::infra::system::ensure_directory_exists(&log_path)?;
     let path_str = log_path.to_string_lossy().to_string();
@@ -112,16 +132,18 @@ pub fn open_log_directory(app_handle: &AppHandle) -> Result<(), String> {
 }
 
 /// コマンド追加ダイアログを開く
-pub fn open_add_command_dialog(app_handle: &AppHandle) -> Result<(), String> {
+pub fn open_add_command_dialog(
+    app_handle: &AppHandle,
+) -> Result<(), crate::domain::error::AppError> {
     use tauri::{Emitter, Manager};
     if let Some(window) = app_handle.get_webview_window("main") {
         let _ = window.show();
         let _ = window.set_focus();
     }
 
-    app_handle
-        .emit("open-add-command-dialog", ())
-        .map_err(|e| format!("Failed to emit add command event: {}", e))
+    app_handle.emit("open-add-command-dialog", ()).map_err(|e| {
+        crate::domain::error::AppError::System(format!("Failed to emit add command event: {}", e))
+    })
 }
 
 /// ブックマーク自動更新タスクを開始
@@ -156,10 +178,12 @@ pub fn start_bookmark_update_task(app_handle: AppHandle) {
 
             if let Some(config) = config_opt {
                 // ブックマークのみリロード
-                if let Err(e) =
-                    crate::services::command::reload_bookmarks(&app_handle, &config).await
-                {
-                    log::error!("Failed to auto-refresh bookmarks: {}", e);
+                if let Some(state) = app_handle.try_state::<AppState>() {
+                    if let Err(e) =
+                        crate::services::command::reload_bookmarks(&state.commands, &config).await
+                    {
+                        log::error!("Failed to auto-refresh bookmarks: {}", e);
+                    }
                 }
             } else {
                 log::warn!("Skipping bookmark refresh due to failure in retrieving AppState or Config lock");

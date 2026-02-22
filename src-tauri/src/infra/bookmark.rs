@@ -27,25 +27,38 @@ struct ChromiumBookmarkRoots {
 }
 
 /// ブックマークを読み込む
-pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, String> {
+pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain::error::AppError> {
     let bookmark_path = get_bookmark_path(&config.browser)?;
 
     // ブックマークファイルがなければエラー
     if !bookmark_path.exists() {
-        return Err(format!("Bookmark file not found: {:?}", bookmark_path));
+        return Err(crate::domain::error::AppError::System(format!(
+            "Bookmark file not found: {:?}",
+            bookmark_path
+        )));
     }
 
     // ブックマークファイルを読み込む
-    let content = fs::read_to_string(&bookmark_path)
-        .await
-        .map_err(|e| format!("Failed to read bookmark file: {}", e))?;
+    let content = fs::read_to_string(&bookmark_path).await.map_err(|e| {
+        crate::domain::error::AppError::System(format!("Failed to read bookmark file: {}", e))
+    })?;
 
     // JSONパース (ワーカースレッドで実行)
     let root: ChromiumBookmarkRoot =
         tokio::task::spawn_blocking(move || serde_json::from_str(&content))
             .await
-            .map_err(|e| format!("Failed to spawn blocking task: {}", e))?
-            .map_err(|e| format!("Failed to parse bookmark file: {}", e))?;
+            .map_err(|e| {
+                crate::domain::error::AppError::System(format!(
+                    "Failed to spawn blocking task: {}",
+                    e
+                ))
+            })?
+            .map_err(|e| {
+                crate::domain::error::AppError::System(format!(
+                    "Failed to parse bookmark file: {}",
+                    e
+                ))
+            })?;
 
     let mut commands = Vec::new();
     let mut seen_urls = std::collections::HashSet::new();
@@ -76,8 +89,10 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, String> {
 
 /// ブックマークファイルのパスを取得
 /// brave, chrome, edgeのみ対応
-fn get_bookmark_path(browser: &str) -> Result<PathBuf, String> {
-    let home_dir = dirs::home_dir().ok_or_else(|| "Could not find home directory".to_string())?;
+fn get_bookmark_path(browser: &str) -> Result<PathBuf, crate::domain::error::AppError> {
+    let home_dir = dirs::home_dir().ok_or_else(|| {
+        crate::domain::error::AppError::System("Could not find home directory".to_string())
+    })?;
     let bookmark_path = match browser {
         "brave" => {
             home_dir.join("AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Bookmarks")
@@ -85,7 +100,10 @@ fn get_bookmark_path(browser: &str) -> Result<PathBuf, String> {
         "chrome" => home_dir.join("AppData/Local/Google/Chrome/User Data/Default/Bookmarks"),
         "edge" => home_dir.join("AppData/Local/Microsoft/Edge/User Data/Default/Bookmarks"),
         _ => {
-            return Err(format!("Unsupported browser: {}", browser));
+            return Err(crate::domain::error::AppError::System(format!(
+                "Unsupported browser: {}",
+                browser
+            )));
         }
     };
     Ok(bookmark_path)

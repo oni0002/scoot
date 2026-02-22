@@ -54,9 +54,14 @@ impl CommandManager {
     }
 
     /// ユーザコマンドを更新
-    pub fn update_user_command(&mut self, command: Command) -> Result<(), String> {
+    pub fn update_user_command(
+        &mut self,
+        command: Command,
+    ) -> Result<(), crate::domain::error::AppError> {
         if !self.user_commands.contains_key(&command.id) {
-            return Err("Command not found".to_string());
+            return Err(crate::domain::error::AppError::NotFound(
+                "Command not found".to_string(),
+            ));
         }
 
         self.user_commands.insert(command.id.clone(), command);
@@ -64,9 +69,11 @@ impl CommandManager {
     }
 
     /// ユーザコマンドを削除
-    pub fn delete_user_command(&mut self, id: &str) -> Result<(), String> {
+    pub fn delete_user_command(&mut self, id: &str) -> Result<(), crate::domain::error::AppError> {
         if self.user_commands.remove(id).is_none() {
-            return Err("Command not found".to_string());
+            return Err(crate::domain::error::AppError::NotFound(
+                "Command not found".to_string(),
+            ));
         }
         Ok(())
     }
@@ -83,12 +90,13 @@ impl CommandManager {
 
     /// 全てのコマンドを取得
     pub fn get_all_commands(&self) -> Vec<Command> {
-        let mut all_commands = Vec::new();
-        all_commands.extend(self.user_commands.values().cloned());
-        all_commands.extend(self.bookmark_commands.values().cloned());
-        all_commands.extend(self.scoot_commands.values().cloned());
-        all_commands.extend(self.application_commands.values().cloned());
-        all_commands
+        self.user_commands
+            .values()
+            .chain(self.bookmark_commands.values())
+            .chain(self.scoot_commands.values())
+            .chain(self.application_commands.values())
+            .cloned()
+            .collect()
     }
 
     /// ユーザー定義コマンドのみ取得 (commands.json用)
@@ -126,17 +134,20 @@ impl CommandManager {
     }
 
     /// コマンドを検証
-    pub fn validate_command(&self, command: &Command) -> Result<(), String> {
+    pub fn validate_command(
+        &self,
+        command: &Command,
+    ) -> Result<(), crate::domain::error::AppError> {
         // ドメインレベルの検証 (フォーマット等)
         command.validate()?;
 
         // ストアレベルの検証 (プロンプトのユニーク性)
         if let Some(ref prompt) = command.prompt {
             if self.is_prompt_used(prompt, Some(&command.id)) {
-                return Err(format!(
+                return Err(crate::domain::error::AppError::Validation(format!(
                     "Prompt '{}' is already used by another command.",
                     prompt
-                ));
+                )));
             }
         }
 
@@ -249,7 +260,7 @@ mod tests {
         let cmd_b_dup = create_dummy_command("cmd-b", Some("p1"));
         let res = manager.validate_command(&cmd_b_dup);
         assert!(res.is_err());
-        assert!(res.unwrap_err().contains("already used"));
+        assert!(res.unwrap_err().to_string().contains("already used"));
 
         // 3. コマンドBを追加 (prompt: p2) -> 成功
         let cmd_b = create_dummy_command("cmd-b", Some("p2"));
@@ -261,7 +272,7 @@ mod tests {
         cmd_a_update.prompt = Some("p2".to_string());
         let res = manager.validate_command(&cmd_a_update);
         assert!(res.is_err());
-        assert!(res.unwrap_err().contains("already used"));
+        assert!(res.unwrap_err().to_string().contains("already used"));
 
         // 5. コマンドAを更新 (prompt: p1) -> 成功 (自分自身)
         let mut cmd_a_same = cmd_a.clone();
