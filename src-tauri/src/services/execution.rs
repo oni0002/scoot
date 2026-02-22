@@ -76,8 +76,8 @@ async fn execute_scoot_command(
             Ok("Opened README.md".to_string())
         }
         "scoot://open-log" => {
-            crate::services::system::open_log_directory(app_handle)?;
-            Ok("Log directory opened".to_string())
+            crate::services::system::open_log(app_handle)?;
+            Ok("Log file opened".to_string())
         }
         "scoot://reload" => crate::services::system::reload(app_handle)
             .await

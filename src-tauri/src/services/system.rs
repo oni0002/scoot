@@ -123,7 +123,7 @@ pub fn get_file_watcher_status(state: &State<'_, AppState>) -> bool {
 }
 
 /// ログ(またはログディレクトリ)を開く
-pub fn open_log_directory(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
+pub fn open_log(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
     let log_dir = crate::infra::system::get_log_dir(app_handle)?;
     crate::infra::system::ensure_directory_exists(&log_dir)?;
 
