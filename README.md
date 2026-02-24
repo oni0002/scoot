@@ -24,9 +24,7 @@ A simple, fast, and keyboard-centric command launcher for Windows.
 | `Alt + Space` (Default)    | Toggle Scoot window visibility              |
 | `Esc`                      | Clear input / Close window                  |
 | `Enter`                    | Execute the selected command                |
-| `↑` / `↓`                  | Navigate search results                     |
-| `Tab` / `Shift + Tab`      | Navigate search results (Next / Previous)   |
-| `Ctrl + N` / `Ctrl + P`    | Navigate search results (Emacs style)       |
+| `↑`/`↓`, `Tab`/`Shift+Tab`, `Ctrl+N`/`P`| Navigate search results           |
 
 ## Configuration
 
@@ -62,6 +60,7 @@ The `config.json` and `commands.json` files are automatically generated in the s
 You can add custom commands to expand Scoot's capabilities.
 
 ### Adding a Command
+
 1. Click the 3-dot menu and select **Add Command** (or use the `Add Command` preset).
 2. Fill in the required fields:
    - **Name**: Display name of the command. *This name is used for fuzzy searching.* (e.g., `Google Search`)
@@ -71,12 +70,14 @@ You can add custom commands to expand Scoot's capabilities.
    - **Prompt**: (Optional) A short prefix string used to trigger this command and accept arguments (e.g., `g`)
 
 ### Using Prompt Arguments
+
 You can define placeholders in your `Command` field that will be replaced by the arguments you type after the prompt.
 
 - `{$n}`: Replaced by the n-th argument.
 - `{$*}`: Replaced by all arguments combined.
 
-**Example: Google Search**
+Example: Google Search
+
 - **Prompt**: `g`
 - **Command**: `https://www.google.com/search?q={$*}`
 - **Usage**: Type `g react hooks` in Scoot.
