@@ -11,7 +11,8 @@ A simple, fast, and keyboard-centric command launcher for Windows.
 
 ## Quick Start
 
-1. **Launch**: Press `Alt + Space` to show the Scoot window.
+1. **Install**: Scoot is a portable application. Simply place the `.exe` file in any directory of your choice and run it.
+2. **Launch**: Press `Alt + Space` to show the Scoot window.
 2. **Search**: Start typing to find applications, bookmarks, or custom commands.
 3. **Navigate**: Use `Tab` / `Shift+Tab` (or `Up`/`Down` arrows) to select a result.
 4. **Execute**: Press `Enter` to run the selected command.
@@ -30,7 +31,6 @@ A simple, fast, and keyboard-centric command launcher for Windows.
 ## Configuration
 
 Settings are defined in `config.json`. You can open this file via the `Open config.json` preset command or from the 3-dot menu. 
-Scoot uses `camelCase` for configuration keys.
 
 ```json
 {
@@ -55,7 +55,7 @@ Scoot uses `camelCase` for configuration keys.
 }
 ```
 
-The `config.json` and `commands.json` files are automatically generated in `%APPDATA%\scoot\` on first launch.
+The `config.json` and `commands.json` files are automatically generated in the same directory as the `.exe` file on first launch.
 
 ## User Custom Commands
 
@@ -64,9 +64,9 @@ You can add custom commands to expand Scoot's capabilities.
 ### Adding a Command
 1. Click the 3-dot menu and select **Add Command** (or use the `Add Command` preset).
 2. Fill in the required fields:
-   - **Name**: Display name (e.g., `Google Search`)
+   - **Name**: Display name of the command. *This name is used for fuzzy searching.* (e.g., `Google Search`)
    - **Description**: What the command does (e.g., `Search the web using Google`)
-   - **Category**: `URL`, `File`, `Command`, or `Custom`
+   - **Category**: `URL`, `File`, or `Command`
    - **Command**: The target path, URL, or shell command to execute
    - **Prompt**: (Optional) A short prefix string used to trigger this command and accept arguments (e.g., `g`)
 
