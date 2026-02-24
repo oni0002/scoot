@@ -88,9 +88,60 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
             );
         }
 
+        if (query) {
+            return (
+                <div className="flex flex-col items-center justify-center py-12 text-base-content/50 h-full select-none">
+                    <p>No commands found for "{query}"</p>
+                </div>
+            );
+        }
+
         return (
-            <div className="text-center py-8 opacity-70">
-                {query ? 'No commands found' : 'Start typing to search...'}
+            <div className="flex flex-col items-center justify-center py-12 text-base-content/50 h-full select-none">
+                <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+
+                    <div className="text-right">
+                        <span>Search</span>
+                    </div>
+                    <div className="flex items-center gap-1 font-mono text-xs">
+                        <span>Type any keyword...</span>
+                    </div>
+
+                    <div className="text-right">
+                        <span>Navigate</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <kbd className="kbd kbd-xs">Tab</kbd>
+                        <span className="opacity-50 mx-1">/</span>
+                        <kbd className="kbd kbd-xs">⇧</kbd>
+                        <span className="opacity-50">+</span>
+                        <kbd className="kbd kbd-xs">Tab</kbd>
+                    </div>
+
+                    <div className="text-right">
+                        <span>Execute</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <kbd className="kbd kbd-xs">↵ Enter</kbd>
+                    </div>
+
+                    <div className="text-right">
+                        <span>Toggle Window</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <kbd className="kbd kbd-xs">Alt</kbd>
+                        <span className="opacity-50">+</span>
+                        <kbd className="kbd kbd-xs">Space</kbd>
+                    </div>
+
+                    <div className="text-right">
+                        <span>Close</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <kbd className="kbd kbd-xs">Esc</kbd>
+                    </div>
+
+                </div>
             </div>
         );
     };

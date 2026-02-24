@@ -33,7 +33,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
     return (
         <div className="flex-shrink-0 mb-4 relative">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
                 <label className="input input-sm input-bordered flex items-center gap-2 flex-1">
                     {promptMode ? (
                         <LuChevronRight />
