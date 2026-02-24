@@ -1,105 +1,83 @@
 # Scoot
 
-シンプルで高速なWindows用コマンドランチャー
+A simple, fast, and keyboard-centric command launcher for Windows.
 
-- **グローバルキー** - `Alt+Space`で起動
-- **あいまい検索** - Fuse.jsによるfuzzy search
-- **アプリケーション** - スタートアップに登録されているアプリケーションの検索
-- **ブックマーク** - ブラウザのブックマークの検索
-- **カスタムショートカット** - ファイルパスやURL、コマンドを登録できる
-- **プロンプトモード** - `g react` --> `https://google.com/search?q=react`のように、プロンプト+引数を展開できる
+- **Global Hotkey** - Launch instantly with `Alt+Space` (default).
+- **Fuzzy Search** - Find what you need quickly with fuzzy matching.
+- **Applications** - Automatically scans your Start Menu for installed programs.
+- **Bookmarks** - Search your browser bookmarks (Chrome, Brave, Edge).
+- **Custom Commands** - Open files, URLs, or run shell scripts effortlessly.
+- **Prompt Mode** - Pass dynamic arguments to your commands (e.g., `g react` opens `https://google.com/search?q=react`).
 
-## Usage
+## Quick Start
 
-### 基本操作
+1. **Launch**: Press `Alt + Space` to show the Scoot window.
+2. **Search**: Start typing to find applications, bookmarks, or custom commands.
+3. **Navigate**: Use `Tab` / `Shift+Tab` (or `Up`/`Down` arrows) to select a result.
+4. **Execute**: Press `Enter` to run the selected command.
 
-1. **起動** - `Alt + Space` でウィンドウを表示
-2. **検索** - キーワードを入力して検索
-3. **選択** - `Tab`/`Shift+Tab` (または`↑`/`↓`, `Ctrl+N`/`Ctrl+P`) で候補を選択
-4. **実行** - `Enter` で選択したショートカットを実行
+## Keybindings
 
-### キーバインド一覧
-
-| キー操作 | 動作 |
-|---|---|
-| `Alt + Space` | ウィンドウの表示/非表示 (グローバル) |
-| `Esc` | 入力クリア / ウィンドウを閉じる |
-| `Enter` | 選択項目の実行 |
-| `↑` / `↓` | 検索候補の選択移動 |
-| `Tab` / `Shift + Tab` | 検索候補の選択移動 (次へ/前へ) |
-| `Ctrl + N` / `P` | 検索候補の選択移動 (Emacsライク) |
+| Key                        | Action                                      |
+| -------------------------- | ------------------------------------------- |
+| `Alt + Space` (Default)    | Toggle Scoot window visibility              |
+| `Esc`                      | Clear input / Close window                  |
+| `Enter`                    | Execute the selected command                |
+| `↑` / `↓`                  | Navigate search results                     |
+| `Tab` / `Shift + Tab`      | Navigate search results (Next / Previous)   |
+| `Ctrl + N` / `Ctrl + P`    | Navigate search results (Emacs style)       |
 
 ## Configuration
 
-### 設定項目
-
-設定はアプリケーションフォルダ配下の`config.json`で定義できる。
-直接開く他に、`Open config.json`ショートカットを実行するか、検索バー右の3点メニューから`Open config.json`を選択しても開くことができる。
+Settings are defined in `config.json`. You can open this file via the `Open config.json` preset command or from the 3-dot menu. 
+Scoot uses `camelCase` for configuration keys.
 
 ```json
 {
-  // 検索結果の数
-  "max_results": 30,
-  // あいまい検索のしきい値 0(ゆるい)~1(厳しい)
-  "fuzzy_threshold": 0.4,
-  // ブックマーク検索の設定
+  "maxResults": 30,
+  "fuzzyThreshold": 0.4,
+  "theme": "dark",
+  "hotkey": "Alt+Space",
   "bookmarks": {
-    // ブックマーク検索の有効化
     "enabled": true,
-    // 対象のブラウザ。chrome/brave/edge
     "browser": "brave",
+    "prompt": "b",
+    "refreshIntervalMinutes": 60
   },
-  // アプリケーション検索の設定
   "applications": {
-    // アプリケーション検索の有効化
     "enabled": true,
-    // スキャン対象のディレクトリ。配下の.lnkファイルが検索対象になる
     "directories": [
       "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs",
       "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs"
-    ]
-  },
-  // カラーテーマ。
-  "theme": "dark"
+    ],
+    "extensions": ["lnk"]
+  }
 }
 ```
 
-`config.json`は.exeと同じディレクトリ、または`%APPDATA%\oni.scoot\`に配置する。
+The `config.json` and `commands.json` files are automatically generated in `%APPDATA%\scoot\` on first launch.
 
-## ショートカット
+## User Custom Commands
 
-### 追加方法
+You can add custom commands to expand Scoot's capabilities.
 
-1. `Add Command`、または3点ボタンからAdd commandを選択
-2. ダイアログに必要な情報を入力
-    - **Name** - 表示名 (例: `Google Search`)
-    - **Description** - 説明 (例: `Googleで検索します`)
-    - **Command** - 実行したい内容
-        - URL - `https://...`
-        - ファイルパス - `C:\Path\To\File.exe`
-        - シェルコマンド - `npm start` など
-    - **Prompt** - (任意) 短縮コマンド。Commandに引数を指定した場合は設定必須 (例: `g`)
+### Adding a Command
+1. Click the 3-dot menu and select **Add Command** (or use the `Add Command` preset).
+2. Fill in the required fields:
+   - **Name**: Display name (e.g., `Google Search`)
+   - **Description**: What the command does (e.g., `Search the web using Google`)
+   - **Category**: `URL`, `File`, `Command`, or `Custom`
+   - **Command**: The target path, URL, or shell command to execute
+   - **Prompt**: (Optional) A short prefix string used to trigger this command and accept arguments (e.g., `g`)
 
-### 引数の展開
+### Using Prompt Arguments
+You can define placeholders in your `Command` field that will be replaced by the arguments you type after the prompt.
 
-commandには引数を設定できる。
+- `{$n}`: Replaced by the n-th argument.
+- `{$*}`: Replaced by all arguments combined.
 
-- `{$n}` - nは数字に置き換え。n番目の引数を展開
-- `{$*}` - 引数をすべて展開
-
-> [!note] 例
-> 
-> - Prompt: `g`
-> - Command: `https://www.google.com/search?q={$*}`
-> - 実行: `g react hooks`
-> - 結果: `https://www.google.com/search?q=react hooks` をブラウザで開く
-
-### カテゴリの種類
-
-- URL - デフォルトのブラウザでURLを開く
-- File - Explorerまたはデフォルトのアプリでファイル/ディレクトリを開く
-- Command - Powershellでコマンドを実行
-- Custom - 任意の実行ファイルを実行
-
-## ライセンス
-[License Name Here]
+**Example: Google Search**
+- **Prompt**: `g`
+- **Command**: `https://www.google.com/search?q={$*}`
+- **Usage**: Type `g react hooks` in Scoot.
+- **Result**: Opens `https://www.google.com/search?q=react hooks` in your browser.
