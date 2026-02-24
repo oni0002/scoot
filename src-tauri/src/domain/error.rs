@@ -1,7 +1,7 @@
 use serde::Serialize;
 use thiserror::Error;
 
-/// アプリケーション全体で利用するエラー型
+/// Error type used throughout the application
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error("IO error: {0}")]
@@ -23,7 +23,7 @@ pub enum AppError {
     System(String),
 }
 
-/// Tauriがフロントエンドにエラーを返すために必要なSerialize実装
+/// Serialize implementation required for Tauri to return errors to the frontend
 impl Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -33,7 +33,7 @@ impl Serialize for AppError {
     }
 }
 
-/// 様々な型からAppErrorへの変換をサポートしたい場合のヘルパー
+/// Helper for converting various types to AppError
 impl From<String> for AppError {
     fn from(err: String) -> Self {
         AppError::System(err)

@@ -1,19 +1,17 @@
 use crate::domain::command::Commands;
 use crate::domain::config::Config;
 use serde_json;
-#[allow(unused_imports)]
-use std::fs; // Keep for now if needed, but we are switching to tokio
 
 pub struct ConfigManager {
-    config_path: String,   // 設定ファイルのパス
-    commands_path: String, // コマンドファイルのパス
+    config_path: String,   // Config file path
+    commands_path: String, // Commands file path
 }
 
-/// Configを管理するクラス
-/// config.jsonとcommands.jsonのバリデーション、シリアライズ/デシリアライズ、デフォルトの生成を行う
+/// Config manager class
+/// Validates, serializes/deserializes, and generates default values for config.json and commands.json
 impl ConfigManager {
     pub fn new() -> Self {
-        // 実行ディレクトリを取得
+        // Get the target directory
         let target_dir = std::env::current_exe()
             .ok()
             .and_then(|p| p.parent().map(|p| p.to_path_buf()))
@@ -31,9 +29,9 @@ impl ConfigManager {
         }
     }
 
-    /// Configを読み込む
+    /// Load the config
     pub async fn load(&self) -> Result<Config, crate::domain::error::AppError> {
-        // config.jsonが存在しない場合、デフォルト値を保存して返す
+        // If config.json does not exist, save the default value and return it
         if !tokio::fs::try_exists(&self.config_path)
             .await
             .unwrap_or(false)
@@ -43,7 +41,7 @@ impl ConfigManager {
             return Ok(default_config);
         }
 
-        // config.jsonを読み込む
+        // Read config.json
         let content = tokio::fs::read_to_string(&self.config_path)
             .await
             .map_err(|e| {
@@ -53,14 +51,14 @@ impl ConfigManager {
                 ))
             })?;
 
-        // config.jsonが空の場合、デフォルト値を保存して返す
+        // If config.json is empty, save the default value and return it
         if content.trim().is_empty() {
             let default_config = Config::default();
             self.save(&default_config).await?;
             return Ok(default_config);
         }
 
-        // config.jsonをパースして返す
+        // Parse config.json
         let mut config: Config = Config::from_json_with_validation(&content).map_err(|e| {
             crate::domain::error::AppError::System(format!(
                 "App config file '{}' validation failed: {}",
@@ -68,15 +66,19 @@ impl ConfigManager {
             ))
         })?;
 
-        // fuzzy_thresholdを検証して必要なら修正
+        // Validate and fix fuzzy_threshold
         config.validate_and_fix()?;
+
+        // Auto-upgrade format to camelCase by saving the loaded config back to the file
+        // Ignore save errors during auto-upgrade
+        let _ = self.save(&config).await;
 
         Ok(config)
     }
 
-    /// Commandsを読み込む
+    /// Load commands
     pub async fn load_commands(&self) -> Result<Commands, crate::domain::error::AppError> {
-        // commands.jsonが存在しない場合、デフォルト値を保存して返す
+        // If commands.json does not exist, save the default value and return it
         if !tokio::fs::try_exists(&self.commands_path)
             .await
             .unwrap_or(false)
@@ -86,7 +88,7 @@ impl ConfigManager {
             return Ok(default_commands);
         }
 
-        // commands.jsonを読み込む
+        // Read commands.json
         let content = tokio::fs::read_to_string(&self.commands_path)
             .await
             .map_err(|e| {
@@ -96,15 +98,15 @@ impl ConfigManager {
                 ))
             })?;
 
-        // commands.jsonが空の場合、デフォルト値を保存して返す
+        // If commands.json is empty, save the default value and return it
         if content.trim().is_empty() {
             let default_commands: Commands = Vec::new();
             self.save_commands(&default_commands).await?;
             return Ok(default_commands);
         }
 
-        // commands.jsonを検証してパース
-        // JSONパースは重い処理の可能性があるためspawn_blockingで実行
+        // Validate and parse commands.json
+        // JSON parsing may be a heavy process, so use spawn_blocking
         let commands = tokio::task::spawn_blocking(move || {
             crate::domain::config::commands_from_json_with_validation(&content)
         })
@@ -117,10 +119,13 @@ impl ConfigManager {
             Vec::new()
         });
 
+        // Auto-upgrade format to camelCase by saving the loaded commands back to the file
+        let _ = self.save_commands(&commands).await;
+
         Ok(commands)
     }
 
-    /// Configを保存
+    /// Save the config
     pub async fn save(
         &self,
         config: &crate::domain::config::Config,
@@ -128,7 +133,7 @@ impl ConfigManager {
         self.save_to_json(&self.config_path, config).await
     }
 
-    /// Commandsを保存
+    /// Save commands
     pub async fn save_commands(
         &self,
         commands: &crate::domain::command::Commands,
@@ -136,7 +141,7 @@ impl ConfigManager {
         self.save_to_json(&self.commands_path, commands).await
     }
 
-    /// JSONで保存
+    /// Save to JSON
     async fn save_to_json<T: serde::Serialize>(
         &self,
         path: &str,
@@ -151,12 +156,12 @@ impl ConfigManager {
         })
     }
 
-    /// 設定ファイルのパスを取得
+    /// Get config file path
     pub fn get_config_path(&self) -> &str {
         &self.config_path
     }
 
-    /// コマンドファイルのパスを取得
+    /// Get commands file path
     pub fn get_commands_path(&self) -> &str {
         &self.commands_path
     }

@@ -2,7 +2,7 @@ use crate::domain::config::Config;
 use crate::store::state::AppState;
 use tauri::State;
 
-/// 設定を取得
+/// Get config
 #[tauri::command]
 pub async fn get_config(
     state: State<'_, AppState>,
@@ -10,7 +10,7 @@ pub async fn get_config(
     crate::services::config::get(&state.config)
 }
 
-/// 設定を保存
+/// Save config
 #[tauri::command]
 pub async fn save_config(
     config: Config,
@@ -19,7 +19,7 @@ pub async fn save_config(
     crate::services::config::save(&state.config_manager, &state.config, &config).await
 }
 
-/// config.jsonのパスを取得
+/// Get config.json path
 #[tauri::command]
 pub async fn get_config_file_path(
     state: State<'_, AppState>,
@@ -29,13 +29,13 @@ pub async fn get_config_file_path(
     ))
 }
 
-/// config.jsonのスキーマを取得
+/// Get config.json schema
 #[tauri::command]
 pub async fn get_config_schema() -> Result<serde_json::Value, crate::domain::error::AppError> {
     Ok(Config::generate_schema())
 }
 
-/// config.jsonを検証
+/// Validate config.json
 #[tauri::command]
 pub async fn validate_config(
     config: serde_json::Value,
@@ -46,7 +46,7 @@ pub async fn validate_config(
     }
 }
 
-/// config.jsonを開く
+/// Open config.json
 #[tauri::command]
 pub async fn open_config_json(
     app_handle: tauri::AppHandle,

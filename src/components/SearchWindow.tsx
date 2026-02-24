@@ -184,11 +184,6 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     }
   }, []);
 
-  const handleOpenSettings = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    alert('Settings dialog not yet implemented.');
-  }, []);
-
   return (
     <div className="h-full flex flex-col p-4">
       <SearchBar
@@ -201,7 +196,6 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         onReloadCommands={handleReload}
         onOpenCommandsJson={handleOpenCommandsJson}
         onOpenConfigJson={handleOpenConfigJson}
-        onOpenSettings={handleOpenSettings}
         onShowReadme={handleShowReadme}
         onShowAbout={handleShowAbout}
       />

@@ -2,13 +2,13 @@ use crate::store::state::AppState;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
-/// グローバルショートカットを登録
+/// Register a global shortcut
 ///
 /// ## args
 ///
-/// * `app_handle` - TauriのAppHandle
-/// * `hotkey` - 登録するホットキー
-/// * `handler` - 押下時に実行するハンドラ
+/// * `app_handle` - Tauri AppHandle
+/// * `hotkey` - The hotkey to register
+/// * `handler` - The handler to execute when the hotkey is pressed
 ///
 /// ## returns
 ///
@@ -23,7 +23,7 @@ where
 {
     let app_handle_clone = app_handle.clone();
 
-    // 既存の登録を確認
+    // Check if the shortcut is already registered
     if let Some(state) = app_handle.try_state::<AppState>() {
         let lock = match state.shortcut.lock() {
             Ok(l) => l,
@@ -43,10 +43,10 @@ where
         }
     }
 
-    // 既存のショートカットを解除
+    // Unregister existing shortcut
     unregister(app_handle);
 
-    // イベントハンドラの登録
+    // Register event handler
     if let Err(e) =
         app_handle
             .global_shortcut()
@@ -60,10 +60,10 @@ where
         return Err(Box::new(e));
     }
 
-    // OSにショートカットを登録
+    // Register the shortcut with the OS
     match app_handle.global_shortcut().register(hotkey) {
         Ok(_) => {
-            // Stateを更新
+            // Update the state
             if let Some(state) = app_handle.try_state::<AppState>() {
                 if let Ok(mut registered) = state.shortcut.lock() {
                     *registered = Some(hotkey.to_string());
@@ -74,7 +74,7 @@ where
             Ok(())
         }
         Err(e) => {
-            // 既に登録されている場合は、成功とみなす
+            // If the hotkey is already registered, consider it a success
             if app_handle.global_shortcut().is_registered(hotkey) {
                 if let Some(state) = app_handle.try_state::<AppState>() {
                     if let Ok(mut registered) = state.shortcut.lock() {
@@ -94,7 +94,7 @@ where
     }
 }
 
-/// 登録済みのショートカットを解除
+/// Unregister the shortcut
 pub fn unregister(app_handle: &AppHandle) {
     if let Some(state) = app_handle.try_state::<AppState>() {
         if let Ok(mut reg) = state.shortcut.lock() {
@@ -105,7 +105,7 @@ pub fn unregister(app_handle: &AppHandle) {
             *reg = None;
         }
     } else {
-        // State取得失敗時のフォールバック
+        // Fallback if state cannot be retrieved
         let _ = app_handle.global_shortcut().unregister_all();
     }
 }

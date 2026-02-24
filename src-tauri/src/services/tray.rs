@@ -5,7 +5,7 @@ use tauri::{
     App, Manager,
 };
 
-/// システムトレイを設定
+/// Setup system tray
 pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
     let show_item = MenuItem::with_id(app, "show", "Show Scoot", true, None::<&str>)?;
     let add_command_item =
@@ -63,7 +63,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {
-            // 左クリックを検出(右クリックは無視)
+            // Left click detection (right click is ignored)
             if let TrayIconEvent::Click {
                 button: tauri::tray::MouseButton::Left,
                 ..
@@ -72,7 +72,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                 let app_handle = tray.app_handle();
 
                 if let Some(state) = app_handle.try_state::<AppState>() {
-                    // デスクトップでフォーカスが外れて隠れた直後のクリックを無視
+                    // Ignore click if window was hidden due to focus loss
                     if let Ok(hidden) = state.last_window_hidden.lock() {
                         if let Some(instant) = *hidden {
                             if instant.elapsed().as_millis() < 300 {
@@ -82,7 +82,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
 
-                    // 300ミリ秒以内の重複クリックを無視
+                    // Ignore click if within 300ms of last click
                     if let Ok(mut last_click) = state.last_tray_click.lock() {
                         if let Some(instant) = *last_click {
                             if instant.elapsed().as_millis() < 300 {
@@ -93,7 +93,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
 
-                // ウィンドウの表示/非表示を切り替える
+                // Toggle window visibility from tray
                 if let Err(e) = crate::services::window::toggle_visibility(&app_handle) {
                     log::error!("Failed to toggle window visibility from tray: {}", e);
                 }

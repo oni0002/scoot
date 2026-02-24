@@ -39,7 +39,7 @@ impl AppState {
         }
     }
 
-    /// prevent_hideフラグを設定
+    /// Set prevent_hide flag
     pub fn set_prevent_hide(&self, prevent: bool) -> Result<(), crate::domain::error::AppError> {
         if let Ok(mut flag) = self.prevent_hide.lock() {
             *flag = prevent;

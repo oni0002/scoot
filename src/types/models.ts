@@ -5,9 +5,9 @@ export interface Command {
     command: string;
     description: string;
     prompt?: string;
-    working_dir?: string;
-    show_window?: boolean;
-    is_editable: boolean;
+    workingDir?: string;
+    showWindow?: boolean;
+    isEditable: boolean;
 }
 
 export type Commands = Command[];
@@ -21,12 +21,12 @@ export interface BookmarkConfig {
     enabled: boolean;
     browser: 'brave' | 'chrome' | 'firefox' | 'edge';
     prompt?: string;
-    refresh_interval_minutes: number;
+    refreshIntervalMinutes: number;
 }
 
 export interface Config {
-    max_results: number;
-    fuzzy_threshold: number;
+    maxResults: number;
+    fuzzyThreshold: number;
     bookmarks: BookmarkConfig;
     applications: ApplicationConfig;
     theme: string;

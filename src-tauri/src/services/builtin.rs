@@ -1,6 +1,6 @@
 use crate::domain::command::Command;
 
-/// Scootの組み込みコマンド定義を取得
+/// Get the built-in commands for Scoot
 pub fn get_scoot_commands() -> Vec<Command> {
     use crate::domain::command::*;
 

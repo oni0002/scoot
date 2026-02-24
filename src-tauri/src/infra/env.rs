@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::env;
 
-/// %APPDATA% などのWindows環境変数を展開する
+/// Expand Windows environment variables like %APPDATA%
 pub fn expand_env_vars(path: &str) -> String {
     let re = Regex::new(r"%([^%]+)%").unwrap();
 

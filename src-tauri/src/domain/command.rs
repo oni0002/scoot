@@ -5,11 +5,10 @@ pub const CATEGORY_URL: &str = "url";
 pub const CATEGORY_FILE: &str = "file";
 pub const CATEGORY_BOOKMARK: &str = "bookmark";
 pub const CATEGORY_COMMAND: &str = "command";
-// pub const CATEGORY_CUSTOM: &str = "custom"; // Deprecated
 pub const CATEGORY_SCOOT: &str = "scoot";
 pub const CATEGORY_APPLICATION: &str = "application";
 
-// Scootコマンドの定数定義
+// Scoot command constants
 pub const CMD_SCOOT_ADD_COMMAND: &str = "scoot://add-command";
 pub const CMD_SCOOT_OPEN_COMMANDS: &str = "scoot://open-commands";
 pub const CMD_SCOOT_OPEN_CONFIG: &str = "scoot://open-config";
@@ -18,8 +17,9 @@ pub const CMD_SCOOT_OPEN_LOG: &str = "scoot://open-log";
 pub const CMD_SCOOT_RELOAD: &str = "scoot://reload";
 pub const CMD_SCOOT_KILL: &str = "scoot://kill";
 
-/// コマンド構造体
+/// Command struct
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct Command {
     pub id: String,
     pub name: String,
@@ -28,11 +28,22 @@ pub struct Command {
     pub description: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prompt: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        // TODO: Remove `alias = "working_dir"` in v1.0.0 (Legacy config support)
+        alias = "working_dir"
+    )]
     pub working_dir: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        // TODO: Remove `alias = "show_window"` in v1.0.0 (Legacy config support)
+        alias = "show_window"
+    )]
     pub show_window: Option<bool>,
-    #[serde(default = "default_editable")]
+    // TODO: Remove `alias = "is_editable"` in v1.0.0 (Legacy config support)
+    #[serde(default = "default_editable", alias = "is_editable")]
     pub is_editable: bool,
 }
 
@@ -40,27 +51,27 @@ fn default_editable() -> bool {
     true
 }
 
-/// コマンドリスト
+/// Command list
 pub type Commands = Vec<Command>;
 
-/// Commandのメソッド
+/// Command methods
 impl Command {
-    /// プレースホルダーがあるかチェック
+    /// Check if the command has placeholders
     pub fn has_placeholders(&self) -> bool {
         self.command.contains('{') && self.command.contains('}')
     }
 
-    /// プレースホルダを引数で置換してコマンドを生成
+    /// Substitute placeholders with arguments
     pub fn substitute_args(&self, args: &[String]) -> String {
         let mut result = self.command.clone();
 
-        // {$*} - 全引数をスペース区切りで結合
+        // {$*} - Substitute all arguments with a space-separated string
         if result.contains("{$*}") {
             let all_args = args.join(" ");
             result = result.replace("{$*}", &all_args);
         }
 
-        // {$1}, {$2}, ... - 指定位置の引数（1ベース）
+        // {$1}, {$2}, ... - Substitute arguments at specified positions (1-based)
         for (i, arg) in args.iter().enumerate() {
             let placeholder = format!("{{${}}}", i + 1);
             result = result.replace(&placeholder, arg);
@@ -69,9 +80,9 @@ impl Command {
         result
     }
 
-    /// コマンドのフォーマット検証
+    /// Validate command format
     pub fn validate(&self) -> Result<(), crate::domain::error::AppError> {
-        // 必須フィールドの検証
+        // Required fields validation
         if self.name.trim().is_empty() {
             return Err(crate::domain::error::AppError::Validation(
                 "Command name is required and cannot be empty or contain only whitespace."
@@ -91,7 +102,7 @@ impl Command {
             ));
         }
 
-        // 名前の長さ制限
+        // Name length limit
         if self.name.len() > 100 {
             return Err(crate::domain::error::AppError::Validation(format!(
                 "Command name is too long ({} characters). Maximum allowed is 100 characters.",
@@ -99,7 +110,7 @@ impl Command {
             )));
         }
 
-        // カテゴリの長さ制限
+        // Category length limit
         if self.category.len() > 50 {
             return Err(crate::domain::error::AppError::Validation(format!(
                 "Command category is too long ({} characters). Maximum allowed is 50 characters.",
@@ -107,7 +118,7 @@ impl Command {
             )));
         }
 
-        // カテゴリの有効性チェック
+        // Category validity check
         if !matches!(
             self.category.as_str(),
             CATEGORY_URL
@@ -123,7 +134,7 @@ impl Command {
             )));
         }
 
-        // コマンド内容の長さ制限
+        // Command content length limit
         if self.command.len() > 1000 {
             return Err(crate::domain::error::AppError::Validation(format!(
                 "Command content is too long ({} characters). Maximum allowed is 1000 characters.",
@@ -131,12 +142,12 @@ impl Command {
             )));
         }
 
-        // 説明の長さ制限
+        // Description length limit
         if self.description.len() > 500 {
             return Err(crate::domain::error::AppError::Validation(format!("Command description is too long ({} characters). Maximum allowed is 500 characters.", self.description.len())));
         }
 
-        // プロンプトの検証
+        // Prompt validation
         if let Some(ref prompt) = self.prompt {
             if prompt.trim().is_empty() {
                 return Err(crate::domain::error::AppError::Validation("Prompt cannot be empty if specified. Either provide a valid prompt or leave it blank.".to_string()));
@@ -147,12 +158,12 @@ impl Command {
                     prompt.len()
                 )));
             }
-            // プロンプトに空白文字が含まれていないかチェック
+            // Prompt contains whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.
             if prompt.contains(' ') || prompt.contains('\t') || prompt.contains('\n') {
                 return Err(crate::domain::error::AppError::Validation("Prompt cannot contain whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.".to_string()));
             }
 
-            // 特殊文字のチェック
+            // Special characters check
             if prompt
                 .chars()
                 .any(|c| !c.is_alphanumeric() && c != '-' && c != '_')
@@ -164,7 +175,7 @@ impl Command {
             }
         }
 
-        // Scootコマンドの検証
+        // Scoot command validation
         if self.command.starts_with("scoot://") {
             let valid_scoot_commands = [
                 CMD_SCOOT_ADD_COMMAND,

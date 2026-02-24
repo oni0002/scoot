@@ -2,22 +2,22 @@ use crate::domain::command::{Command, Commands}; // models::Command -> command::
 use crate::infra::config::ConfigManager;
 use crate::store::commands::CommandManager;
 
-/// コマンド設定(Commands)を取得
+/// Get the commands
 pub async fn get_commands(
     config_manager: &ConfigManager,
 ) -> Result<Commands, crate::domain::error::AppError> {
     config_manager.load_commands().await
 }
 
-/// コマンド設定(Commands)を保存
+/// Save the commands
 pub async fn save_commands(
     config_manager: &ConfigManager,
     command_manager: &std::sync::Mutex<CommandManager>,
     commands: &Commands,
 ) -> Result<(), crate::domain::error::AppError> {
-    // コマンド設定を保存
+    // Save the commands
     config_manager.save_commands(commands).await?;
-    // CommandManagerも更新
+    // Update CommandManager
     let mut manager = command_manager
         .lock()
         .map_err(|e| crate::domain::error::AppError::System(e.to_string()))?;
@@ -25,18 +25,18 @@ pub async fn save_commands(
     Ok(())
 }
 
-/// コマンドファイルのパスを取得
+/// Get the path to the commands file
 pub fn get_file_path(config_manager: &ConfigManager) -> String {
     config_manager.get_commands_path().to_string()
 }
 
-/// コマンド関連(Commands, Bookmarks, Apps)のみをリロード
+/// Reload commands, bookmarks, and apps
 pub async fn reload(
     config_manager: &ConfigManager,
     command_manager: &std::sync::Mutex<CommandManager>,
     config: &crate::domain::config::Config,
 ) -> Result<(), crate::domain::error::AppError> {
-    // コマンドの読み込み
+    // Load commands
     log::debug!("Loading commands.");
     let commands = match config_manager.load_commands().await {
         Ok(cmds) => cmds,
@@ -49,21 +49,10 @@ pub async fn reload(
         }
     };
 
-    // ブックマークの読み込み
-    log::debug!("Loading bookmarks.");
-    let bookmarks = if config.bookmarks.enabled {
-        match crate::infra::bookmark::load(&config.bookmarks).await {
-            Ok(bm_commands) => bm_commands,
-            Err(e) => {
-                log::warn!("Failed to load bookmarks: {}", e);
-                Vec::new()
-            }
-        }
-    } else {
-        Vec::new()
-    };
+    // Load bookmarks
+    let bookmarks = load_internal_bookmarks(&config.bookmarks).await;
 
-    // アプリケーションスキャン
+    // Scan applications
     log::debug!("Loading applications.");
     let app_commands = if config.applications.enabled {
         crate::infra::application::scan(
@@ -76,7 +65,7 @@ pub async fn reload(
         Vec::new()
     };
 
-    // CommandManagerに反映
+    // Reflect in CommandManager
     let mut manager = command_manager
         .lock()
         .map_err(|e| crate::domain::error::AppError::System(e.to_string()))?;
@@ -87,26 +76,15 @@ pub async fn reload(
     Ok(())
 }
 
-/// ブックマークのみをリロード
+/// Reload bookmarks only
 pub async fn reload_bookmarks(
     command_manager: &std::sync::Mutex<CommandManager>,
     config: &crate::domain::config::Config,
 ) -> Result<(), crate::domain::error::AppError> {
-    // ブックマークの読み込み
-    log::debug!("Loading bookmarks.");
-    let bookmarks = if config.bookmarks.enabled {
-        match crate::infra::bookmark::load(&config.bookmarks).await {
-            Ok(bm_commands) => bm_commands,
-            Err(e) => {
-                log::warn!("Failed to load bookmarks: {}", e);
-                Vec::new()
-            }
-        }
-    } else {
-        Vec::new()
-    };
+    // Load bookmarks
+    let bookmarks = load_internal_bookmarks(&config.bookmarks).await;
 
-    // CommandManagerに反映
+    // Reflect in CommandManager
     let mut manager = command_manager
         .lock()
         .map_err(|e| crate::domain::error::AppError::System(e.to_string()))?;
@@ -115,13 +93,31 @@ pub async fn reload_bookmarks(
     Ok(())
 }
 
-/// 全てのコマンドを取得
+/// Helper method to load bookmarks consistently
+async fn load_internal_bookmarks(
+    bookmark_config: &crate::domain::config::BookmarkConfig,
+) -> Vec<Command> {
+    log::debug!("Loading bookmarks.");
+    if bookmark_config.enabled {
+        match crate::infra::bookmark::load(bookmark_config).await {
+            Ok(bm_commands) => bm_commands,
+            Err(e) => {
+                log::warn!("Failed to load bookmarks: {}", e);
+                Vec::new()
+            }
+        }
+    } else {
+        Vec::new()
+    }
+}
+
+/// Get all commands
 pub fn get_all(command_manager: &std::sync::Mutex<CommandManager>) -> Vec<Command> {
     let manager = command_manager.lock().unwrap();
     manager.get_all_commands()
 }
 
-/// プロンプトでコマンドを検索
+/// Search commands by prompt
 pub fn get_by_prompt(
     command_manager: &std::sync::Mutex<CommandManager>,
     prompt: &str,
@@ -130,7 +126,7 @@ pub fn get_by_prompt(
     manager.get_commands_by_prompt(prompt)
 }
 
-/// コマンドを追加
+/// Add a command
 pub async fn add(
     config_manager: &ConfigManager,
     command_manager: &std::sync::Mutex<CommandManager>,
@@ -140,22 +136,22 @@ pub async fn add(
         let mut manager = command_manager
             .lock()
             .map_err(|e| crate::domain::error::AppError::System(e.to_string()))?;
-        // バリデーション
+        // Validate
         manager.validate_command(&command)?;
 
-        // コマンド追加
+        // Add command
         let id = manager.add_user_command(command);
         let commands = manager.get_user_commands();
         (id, commands)
     };
 
-    // 設定ファイルに保存
+    // Save to config file
     config_manager.save_commands(&commands).await?;
 
     Ok(id)
 }
 
-/// コマンドを更新
+/// Update a command
 pub async fn update(
     config_manager: &ConfigManager,
     command_manager: &std::sync::Mutex<CommandManager>,
@@ -165,21 +161,21 @@ pub async fn update(
         let mut manager = command_manager
             .lock()
             .map_err(|e| crate::domain::error::AppError::System(e.to_string()))?;
-        // バリデーション
+        // Validate
         manager.validate_command(&command)?;
 
-        // コマンド更新
+        // Update command
         manager.update_user_command(command)?;
         manager.get_user_commands()
     };
 
-    // 設定ファイルに保存
+    // Save to config file
     config_manager.save_commands(&commands).await?;
 
     Ok(())
 }
 
-/// コマンドを削除
+/// Delete a command
 pub async fn delete(
     config_manager: &ConfigManager,
     command_manager: &std::sync::Mutex<CommandManager>,
@@ -189,12 +185,12 @@ pub async fn delete(
         let mut manager = command_manager
             .lock()
             .map_err(|e| crate::domain::error::AppError::System(e.to_string()))?;
-        // コマンド削除
+        // Delete command
         manager.delete_user_command(id)?;
         manager.get_user_commands()
     };
 
-    // 設定ファイルに保存
+    // Save to config file
     config_manager.save_commands(&commands).await?;
 
     Ok(())

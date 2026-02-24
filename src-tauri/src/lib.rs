@@ -10,7 +10,7 @@ use crate::store::commands::CommandManager;
 use crate::store::state::AppState;
 use tauri::Manager;
 
-// エントリーポイント
+// Entry point
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -29,7 +29,7 @@ pub fn run() {
                 .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepOne)
                 .max_file_size(50_000) // 50KB
                 .targets([
-                    // Exeと同じディレクトリの logs フォルダに出力
+                    // Output to logs folder in the same directory as the exe
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Folder {
                         path: std::env::current_exe()
                             .ok()
@@ -45,13 +45,13 @@ pub fn run() {
         )
         .setup(|app| {
             log::info!("Initializing Scoot");
-            // アプリケーション状態(State)の初期化
+            // Initialize application state
             let config_manager = ConfigManager::new();
             let mut command_manager = CommandManager::new();
-            // Scootコマンドを注入 (Dependency Injection)
+            // Inject Scoot commands (Dependency Injection)
             command_manager.set_scoot_commands(crate::services::builtin::get_scoot_commands());
 
-            // Configをロード (非同期)
+            // Load Config (async)
             let config = tauri::async_runtime::block_on(async { config_manager.load().await })
                 .unwrap_or_else(|e| {
                     log::error!("Failed to load initial config: {}", e);
@@ -60,11 +60,11 @@ pub fn run() {
 
             let commands_path = config_manager.get_commands_path();
             let config_path = config_manager.get_config_path();
-            // ファイルウォッチャー
+            // File watchers
             let commands_file_watcher = FileWatcher::new(commands_path, app.handle().clone()).ok();
             let config_file_watcher = FileWatcher::new(config_path, app.handle().clone()).ok();
 
-            // State生成
+            // State generation
             let app_state = AppState::new(
                 command_manager,
                 config,
@@ -73,33 +73,33 @@ pub fn run() {
                 config_file_watcher,
             );
 
-            // ウィンドウイベントリスナーに渡すためにArcをクローンしておく
+            // Clone Arcs for window event listeners
             let last_window_shown = app_state.last_window_shown.clone();
             let prevent_hide = app_state.prevent_hide.clone();
             let last_window_hidden = app_state.last_window_hidden.clone();
 
-            // State登録
+            // State registration
             app.manage(app_state);
 
-            // 共通のデータロード処理を実行
+            // Run common data loading process
             tauri::async_runtime::block_on(async {
                 if let Err(e) = crate::services::system::reload(app.handle()).await {
                     log::error!("Initial configuration load failed: {}", e);
                 }
             });
-            // ウィンドウイベントの設定
+            // Set window events
             crate::services::window::setup_window_events(
                 app,
                 last_window_shown,
                 prevent_hide,
                 last_window_hidden,
             );
-            // イベントリスナーとバックグラウンドタスクの設定
+            // Set event listeners and background tasks
             crate::services::system::setup_event_listeners(app)?;
             crate::services::system::start_bookmark_update_task(app.handle().clone());
-            // システムトレイのセットアップ
+            // Set up system tray
             crate::services::tray::setup_system_tray(app)?;
-            // グローバルショートカットを設定
+            // Set up global shortcuts
             crate::services::shortcut::setup_shortcuts(app)?;
             Ok(())
         })

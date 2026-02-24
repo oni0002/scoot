@@ -2,19 +2,19 @@ use crate::domain::command::Command;
 use std::collections::HashMap;
 use uuid::Uuid;
 
-/// CommandManagerの構造体
+/// CommandManager struct
 pub struct CommandManager {
-    // ユーザ定義コマンド
+    // User defined commands
     pub user_commands: HashMap<String, Command>,
-    // ブックマークコマンド
+    // Bookmark commands
     pub bookmark_commands: HashMap<String, Command>,
-    // Scootコマンド
+    // Scoot commands
     pub scoot_commands: HashMap<String, Command>,
-    // アプリケーションコマンド
+    // Application commands
     pub application_commands: HashMap<String, Command>,
 }
 
-/// commandを管理するためのクラス
+/// CommandManager implementation
 impl CommandManager {
     pub fn new() -> Self {
         Self {
@@ -25,7 +25,7 @@ impl CommandManager {
         }
     }
 
-    /// Scootコマンドを一括設定
+    /// Set Scoot commands
     pub fn set_scoot_commands(&mut self, commands: Vec<Command>) {
         self.scoot_commands.clear();
         for command in commands {
@@ -33,13 +33,13 @@ impl CommandManager {
         }
     }
 
-    /// ユーザコマンドを追加
+    /// Add user command
     pub fn add_user_command(&mut self, mut command: Command) -> String {
-        // IDが空の場合は新しいUUIDを生成
+        // If ID is empty, generate a new UUID
         if command.id.is_empty() {
             command.id = Uuid::new_v4().to_string();
         }
-        // ID重複チェック
+        // ID duplicate check
         let mut final_id = command.id.clone();
         let mut counter = 1;
         while self.user_commands.contains_key(&final_id) {
@@ -48,12 +48,12 @@ impl CommandManager {
         }
         command.id = final_id.clone();
 
-        // コマンド一覧に追加
+        // Add to command list
         self.user_commands.insert(final_id.clone(), command);
         final_id
     }
 
-    /// ユーザコマンドを更新
+    /// Update user command
     pub fn update_user_command(
         &mut self,
         command: Command,
@@ -68,7 +68,7 @@ impl CommandManager {
         Ok(())
     }
 
-    /// ユーザコマンドを削除
+    /// Delete user command
     pub fn delete_user_command(&mut self, id: &str) -> Result<(), crate::domain::error::AppError> {
         if self.user_commands.remove(id).is_none() {
             return Err(crate::domain::error::AppError::NotFound(
@@ -78,7 +78,7 @@ impl CommandManager {
         Ok(())
     }
 
-    /// IDでコマンドを取得
+    /// Get command by ID
     #[allow(dead_code)]
     pub fn get_command(&self, id: &str) -> Option<&Command> {
         self.user_commands
@@ -88,7 +88,7 @@ impl CommandManager {
             .or_else(|| self.application_commands.get(id))
     }
 
-    /// 全てのコマンドを取得
+    /// Get all commands
     pub fn get_all_commands(&self) -> Vec<Command> {
         self.user_commands
             .values()
@@ -99,22 +99,22 @@ impl CommandManager {
             .collect()
     }
 
-    /// ユーザー定義コマンドのみ取得 (commands.json用)
+    /// Get user commands only (for commands.json)
     pub fn get_user_commands(&self) -> Vec<Command> {
         self.user_commands.values().cloned().collect()
     }
 
-    /// ブックマークコマンドを追加
+    /// Add bookmark command
     pub fn add_bookmark_command(&mut self, command: Command) {
         self.bookmark_commands.insert(command.id.clone(), command);
     }
 
-    /// ブックマークコマンドをクリア
+    /// Clear bookmarks
     pub fn clear_bookmarks(&mut self) {
         self.bookmark_commands.clear();
     }
 
-    /// カテゴリでコマンドを取得
+    /// Get commands by category
     #[allow(dead_code)]
     pub fn get_commands_by_category(&self, category: &str) -> Vec<Command> {
         self.user_commands
@@ -124,7 +124,7 @@ impl CommandManager {
             .collect()
     }
 
-    /// プロンプトでコマンドを取得
+    /// Get commands by prompt
     pub fn get_commands_by_prompt(&self, prompt: &str) -> Vec<Command> {
         self.user_commands
             .values()
@@ -133,15 +133,15 @@ impl CommandManager {
             .collect()
     }
 
-    /// コマンドを検証
+    /// Validate command
     pub fn validate_command(
         &self,
         command: &Command,
     ) -> Result<(), crate::domain::error::AppError> {
-        // ドメインレベルの検証 (フォーマット等)
+        // Domain level validation (format etc.)
         command.validate()?;
 
-        // ストアレベルの検証 (プロンプトのユニーク性)
+        // Store level validation (prompt uniqueness)
         if let Some(ref prompt) = command.prompt {
             if self.is_prompt_used(prompt, Some(&command.id)) {
                 return Err(crate::domain::error::AppError::Validation(format!(
@@ -154,7 +154,7 @@ impl CommandManager {
         Ok(())
     }
 
-    /// プロンプトの重複チェック
+    /// Prompt duplicate check
     pub fn is_prompt_used(&self, prompt: &str, exclude_id: Option<&str>) -> bool {
         self.user_commands.values().any(|cmd| {
             if let Some(exclude) = exclude_id {
@@ -166,7 +166,7 @@ impl CommandManager {
         })
     }
 
-    /// カテゴリ一覧を取得
+    /// Get categories
     #[allow(dead_code)]
     pub fn get_categories(&self) -> Vec<String> {
         let mut categories: Vec<String> = self
@@ -180,7 +180,7 @@ impl CommandManager {
         categories
     }
 
-    /// 指定されたカテゴリのコマンド数を取得
+    /// Get command count by category
     #[allow(dead_code)]
     pub fn count_by_category(&self, category: &str) -> usize {
         self.user_commands
@@ -189,12 +189,12 @@ impl CommandManager {
             .count()
     }
 
-    /// 全てのユーザー定義コマンドをクリア
+    /// Clear user commands
     pub fn clear_user_commands(&mut self) {
         self.user_commands.clear();
     }
 
-    /// アプリケーションコマンドリストを一括更新
+    /// Set application commands
     pub fn set_application_commands(&mut self, commands: Vec<Command>) {
         self.application_commands.clear();
         for command in commands {
@@ -203,7 +203,7 @@ impl CommandManager {
         }
     }
 
-    /// ブックマークコマンドを一括設定
+    /// Set bookmark commands
     pub fn set_bookmark_commands(&mut self, commands: Vec<Command>) {
         self.bookmark_commands.clear();
         for command in commands {
@@ -211,11 +211,11 @@ impl CommandManager {
         }
     }
 
-    /// ユーザーコマンドを一括設定 (検証込み)
+    /// Set user commands (with validation)
     pub fn set_user_commands(&mut self, commands: Vec<Command>) {
         self.user_commands.clear();
         for command in commands {
-            // カテゴリの検証
+            // Category validation
             if self.validate_command(&command).is_ok() {
                 self.add_user_command(command);
             } else {
@@ -237,7 +237,7 @@ mod tests {
         Command {
             id: id.to_string(),
             name: "Test Command".to_string(),
-            category: "general".to_string(),
+            category: "command".to_string(),
             command: "echo test".to_string(),
             description: "Test".to_string(),
             prompt: prompt.map(|s| s.to_string()),

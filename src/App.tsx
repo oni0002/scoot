@@ -43,8 +43,8 @@ const AppContent = () => {
     try {
       const config = await TauriAPI.getConfig();
       setTheme(config.theme || "dark");
-      setFuzzyThreshold(config.fuzzy_threshold || 0.5);
-      setMaxResults(config.max_results || 10);
+      setFuzzyThreshold(config.fuzzyThreshold || 0.5);
+      setMaxResults(config.maxResults || 10);
     } catch (err) {
       console.warn("Failed to load config, using default values:", err);
       setTheme("dark");

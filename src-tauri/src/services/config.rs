@@ -1,7 +1,7 @@
 use crate::domain::config::Config;
 use crate::infra::config::ConfigManager;
 
-/// 設定を取得
+/// Get config
 pub fn get(config: &std::sync::Mutex<Config>) -> Result<Config, crate::domain::error::AppError> {
     config
         .lock()
@@ -9,7 +9,7 @@ pub fn get(config: &std::sync::Mutex<Config>) -> Result<Config, crate::domain::e
         .map_err(|e| crate::domain::error::AppError::System(e.to_string()))
 }
 
-/// 設定を保存
+/// Save config
 pub async fn save(
     config_manager: &ConfigManager,
     state_config: &std::sync::Mutex<Config>,
@@ -27,24 +27,24 @@ pub async fn save(
     config_manager.save(config).await
 }
 
-/// 設定ファイルのパスを取得
+/// Get config file path
 pub fn get_file_path(config_manager: &ConfigManager) -> String {
     config_manager.get_config_path().to_string()
 }
 
-/// 設定を読み込み、メモリ上の設定を更新
+/// Reload config
 pub async fn reload(
     config_manager: &ConfigManager,
     state_config: &std::sync::Mutex<Config>,
 ) -> Result<Config, crate::domain::error::AppError> {
-    // 設定の読み込み
+    // Load config
     log::debug!("Loading configuration.");
     let new_config = config_manager
         .load()
         .await
         .map_err(|e| crate::domain::error::AppError::System(e.to_string()))?;
 
-    // メモリ上のConfigを更新
+    // Update state config
     {
         let mut locked_config = state_config
             .lock()

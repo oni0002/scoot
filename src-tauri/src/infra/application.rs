@@ -2,7 +2,7 @@ use crate::domain::command::Command;
 use std::path::Path;
 use walkdir::WalkDir;
 
-/// 指定されたディレクトリリストからアプリケーションをスキャンする
+/// Scans the specified directory list for applications
 pub async fn scan(
     directories: &[String],
     extensions: &[String],
@@ -13,7 +13,7 @@ pub async fn scan(
         .map(|e| e.to_lowercase())
         .collect::<Vec<_>>();
 
-    // 重いI/O処理をワーカースレッドで実行
+    // Heavy I/O processing is executed in a worker thread
     let commands = tokio::task::spawn_blocking(move || {
         let mut commands = Vec::new();
 
@@ -25,11 +25,11 @@ pub async fn scan(
                 continue;
             }
 
-            // 再帰的にスキャン
+            // Recursively scan
             for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
                 let path = entry.path();
 
-                // 指定された拡張子のみを対象とする
+                // Only target specified extensions
                 if let Some(extension) = path.extension() {
                     let ext_str = extension.to_string_lossy().to_lowercase();
                     if extensions.contains(&ext_str) {
@@ -51,16 +51,16 @@ pub async fn scan(
     Ok(commands)
 }
 
-/// パスからCommandオブジェクトを生成
+/// Creates a Command object from a path
 fn create_command_from_path(path: &Path) -> Option<Command> {
     let file_stem = path.file_stem()?.to_string_lossy().to_string();
     let full_path = path.to_string_lossy().to_string();
 
-    // ID生成
+    // ID generation
     let id_hash = md5::compute(full_path.as_bytes());
     let id = format!("app-{:x}", id_hash);
 
-    // 親ディレクトリ名を取得（説明用）
+    // Get parent directory name (for description)
     let parent = path
         .parent()
         .and_then(|p| p.file_name())
@@ -70,8 +70,8 @@ fn create_command_from_path(path: &Path) -> Option<Command> {
     Some(Command {
         id,
         name: file_stem,
-        category: "application".to_string(), // 専用カテゴリ
-        command: full_path,                  // パスそのものをコマンドとする (Windowsが解決)
+        category: "application".to_string(), // Dedicated category
+        command: full_path, // Use the path itself as the command (Windows will resolve it)
         description: format!("Application in {}", parent),
         prompt: None,
         working_dir: None,

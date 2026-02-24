@@ -96,7 +96,7 @@ export const SearchResultItem = React.memo(({
                                     Copy
                                 </a>
                             </li>
-                            {result.command.is_editable && (
+                            {result.command.isEditable && (
                                 <>
                                     <li></li>
                                     <li>

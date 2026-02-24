@@ -1,7 +1,7 @@
 use crate::store::state::AppState;
 use tauri::State;
 
-/// ウィンドウを表示/非表示を切り替える
+/// Toggle window visibility
 #[tauri::command]
 pub async fn toggle_window(
     app_handle: tauri::AppHandle,
@@ -9,7 +9,7 @@ pub async fn toggle_window(
     crate::services::window::toggle_visibility(&app_handle)
 }
 
-/// ウィンドウを隠す
+/// Hide window
 #[tauri::command]
 pub async fn hide_window(
     app_handle: tauri::AppHandle,
@@ -17,7 +17,7 @@ pub async fn hide_window(
     crate::services::window::hide(&app_handle)
 }
 
-/// ウィンドウを表示
+/// Show window
 #[tauri::command]
 pub async fn show_window(
     app_handle: tauri::AppHandle,
@@ -25,7 +25,7 @@ pub async fn show_window(
     crate::services::window::show(&app_handle)
 }
 
-/// prevent_hideフラグを設定
+/// Set prevent_hide flag
 #[tauri::command]
 pub async fn set_prevent_hide(
     prevent: bool,

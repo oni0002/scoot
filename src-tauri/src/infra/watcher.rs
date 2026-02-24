@@ -5,26 +5,26 @@ use std::thread;
 use std::time::Duration;
 use tauri::Emitter;
 
-/// ファイルウォッチャーの構造体
+/// File watcher struct
 pub struct FileWatcher {
     _watcher: RecommendedWatcher,
     #[allow(dead_code)]
     file_path: PathBuf,
 }
 
-/// ファイルウォッチャー
-/// ファイルを監視し、変更があった場合にイベントを発行する
+/// File watcher
+/// Watches a file and emits events when changes are detected
 impl FileWatcher {
     pub fn new<P: AsRef<Path>>(
         file_path: P,
         app_handle: tauri::AppHandle,
     ) -> Result<Self, crate::domain::error::AppError> {
-        // チャンネルを生成
+        // Channel to send events
         let (tx, rx) = mpsc::channel();
-        // ファイルウォッチャーを生成
+        // File watcher to monitor file changes
         let mut watcher = RecommendedWatcher::new(
             move |res: Result<Event, notify::Error>| {
-                // イベントを受け取ったらチャンネルに送信
+                // Send event to channel
                 if let Ok(event) = res {
                     if let Err(e) = tx.send(event) {
                         log::error!("Failed to send file watcher event: {}", e);
@@ -39,14 +39,14 @@ impl FileWatcher {
 
         let file_path = file_path.as_ref().to_path_buf();
 
-        // 対象ファイルの親ディレクトリを取得
+        // Get the parent directory of the target file
         let watch_path = if let Some(parent) = file_path.parent() {
             parent
         } else {
             file_path.as_path()
         };
 
-        // 対象ファイルを監視
+        // Watch the target file
         watcher
             .watch(watch_path, RecursiveMode::NonRecursive)
             .map_err(|e| {
@@ -59,12 +59,12 @@ impl FileWatcher {
             .unwrap_or("")
             .to_string();
 
-        // 別スレッドでファイル変更イベントを処理
+        // Process file change events in a separate thread
         thread::spawn(move || {
             let mut last_event_time = std::time::Instant::now();
 
             while let Ok(event) = rx.recv() {
-                // 監視対象ファイルの変更かチェック
+                // Check if the event is for the target file
                 let is_target_file = event.paths.iter().any(|path| {
                     path.file_name()
                         .and_then(|n| n.to_str())
@@ -72,15 +72,16 @@ impl FileWatcher {
                 });
 
                 if is_target_file {
-                    // 500ms以内の重複イベントを防ぐ (デバウンス)
+                    // Prevent duplicate events within 500ms (debounce)
                     let now = std::time::Instant::now();
                     if now.duration_since(last_event_time) < Duration::from_millis(500) {
                         continue;
                     }
                     last_event_time = now;
 
-                    // 対象ファイルに関連するイベント(Modify, Create, Rename, Removeなど)であればリロードを試みる
-                    // Removeの場合はConfigManagerがデフォルト値を再生成する挙動になる
+                    // If the event is related to the target file (Modify, Create, Rename, Remove, etc.)
+                    // Try to reload
+                    // If Remove, ConfigManager will regenerate default values
                     log::debug!("Config file event ({:?}): {:?}", event.kind, event.paths);
 
                     if let Err(e) = app_handle.emit("config-file-changed", ()) {
@@ -96,19 +97,19 @@ impl FileWatcher {
         })
     }
 
-    /// 監視対象ファイルのパスを取得
+    /// Get the path to the file being watched
     #[allow(dead_code)]
     pub fn get_file_path(&self) -> &Path {
         &self.file_path
     }
 
-    /// ファイルが存在するかチェック
+    /// Check if the file exists
     #[allow(dead_code)]
     pub fn file_exists(&self) -> bool {
         self.file_path.exists()
     }
 
-    /// ファイルの最終更新時刻を取得
+    /// Get the last modified time of the file
     #[allow(dead_code)]
     pub fn get_last_modified(&self) -> Result<std::time::SystemTime, std::io::Error> {
         let metadata = std::fs::metadata(&self.file_path)?;

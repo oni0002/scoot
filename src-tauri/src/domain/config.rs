@@ -5,12 +5,17 @@ use serde::{Deserialize, Serialize};
 pub const DEFAULT_THEME: &str = "dark";
 pub const DEFAULT_SHORTCUT: &str = "Alt+Space";
 
-/// 設定構造体
+/// Config struct
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
     #[schemars(range(min = 1, max = 100))]
+    // TODO: Remove `alias = "max_results"` in v1.0.0 (Legacy config support)
+    #[serde(alias = "max_results")]
     pub max_results: usize,
     #[schemars(range(min = 0.0, max = 1.0))]
+    // TODO: Remove `alias = "fuzzy_threshold"` in v1.0.0 (Legacy config support)
+    #[serde(alias = "fuzzy_threshold")]
     pub fuzzy_threshold: f64,
     pub bookmarks: BookmarkConfig,
     pub applications: ApplicationConfig,
@@ -24,25 +29,29 @@ pub struct Config {
     pub hotkey: String,
 }
 
-/// ブックマーク設定構造体
+/// Bookmark config struct
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct BookmarkConfig {
     pub enabled: bool,
     pub browser: String,
     pub prompt: Option<String>,
     #[schemars(range(min = 1))]
+    // TODO: Remove `alias = "refresh_interval_minutes"` in v1.0.0 (Legacy config support)
+    #[serde(alias = "refresh_interval_minutes")]
     pub refresh_interval_minutes: u64,
 }
 
-/// アプリケーション設定構造体
+/// Application config struct
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct ApplicationConfig {
     pub enabled: bool,
     pub directories: Vec<String>,
     pub extensions: Vec<String>,
 }
 
-/// ApplicationConfigのデフォルト値
+/// ApplicationConfig default values
 impl Default for ApplicationConfig {
     fn default() -> Self {
         Self {
@@ -56,7 +65,7 @@ impl Default for ApplicationConfig {
     }
 }
 
-/// BookmarkConfigのデフォルト値
+/// BookmarkConfig default values
 impl Default for BookmarkConfig {
     fn default() -> Self {
         Self {
@@ -68,7 +77,7 @@ impl Default for BookmarkConfig {
     }
 }
 
-/// Configのデフォルト値
+/// Config default values
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -82,30 +91,39 @@ impl Default for Config {
     }
 }
 
-/// スキーマ検証機能
+/// Config schema validation
 impl Config {
-    /// ConfigのJSONスキーマを生成
+    /// Generate Config JSON schema
     pub fn generate_schema() -> serde_json::Value {
         let schema = schema_for!(Config);
         serde_json::to_value(schema).unwrap_or_default()
     }
 
-    /// JSON文字列をスキーマ検証してからデシリアライズ
+    /// Deserialize JSON string with schema validation
     pub fn from_json_with_validation(
         json_str: &str,
     ) -> Result<Self, crate::domain::error::AppError> {
-        // json5を使用してパース (コメントと末尾カンマを許容)
-        let json_value: serde_json::Value = json5::from_str(json_str).map_err(|e| {
-            crate::domain::error::AppError::Validation(format!("Invalid JSON5: {}", e))
+        // Use json5 for parsing and deserialization
+        // This allows serde's alias feature to work, correctly parsing old snake_case keys
+        let config: Self = json5::from_str(json_str).map_err(|e| {
+            crate::domain::error::AppError::Validation(format!("Failed to parse config: {}", e))
         })?;
 
-        // スキーマ検証
+        // Convert normalized config to JSON Value for validation (all will be camelCase)
+        let normalized_value = serde_json::to_value(&config).map_err(|e| {
+            crate::domain::error::AppError::Validation(format!(
+                "Failed to serialize normalized config: {}",
+                e
+            ))
+        })?;
+
+        // Schema validation
         let schema = Self::generate_schema();
         let compiled_schema = jsonschema::JSONSchema::compile(&schema).map_err(|e| {
             crate::domain::error::AppError::Validation(format!("Failed to compile schema: {}", e))
         })?;
 
-        if let Err(errors) = compiled_schema.validate(&json_value) {
+        if let Err(errors) = compiled_schema.validate(&normalized_value) {
             let error_messages: Vec<String> = errors
                 .map(|error| format!("Validation error at {}: {}", error.instance_path, error))
                 .collect();
@@ -115,35 +133,42 @@ impl Config {
             )));
         }
 
-        // デシリアライゼーション
-        serde_json::from_value(json_value).map_err(|e| {
-            crate::domain::error::AppError::Validation(format!("Failed to deserialize: {}", e))
-        })
+        Ok(config)
     }
 }
 
-/// Commandsのスキーマを生成
+/// Generate Commands JSON schema
 pub fn generate_commands_schema() -> serde_json::Value {
     // Vec<Command> のスキーマを生成
     let schema = schema_for!(Vec<Command>);
     serde_json::to_value(schema).unwrap_or_default()
 }
 
-/// JSON文字列をスキーマ検証してからデシリアライズ
+/// Deserialize JSON string with schema validation
 pub fn commands_from_json_with_validation(
     json_str: &str,
 ) -> Result<Commands, crate::domain::error::AppError> {
-    // json5を使用してパース (コメントと末尾カンマを許容)
-    let json_value: serde_json::Value = json5::from_str(json_str)
-        .map_err(|e| crate::domain::error::AppError::Validation(format!("Invalid JSON5: {}", e)))?;
+    // Parse and deserialize JSON string
+    // This allows serde's alias to work, reading snake_case keys correctly
+    let commands: Commands = json5::from_str(json_str).map_err(|e| {
+        crate::domain::error::AppError::Validation(format!("Failed to parse commands: {}", e))
+    })?;
 
-    // スキーマ検証
+    // Parse normalized object for validation
+    let normalized_value = serde_json::to_value(&commands).map_err(|e| {
+        crate::domain::error::AppError::Validation(format!(
+            "Failed to serialize normalized commands: {}",
+            e
+        ))
+    })?;
+
+    // Schema validation
     let schema = generate_commands_schema();
     let compiled_schema = jsonschema::JSONSchema::compile(&schema).map_err(|e| {
         crate::domain::error::AppError::Validation(format!("Failed to compile schema: {}", e))
     })?;
 
-    if let Err(errors) = compiled_schema.validate(&json_value) {
+    if let Err(errors) = compiled_schema.validate(&normalized_value) {
         let error_messages: Vec<String> = errors
             .map(|error| format!("Validation error at {}: {}", error.instance_path, error))
             .collect();
@@ -153,14 +178,11 @@ pub fn commands_from_json_with_validation(
         )));
     }
 
-    // デシリアライゼーション
-    serde_json::from_value(json_value).map_err(|e| {
-        crate::domain::error::AppError::Validation(format!("Failed to deserialize: {}", e))
-    })
+    Ok(commands)
 }
 
 impl Config {
-    /// 設定の値を検証し、不正な値があれば修正する
+    /// Validate and fix config values
     pub fn validate_and_fix(&mut self) -> Result<(), crate::domain::error::AppError> {
         // fuzzy_threshold (0.0 - 1.0)
         if self.fuzzy_threshold < 0.0 || self.fuzzy_threshold > 1.0 {

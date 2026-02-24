@@ -23,8 +23,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({
         command: '',
         description: '',
         prompt: '',
-        working_dir: '',
-        show_window: false,
+        workingDir: '',
+        showWindow: false,
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -41,8 +41,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                 command: command.command,
                 description: command.description,
                 prompt: command.prompt || '',
-                working_dir: command.working_dir || '',
-                show_window: command.show_window || false,
+                workingDir: command.workingDir || '',
+                showWindow: command.showWindow || false,
             });
         } else {
             // Adding new command
@@ -53,8 +53,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                 command: '',
                 description: '',
                 prompt: '',
-                working_dir: '',
-                show_window: false,
+                workingDir: '',
+                showWindow: false,
             });
         }
         setErrors({});
@@ -98,9 +98,9 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             command: formData.command.trim(),
             description: formData.description.trim(),
             prompt: formData.prompt.trim() || undefined,
-            working_dir: formData.working_dir.trim() || undefined,
-            show_window: formData.show_window,
-            is_editable: true,
+            workingDir: formData.workingDir.trim() || undefined,
+            showWindow: formData.showWindow,
+            isEditable: true,
         };
 
         onSave(commandToSave);
@@ -307,8 +307,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 </label>
                                 <input
                                     type="text"
-                                    value={formData.working_dir}
-                                    onChange={(e) => handleInputChange('working_dir', e.target.value)}
+                                    value={formData.workingDir}
+                                    onChange={(e) => handleInputChange('workingDir', e.target.value)}
                                     placeholder="C:\path\to\working_dir"
                                     className="input input-bordered input-sm w-full"
                                 />
@@ -319,8 +319,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                     <span className="label-text">Show Window</span>
                                     <input
                                         type="checkbox"
-                                        checked={formData.show_window}
-                                        onChange={(e) => handleInputChange('show_window', e.target.checked)}
+                                        checked={formData.showWindow}
+                                        onChange={(e) => handleInputChange('showWindow', e.target.checked)}
                                         className="checkbox checkbox-sm"
                                     />
                                 </label>

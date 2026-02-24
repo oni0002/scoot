@@ -1,6 +1,6 @@
 use tauri::{AppHandle, Manager};
 
-/// ウィンドウを表示/非表示を切り替える
+/// toggle visibility of the main window
 pub fn toggle_visibility(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
     if let Some(window) = app_handle.get_webview_window("main") {
         if window.is_visible().unwrap_or(false) {
@@ -13,17 +13,17 @@ pub fn toggle_visibility(app_handle: &AppHandle) -> Result<(), crate::domain::er
     }
 }
 
-/// ウィンドウを隠す
+/// Hide window
 pub fn hide(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
     crate::infra::window::hide(app_handle)
 }
 
-/// ウィンドウを表示
+/// Show window
 pub fn show(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
     crate::infra::window::show(app_handle)
 }
 
-/// prevent_hideフラグを設定
+/// Set prevent_hide flag
 pub fn set_prevent_hide(
     prevent_hide_mutex: &std::sync::Mutex<bool>,
     prevent: bool,
@@ -38,7 +38,7 @@ pub fn set_prevent_hide(
     }
 }
 
-/// フォーカス変更時の処理
+/// Handle focus change event
 pub fn handle_focus_change(
     window: &tauri::WebviewWindow,
     focused: bool,
@@ -46,12 +46,12 @@ pub fn handle_focus_change(
     prevent_hide: &std::sync::Mutex<bool>,
     last_window_hidden: &std::sync::Mutex<Option<std::time::Instant>>,
 ) {
-    // フォーカスが得られた場合は何もしない
+    // If focused, do nothing
     if focused {
         return;
     }
 
-    // 表示直後 (200ms以内) なら隠さない
+    // If shown within 200ms, do nothing
     if let Ok(last_shown) = last_window_shown.lock() {
         if let Some(ref instant) = *last_shown {
             if instant.elapsed().as_millis() <= 200 {
@@ -60,21 +60,21 @@ pub fn handle_focus_change(
         }
     }
 
-    // prevent_hide = true なら隠さない
+    // If prevent_hide is true, do nothing
     if let Ok(flag) = prevent_hide.lock() {
         if *flag {
             return;
         }
     }
 
-    // 上記以外はウィンドウを隠す
+    // Hide window
     if let Ok(mut hidden) = last_window_hidden.lock() {
         *hidden = Some(std::time::Instant::now());
     }
     let _ = window.hide();
 }
 
-/// ウィンドウイベントの設定
+/// Setup window events
 pub fn setup_window_events(
     app: &tauri::App,
     last_window_shown: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
@@ -85,12 +85,12 @@ pub fn setup_window_events(
         let window_clone = window.clone();
         window.on_window_event(move |event| {
             match event {
-                // ウィンドウのクローズリクエストが送られたとき
+                // When window close request is sent
                 tauri::WindowEvent::CloseRequested { api, .. } => {
                     api.prevent_close();
                     let _ = hide(&window_clone.app_handle());
                 }
-                // フォーカスが変わったとき
+                // When focus changes
                 tauri::WindowEvent::Focused(focused) => {
                     handle_focus_change(
                         &window_clone,
@@ -103,7 +103,7 @@ pub fn setup_window_events(
                 _ => {}
             }
         });
-        // 起動時は非表示
+        // Hide window on startup
         let _ = hide(&window.app_handle());
     }
 }

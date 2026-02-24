@@ -1,36 +1,36 @@
 use crate::domain::command::Command;
 
-/// コマンドの実行
+/// Execute a command
 pub async fn execute_command(
     app_handle: &tauri::AppHandle,
     command: &Command,
     args: &[String],
 ) -> Result<String, crate::domain::error::AppError> {
-    // コマンドを構築 (引数があれば展開)
+    // Build command (expand args if needed)
     let final_command = if command.has_placeholders() {
         command.substitute_args(args)
     } else {
         command.command.clone()
     };
 
-    // Scootコマンドの処理
+    // Scoot command
     if command.category == crate::domain::command::CATEGORY_SCOOT
         || final_command.starts_with("scoot://")
     {
         return execute_scoot_command(app_handle, &final_command).await;
     }
 
-    // 他のコマンド
+    // Other commands
     match command.category.as_str() {
-        // URL, ブックマーク
+        // URL, bookmark
         crate::domain::command::CATEGORY_URL | crate::domain::command::CATEGORY_BOOKMARK => {
             execute_url(app_handle, &final_command).await
         }
-        // ファイル, アプリケーション
+        // File, application
         crate::domain::command::CATEGORY_FILE | crate::domain::command::CATEGORY_APPLICATION => {
             execute_local_file(app_handle, &final_command).await
         }
-        // シェルコマンド
+        // Shell command
         crate::domain::command::CATEGORY_COMMAND => {
             crate::infra::system::execute_shell_command(
                 &final_command,
@@ -39,7 +39,7 @@ pub async fn execute_command(
             )
             .await
         }
-        // その他のカテゴリはシェルコマンドとして扱うデフォルト挙動
+        // Default to shell command
         _ => {
             crate::infra::system::execute_shell_command(
                 &final_command,
@@ -51,7 +51,7 @@ pub async fn execute_command(
     }
 }
 
-/// scootの内部コマンドを実行
+/// Execute internal scoot command
 async fn execute_scoot_command(
     app_handle: &tauri::AppHandle,
     command: &str,
@@ -93,7 +93,7 @@ async fn execute_scoot_command(
     }
 }
 
-/// URLカテゴリのコマンドを実行
+/// Execute URL command
 async fn execute_url(
     app_handle: &tauri::AppHandle,
     url: &str,
@@ -114,18 +114,18 @@ async fn execute_url(
     Ok(success_msg)
 }
 
-/// ファイルパスを開く
+/// Execute local file
 async fn execute_local_file(
     app_handle: &tauri::AppHandle,
     file_path: &str,
 ) -> Result<String, crate::domain::error::AppError> {
     log::debug!("Opening file: {}", file_path);
 
-    // 環境変数の展開
+    // Expand environment variables
     let expanded_path = crate::infra::env::expand_env_vars(file_path);
     log::debug!("Opening file (expanded): {}", expanded_path);
 
-    // ファイルの存在確認
+    // Check if file exists
     if !std::path::Path::new(&expanded_path).exists() {
         let error_msg = format!(
             "File not found: '{}' (expanded from '{}'). Please check if the file exists and the path is correct.",
@@ -135,7 +135,7 @@ async fn execute_local_file(
         return Err(crate::domain::error::AppError::CommandExecution(error_msg));
     }
 
-    // ファイルを開く
+    // Open file
     crate::infra::system::open_path(app_handle, &expanded_path).map_err(|e| {
         let error_msg = format!("Failed to open file '{}': {}. Please check file permissions and ensure a default application is set for this file type.", expanded_path, e);
         log::error!("Error: {}", error_msg);

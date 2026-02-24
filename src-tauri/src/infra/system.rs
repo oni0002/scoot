@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_opener::OpenerExt;
 
-/// 指定されたパス(ファイル、ディレクトリ、URL)をデフォルトのアプリケーションで開く
+/// Open the specified path (file, directory, URL) with the default application
 pub fn open_path(app_handle: &AppHandle, path: &str) -> Result<(), crate::domain::error::AppError> {
     app_handle
         .opener()
@@ -12,7 +12,7 @@ pub fn open_path(app_handle: &AppHandle, path: &str) -> Result<(), crate::domain
         })
 }
 
-/// 指定されたURLをデフォルトのブラウザで開く
+/// Open the specified URL with the default browser
 pub fn open_url(app_handle: &AppHandle, url: &str) -> Result<(), crate::domain::error::AppError> {
     app_handle
         .opener()
@@ -22,7 +22,7 @@ pub fn open_url(app_handle: &AppHandle, url: &str) -> Result<(), crate::domain::
         })
 }
 
-/// ファイルが存在することを確認し、なければデフォルトの内容で作成する
+/// Ensure the file exists, create it with default content if not
 pub fn ensure_file_exists<F>(
     path: &Path,
     create_content: F,
@@ -42,7 +42,7 @@ where
     Ok(())
 }
 
-/// ディレクトリが存在することを確認し、なければ作成する
+/// Ensure the directory exists, create it if not
 pub fn ensure_directory_exists(path: &Path) -> Result<(), crate::domain::error::AppError> {
     if !path.exists() {
         std::fs::create_dir_all(path)
@@ -51,7 +51,7 @@ pub fn ensure_directory_exists(path: &Path) -> Result<(), crate::domain::error::
     Ok(())
 }
 
-/// リソースファイルのパスを解決する
+/// Resolve the path to a resource file
 pub fn resolve_resource(
     app_handle: &AppHandle,
     path: &str,
@@ -76,7 +76,7 @@ pub fn resolve_resource(
     Ok(resource_path)
 }
 
-/// ログディレクトリのパスを取得する
+/// Get the path to the log directory
 pub fn get_log_dir(_app_handle: &AppHandle) -> Result<PathBuf, crate::domain::error::AppError> {
     std::env::current_exe()
         .ok()
@@ -86,7 +86,7 @@ pub fn get_log_dir(_app_handle: &AppHandle) -> Result<PathBuf, crate::domain::er
         })
 }
 
-/// シェルコマンドを実行
+/// Execute a shell command
 pub async fn execute_shell_command(
     command: &str,
     working_dir: &Option<String>,
@@ -95,21 +95,21 @@ pub async fn execute_shell_command(
     use std::process::Command as StdCommand;
     log::debug!("Executing shell command: {}", command);
 
-    // コマンドが空の場合はエラー
+    // If the command is empty, return an error
     if command.trim().is_empty() {
         return Err(crate::domain::error::AppError::Validation(
             "System command cannot be empty.".to_string(),
         ));
     }
 
-    // コマンドを構築
+    // Build the command
     let mut cmd_builder = if cfg!(target_os = "windows") {
         use std::os::windows::process::CommandExt;
-        // PowerShellを直接呼び出す
+        // PowerShell to call directly
         let mut cmd = StdCommand::new("powershell");
-        // プロファイル読み込みをスキップして高速化
+        // Skip profile loading for faster execution
         let mut args = vec!["-NoProfile"];
-        // show_windowがtrueの場合 -NoExit を追加 (ウィンドウを閉じないようにする)
+        // If show_window is true, add -NoExit (to prevent window closure)
         if show_window {
             args.push("-NoExit");
         }
@@ -120,10 +120,10 @@ pub async fn execute_shell_command(
         cmd.args(args);
 
         if show_window {
-            // 新しいコンソールウィンドウを作成 (CREATE_NEW_CONSOLE)
+            // Create a new console window (CREATE_NEW_CONSOLE)
             cmd.creation_flags(0x00000010);
         } else {
-            // ウィンドウを表示しない (CREATE_NO_WINDOW)
+            // Do not show the window (CREATE_NO_WINDOW)
             cmd.creation_flags(0x08000000);
         }
         cmd
@@ -133,9 +133,9 @@ pub async fn execute_shell_command(
         cmd
     };
 
-    // ワークディレクトリを設定
+    // Set the working directory
     if let Some(dir) = working_dir {
-        // ダブルクォートで囲まれている場合は除去する
+        // Remove double quotes if present
         let trimmed_dir = dir.trim();
         let clean_dir =
             if trimmed_dir.starts_with('"') && trimmed_dir.ends_with('"') && trimmed_dir.len() >= 2
@@ -149,7 +149,7 @@ pub async fn execute_shell_command(
             if std::path::Path::new(clean_dir).exists() {
                 cmd_builder.current_dir(clean_dir);
             } else {
-                // ワークディレクトリが存在しない場合は警告
+                // If the working directory does not exist, issue a warning
                 log::warn!(
                     "Warning: Working directory '{}' does not exist. Ignoring.",
                     clean_dir
@@ -158,7 +158,7 @@ pub async fn execute_shell_command(
         }
     }
 
-    // 非同期でコマンドを実行
+    // Execute the command asynchronously
     match cmd_builder.spawn() {
         Ok(_) => {
             let success_msg = "Command launched successfully (background).".to_string();

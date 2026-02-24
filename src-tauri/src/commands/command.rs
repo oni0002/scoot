@@ -2,15 +2,15 @@ use crate::domain::command::{Command, Commands};
 use crate::store::state::AppState;
 use tauri::State;
 
-/// すべてのコマンドを取得
+/// Get all commands
 #[tauri::command]
-pub async fn get_all_commands(
+pub fn get_all_commands(
     state: State<'_, AppState>,
 ) -> Result<Vec<Command>, crate::domain::error::AppError> {
     Ok(crate::services::command::get_all(&state.commands))
 }
 
-/// コマンドを追加
+/// Add command
 #[tauri::command]
 pub async fn add_command(
     command: Command,
@@ -19,7 +19,7 @@ pub async fn add_command(
     crate::services::command::add(&state.config_manager, &state.commands, command).await
 }
 
-/// コマンドを更新
+/// Update command
 #[tauri::command]
 pub async fn update_command(
     command: Command,
@@ -28,7 +28,7 @@ pub async fn update_command(
     crate::services::command::update(&state.config_manager, &state.commands, command).await
 }
 
-/// コマンドを削除
+/// Delete command
 #[tauri::command]
 pub async fn delete_command(
     id: String,
@@ -37,7 +37,7 @@ pub async fn delete_command(
     crate::services::command::delete(&state.config_manager, &state.commands, &id).await
 }
 
-/// コマンドを実行(非同期)
+/// Execute command (async)
 #[tauri::command]
 pub async fn execute_command(
     command: Command,
@@ -48,9 +48,9 @@ pub async fn execute_command(
     crate::services::execution::execute_command(&app_handle, &command, &args).await
 }
 
-/// プロンプトでコマンドを検索
+/// Search commands by prompt
 #[tauri::command]
-pub async fn get_commands_by_prompt(
+pub fn get_commands_by_prompt(
     prompt: String,
     state: State<'_, AppState>,
 ) -> Result<Vec<Command>, crate::domain::error::AppError> {
@@ -60,7 +60,7 @@ pub async fn get_commands_by_prompt(
     ))
 }
 
-/// コマンドを取得
+/// Get commands
 #[tauri::command]
 pub async fn get_commands(
     state: State<'_, AppState>,
@@ -68,7 +68,7 @@ pub async fn get_commands(
     crate::services::command::get_commands(&state.config_manager).await
 }
 
-/// コマンドを保存
+/// Save commands
 #[tauri::command]
 pub async fn save_commands(
     commands: Commands,
@@ -77,9 +77,9 @@ pub async fn save_commands(
     crate::services::command::save_commands(&state.config_manager, &state.commands, &commands).await
 }
 
-/// commands.jsonのパスを取得
+/// Get commands.json path
 #[tauri::command]
-pub async fn get_commands_file_path(
+pub fn get_commands_file_path(
     state: State<'_, AppState>,
 ) -> Result<String, crate::domain::error::AppError> {
     Ok(crate::services::command::get_file_path(
@@ -87,15 +87,15 @@ pub async fn get_commands_file_path(
     ))
 }
 
-/// commands.jsonのスキーマを取得
+/// Get commands.json schema
 #[tauri::command]
-pub async fn get_commands_schema() -> Result<serde_json::Value, crate::domain::error::AppError> {
+pub fn get_commands_schema() -> Result<serde_json::Value, crate::domain::error::AppError> {
     Ok(crate::domain::config::generate_commands_schema())
 }
 
-/// commands.jsonを検証
+/// Validate commands.json
 #[tauri::command]
-pub async fn validate_commands(
+pub fn validate_commands(
     config: serde_json::Value,
 ) -> Result<serde_json::Value, crate::domain::error::AppError> {
     match crate::domain::config::commands_from_json_with_validation(&config.to_string()) {
@@ -104,7 +104,7 @@ pub async fn validate_commands(
     }
 }
 
-/// commands.jsonを開く
+/// Open commands.json
 #[tauri::command]
 pub async fn open_commands_json(
     app_handle: tauri::AppHandle,

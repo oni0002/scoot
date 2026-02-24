@@ -26,11 +26,11 @@ struct ChromiumBookmarkRoots {
     synced: Option<ChromiumBookmark>,
 }
 
-/// ブックマークを読み込む
+/// Load bookmarks
 pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain::error::AppError> {
     let bookmark_path = get_bookmark_path(&config.browser)?;
 
-    // ブックマークファイルがなければエラー
+    // If the bookmark file doesn't exist, return an error
     if !bookmark_path.exists() {
         return Err(crate::domain::error::AppError::System(format!(
             "Bookmark file not found: {:?}",
@@ -38,12 +38,12 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
         )));
     }
 
-    // ブックマークファイルを読み込む
+    // Read the bookmark file
     let content = fs::read_to_string(&bookmark_path).await.map_err(|e| {
         crate::domain::error::AppError::System(format!("Failed to read bookmark file: {}", e))
     })?;
 
-    // JSONパース (ワーカースレッドで実行)
+    // JSON parse (execute in a worker thread)
     let root: ChromiumBookmarkRoot =
         tokio::task::spawn_blocking(move || serde_json::from_str(&content))
             .await
@@ -63,7 +63,7 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
     let mut commands = Vec::new();
     let mut seen_urls = std::collections::HashSet::new();
 
-    // ブックマークバーから読み込み
+    // Load bookmarks from the bookmark bar
     collect_commands(
         &root.roots.bookmark_bar,
         &mut commands,
@@ -71,7 +71,7 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
         &config.prompt,
     );
 
-    // その他のブックマークから読み込み
+    // Load bookmarks from the other bookmarks
     collect_commands(
         &root.roots.other,
         &mut commands,
@@ -79,7 +79,7 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
         &config.prompt,
     );
 
-    // 同期されたブックマークから読み込み（存在する場合）
+    // Load bookmarks from the synced bookmarks (if they exist)
     if let Some(synced) = &root.roots.synced {
         collect_commands(synced, &mut commands, &mut seen_urls, &config.prompt);
     }
@@ -87,8 +87,8 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
     Ok(commands)
 }
 
-/// ブックマークファイルのパスを取得
-/// brave, chrome, edgeのみ対応
+/// Get the path to the bookmark file
+/// Only brave, chrome, and edge are supported
 fn get_bookmark_path(browser: &str) -> Result<PathBuf, crate::domain::error::AppError> {
     let home_dir = dirs::home_dir().ok_or_else(|| {
         crate::domain::error::AppError::System("Could not find home directory".to_string())
@@ -109,7 +109,7 @@ fn get_bookmark_path(browser: &str) -> Result<PathBuf, crate::domain::error::App
     Ok(bookmark_path)
 }
 
-/// ブックマークからコマンドを収集
+/// Collect commands from bookmarks
 fn collect_commands(
     bookmark: &ChromiumBookmark,
     commands: &mut Vec<Command>,
@@ -118,7 +118,7 @@ fn collect_commands(
 ) {
     if bookmark.bookmark_type == "url" {
         if let Some(url) = &bookmark.url {
-            // 重複URLは無視
+            // Skip duplicate URLs
             if seen_urls.contains(url) {
                 return;
             }
