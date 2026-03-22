@@ -1,4 +1,4 @@
-use super::command::{Command, Commands};
+use crate::commands::domain::{Command, Commands};
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 
@@ -100,18 +100,16 @@ impl Config {
     }
 
     /// Deserialize JSON string with schema validation
-    pub fn from_json_with_validation(
-        json_str: &str,
-    ) -> Result<Self, crate::domain::error::AppError> {
+    pub fn from_json_with_validation(json_str: &str) -> Result<Self, crate::error::AppError> {
         // Use json5 for parsing and deserialization
         // This allows serde's alias feature to work, correctly parsing old snake_case keys
         let config: Self = json5::from_str(json_str).map_err(|e| {
-            crate::domain::error::AppError::Validation(format!("Failed to parse config: {}", e))
+            crate::error::AppError::Validation(format!("Failed to parse config: {}", e))
         })?;
 
         // Convert normalized config to JSON Value for validation (all will be camelCase)
         let normalized_value = serde_json::to_value(&config).map_err(|e| {
-            crate::domain::error::AppError::Validation(format!(
+            crate::error::AppError::Validation(format!(
                 "Failed to serialize normalized config: {}",
                 e
             ))
@@ -120,14 +118,14 @@ impl Config {
         // Schema validation
         let schema = Self::generate_schema();
         let compiled_schema = jsonschema::JSONSchema::compile(&schema).map_err(|e| {
-            crate::domain::error::AppError::Validation(format!("Failed to compile schema: {}", e))
+            crate::error::AppError::Validation(format!("Failed to compile schema: {}", e))
         })?;
 
         if let Err(errors) = compiled_schema.validate(&normalized_value) {
             let error_messages: Vec<String> = errors
                 .map(|error| format!("Validation error at {}: {}", error.instance_path, error))
                 .collect();
-            return Err(crate::domain::error::AppError::Validation(format!(
+            return Err(crate::error::AppError::Validation(format!(
                 "Schema validation failed: {}",
                 error_messages.join(", ")
             )));
@@ -139,7 +137,7 @@ impl Config {
 
 /// Generate Commands JSON schema
 pub fn generate_commands_schema() -> serde_json::Value {
-    // Vec<Command> のスキーマを生成
+    // Vec<Command> 縺ｮ繧ｹ繧ｭ繝ｼ繝槭ｒ逕滓・
     let schema = schema_for!(Vec<Command>);
     serde_json::to_value(schema).unwrap_or_default()
 }
@@ -147,16 +145,16 @@ pub fn generate_commands_schema() -> serde_json::Value {
 /// Deserialize JSON string with schema validation
 pub fn commands_from_json_with_validation(
     json_str: &str,
-) -> Result<Commands, crate::domain::error::AppError> {
+) -> Result<Commands, crate::error::AppError> {
     // Parse and deserialize JSON string
     // This allows serde's alias to work, reading snake_case keys correctly
     let commands: Commands = json5::from_str(json_str).map_err(|e| {
-        crate::domain::error::AppError::Validation(format!("Failed to parse commands: {}", e))
+        crate::error::AppError::Validation(format!("Failed to parse commands: {}", e))
     })?;
 
     // Parse normalized object for validation
     let normalized_value = serde_json::to_value(&commands).map_err(|e| {
-        crate::domain::error::AppError::Validation(format!(
+        crate::error::AppError::Validation(format!(
             "Failed to serialize normalized commands: {}",
             e
         ))
@@ -165,14 +163,14 @@ pub fn commands_from_json_with_validation(
     // Schema validation
     let schema = generate_commands_schema();
     let compiled_schema = jsonschema::JSONSchema::compile(&schema).map_err(|e| {
-        crate::domain::error::AppError::Validation(format!("Failed to compile schema: {}", e))
+        crate::error::AppError::Validation(format!("Failed to compile schema: {}", e))
     })?;
 
     if let Err(errors) = compiled_schema.validate(&normalized_value) {
         let error_messages: Vec<String> = errors
             .map(|error| format!("Validation error at {}: {}", error.instance_path, error))
             .collect();
-        return Err(crate::domain::error::AppError::Validation(format!(
+        return Err(crate::error::AppError::Validation(format!(
             "Schema validation failed: {}",
             error_messages.join(", ")
         )));
@@ -183,7 +181,7 @@ pub fn commands_from_json_with_validation(
 
 impl Config {
     /// Validate and fix config values
-    pub fn validate_and_fix(&mut self) -> Result<(), crate::domain::error::AppError> {
+    pub fn validate_and_fix(&mut self) -> Result<(), crate::error::AppError> {
         // fuzzy_threshold (0.0 - 1.0)
         if self.fuzzy_threshold < 0.0 || self.fuzzy_threshold > 1.0 {
             log::warn!(
@@ -193,5 +191,32 @@ impl Config {
             self.fuzzy_threshold = 0.5;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_schema_with_skipped_id() {
+        let schema = generate_commands_schema();
+        let compiled = jsonschema::JSONSchema::compile(&schema).unwrap();
+
+        let json =
+            r#"[{"name": "test", "category": "url", "command": "http", "description": "desc"}]"#;
+        let cmds: Commands = json5::from_str(json).unwrap();
+
+        // Convert to JSON Value to validate
+        let normalized = serde_json::to_value(&cmds).unwrap();
+
+        // This will panic if invalid
+        let result = compiled.validate(&normalized);
+        if let Err(e) = result {
+            for err in e {
+                println!("Error: {}", err);
+            }
+            panic!("Validation failed");
+        }
     }
 }

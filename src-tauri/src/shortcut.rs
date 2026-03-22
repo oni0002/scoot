@@ -1,6 +1,9 @@
-use crate::store::state::AppState;
-use tauri::{AppHandle, Emitter, Manager};
+use crate::config::domain::DEFAULT_SHORTCUT;
+use crate::state::AppState;
+use tauri::{App, AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+
+// --- Infrastructure / Core Logic ---
 
 /// Register a global shortcut
 ///
@@ -108,4 +111,45 @@ pub fn unregister(app_handle: &AppHandle) {
         // Fallback if state cannot be retrieved
         let _ = app_handle.global_shortcut().unregister_all();
     }
+}
+pub fn setup_shortcuts(app: &App) -> Result<(), Box<dyn std::error::Error>> {
+    let handle = app.handle();
+    // Get hotkey from state
+    let hotkey = if let Some(state) = handle.try_state::<AppState>() {
+        if let Ok(config) = state.config.lock() {
+            config.hotkey.clone()
+        } else {
+            DEFAULT_SHORTCUT.to_string()
+        }
+    } else {
+        DEFAULT_SHORTCUT.to_string()
+    };
+
+    setup_global_shortcuts(&handle, &hotkey)
+}
+
+/// Register global shortcuts
+pub fn setup_global_shortcuts(
+    app_handle: &tauri::AppHandle,
+    hotkey: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    register(app_handle, hotkey, move |h| {
+        // Callback: toggle window visibility
+        if let Some(window) = h.get_webview_window("main") {
+            if window.is_visible().unwrap_or(false) {
+                let _ = window.hide();
+            } else {
+                let _ = window.show();
+                let _ = window.set_focus();
+                let _ = window.emit("window-shown", ());
+    
+                // Record the time the window was shown
+                if let Some(state) = h.try_state::<AppState>() {
+                    if let Ok(mut last_shown) = state.last_window_shown.lock() {
+                        *last_shown = Some(std::time::Instant::now());
+                    }
+                }
+            }
+        }
+    })
 }

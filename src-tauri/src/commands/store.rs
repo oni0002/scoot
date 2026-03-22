@@ -1,6 +1,14 @@
-use crate::domain::command::Command;
+﻿use crate::commands::domain::Command;
 use std::collections::HashMap;
-use uuid::Uuid;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+/// Global ID counter for generating unique command IDs
+static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+/// Generate a unique ID
+fn generate_id() -> String {
+    ID_COUNTER.fetch_add(1, Ordering::Relaxed).to_string()
+}
 
 /// CommandManager struct
 pub struct CommandManager {
@@ -25,41 +33,35 @@ impl CommandManager {
         }
     }
 
+    /// Assign a new ID to a command
+    fn assign_id(command: &mut Command) {
+        command.id = generate_id();
+    }
+
     /// Set Scoot commands
     pub fn set_scoot_commands(&mut self, commands: Vec<Command>) {
         self.scoot_commands.clear();
-        for command in commands {
+        for mut command in commands {
+            Self::assign_id(&mut command);
             self.scoot_commands.insert(command.id.clone(), command);
         }
     }
 
     /// Add user command
     pub fn add_user_command(&mut self, mut command: Command) -> String {
-        // If ID is empty, generate a new UUID
-        if command.id.is_empty() {
-            command.id = Uuid::new_v4().to_string();
-        }
-        // ID duplicate check
-        let mut final_id = command.id.clone();
-        let mut counter = 1;
-        while self.user_commands.contains_key(&final_id) {
-            final_id = format!("{}-{}", command.id, counter);
-            counter += 1;
-        }
-        command.id = final_id.clone();
-
-        // Add to command list
-        self.user_commands.insert(final_id.clone(), command);
-        final_id
+        Self::assign_id(&mut command);
+        let id = command.id.clone();
+        self.user_commands.insert(id.clone(), command);
+        id
     }
 
     /// Update user command
     pub fn update_user_command(
         &mut self,
         command: Command,
-    ) -> Result<(), crate::domain::error::AppError> {
+    ) -> Result<(), crate::error::AppError> {
         if !self.user_commands.contains_key(&command.id) {
-            return Err(crate::domain::error::AppError::NotFound(
+            return Err(crate::error::AppError::NotFound(
                 "Command not found".to_string(),
             ));
         }
@@ -69,9 +71,9 @@ impl CommandManager {
     }
 
     /// Delete user command
-    pub fn delete_user_command(&mut self, id: &str) -> Result<(), crate::domain::error::AppError> {
+    pub fn delete_user_command(&mut self, id: &str) -> Result<(), crate::error::AppError> {
         if self.user_commands.remove(id).is_none() {
-            return Err(crate::domain::error::AppError::NotFound(
+            return Err(crate::error::AppError::NotFound(
                 "Command not found".to_string(),
             ));
         }
@@ -105,7 +107,8 @@ impl CommandManager {
     }
 
     /// Add bookmark command
-    pub fn add_bookmark_command(&mut self, command: Command) {
+    pub fn add_bookmark_command(&mut self, mut command: Command) {
+        Self::assign_id(&mut command);
         self.bookmark_commands.insert(command.id.clone(), command);
     }
 
@@ -137,14 +140,14 @@ impl CommandManager {
     pub fn validate_command(
         &self,
         command: &Command,
-    ) -> Result<(), crate::domain::error::AppError> {
+    ) -> Result<(), crate::error::AppError> {
         // Domain level validation (format etc.)
         command.validate()?;
 
         // Store level validation (prompt uniqueness)
         if let Some(ref prompt) = command.prompt {
             if self.is_prompt_used(prompt, Some(&command.id)) {
-                return Err(crate::domain::error::AppError::Validation(format!(
+                return Err(crate::error::AppError::Validation(format!(
                     "Prompt '{}' is already used by another command.",
                     prompt
                 )));
@@ -197,7 +200,8 @@ impl CommandManager {
     /// Set application commands
     pub fn set_application_commands(&mut self, commands: Vec<Command>) {
         self.application_commands.clear();
-        for command in commands {
+        for mut command in commands {
+            Self::assign_id(&mut command);
             self.application_commands
                 .insert(command.id.clone(), command);
         }
@@ -206,7 +210,8 @@ impl CommandManager {
     /// Set bookmark commands
     pub fn set_bookmark_commands(&mut self, commands: Vec<Command>) {
         self.bookmark_commands.clear();
-        for command in commands {
+        for mut command in commands {
+            Self::assign_id(&mut command);
             self.bookmark_commands.insert(command.id.clone(), command);
         }
     }
@@ -233,9 +238,9 @@ impl CommandManager {
 mod tests {
     use super::*;
 
-    fn create_dummy_command(id: &str, prompt: Option<&str>) -> Command {
+    fn create_dummy_command(prompt: Option<&str>) -> Command {
         Command {
-            id: id.to_string(),
+            id: String::new(),
             name: "Test Command".to_string(),
             category: "command".to_string(),
             command: "echo test".to_string(),
@@ -243,7 +248,6 @@ mod tests {
             prompt: prompt.map(|s| s.to_string()),
             working_dir: None,
             show_window: None,
-            is_editable: true,
         }
     }
 
@@ -251,31 +255,31 @@ mod tests {
     fn test_duplicate_prompt_check() {
         let mut manager = CommandManager::new();
 
-        // 1. コマンドAを追加 (prompt: p1)
-        let cmd_a = create_dummy_command("cmd-a", Some("p1"));
+        // 1. 繧ｳ繝槭Φ繝陰繧定ｿｽ蜉 (prompt: p1)
+        let cmd_a = create_dummy_command(Some("p1"));
         assert!(manager.validate_command(&cmd_a).is_ok());
-        manager.add_user_command(cmd_a.clone());
+        let id_a = manager.add_user_command(cmd_a);
 
-        // 2. コマンドBを追加 (prompt: p1) -> 重複エラー
-        let cmd_b_dup = create_dummy_command("cmd-b", Some("p1"));
+        // 2. 繧ｳ繝槭Φ繝隠繧定ｿｽ蜉 (prompt: p1) -> 驥崎､・お繝ｩ繝ｼ
+        let cmd_b_dup = create_dummy_command(Some("p1"));
         let res = manager.validate_command(&cmd_b_dup);
         assert!(res.is_err());
         assert!(res.unwrap_err().to_string().contains("already used"));
 
-        // 3. コマンドBを追加 (prompt: p2) -> 成功
-        let cmd_b = create_dummy_command("cmd-b", Some("p2"));
+        // 3. 繧ｳ繝槭Φ繝隠繧定ｿｽ蜉 (prompt: p2) -> 謌仙粥
+        let cmd_b = create_dummy_command(Some("p2"));
         assert!(manager.validate_command(&cmd_b).is_ok());
-        manager.add_user_command(cmd_b.clone());
+        let _id_b = manager.add_user_command(cmd_b);
 
-        // 4. コマンドAを更新 (prompt: p2) -> 重複エラー
-        let mut cmd_a_update = cmd_a.clone();
+        // 4. 繧ｳ繝槭Φ繝陰繧呈峩譁ｰ (prompt: p2) -> 驥崎､・お繝ｩ繝ｼ
+        let mut cmd_a_update = manager.user_commands.get(&id_a).unwrap().clone();
         cmd_a_update.prompt = Some("p2".to_string());
         let res = manager.validate_command(&cmd_a_update);
         assert!(res.is_err());
         assert!(res.unwrap_err().to_string().contains("already used"));
 
-        // 5. コマンドAを更新 (prompt: p1) -> 成功 (自分自身)
-        let mut cmd_a_same = cmd_a.clone();
+        // 5. 繧ｳ繝槭Φ繝陰繧呈峩譁ｰ (prompt: p1) -> 謌仙粥 (閾ｪ蛻・・霄ｫ)
+        let mut cmd_a_same = manager.user_commands.get(&id_a).unwrap().clone();
         cmd_a_same.description = "Updated".to_string();
         assert!(manager.validate_command(&cmd_a_same).is_ok());
     }
@@ -283,21 +287,23 @@ mod tests {
     #[test]
     fn test_set_scoot_commands() {
         let mut manager = CommandManager::new();
-        let scoot_cmd = create_dummy_command("scoot-1", None);
+        let scoot_cmd = create_dummy_command(None);
 
-        manager.set_scoot_commands(vec![scoot_cmd.clone()]);
+        manager.set_scoot_commands(vec![scoot_cmd]);
 
         let all = manager.get_all_commands();
-        assert!(all.iter().any(|c| c.id == "scoot-1"));
+        assert_eq!(all.len(), 1);
+        assert!(!all[0].id.is_empty()); // ID縺瑚・蜍慕函謌舌＆繧後※縺・ｋ縺薙→
     }
 
     #[test]
     fn test_add_user_command_id_generation() {
         let mut manager = CommandManager::new();
-        let cmd = create_dummy_command("", None); // Empty ID
+        let cmd = create_dummy_command(None);
 
         let id = manager.add_user_command(cmd);
         assert!(!id.is_empty());
         assert!(manager.get_user_commands().iter().any(|c| c.id == id));
     }
 }
+

@@ -96,7 +96,7 @@ export const SearchResultItem = React.memo(({
                                     Copy
                                 </a>
                             </li>
-                            {result.command.isEditable && (
+                            {!['bookmark', 'application', 'scoot'].includes(result.command.category) && (
                                 <>
                                     <li></li>
                                     <li>

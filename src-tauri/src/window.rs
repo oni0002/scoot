@@ -1,38 +1,86 @@
-use tauri::{AppHandle, Manager};
+﻿use crate::state::AppState;
+use tauri::{Emitter, Manager, State};
 
-/// toggle visibility of the main window
-pub fn toggle_visibility(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
+// --- Tauri Commands ---
+
+/// Toggle window visibility
+#[tauri::command]
+pub async fn toggle_window(
+    app_handle: tauri::AppHandle,
+) -> Result<(), crate::error::AppError> {
     if let Some(window) = app_handle.get_webview_window("main") {
         if window.is_visible().unwrap_or(false) {
-            crate::infra::window::hide(app_handle)
+            let _ = window.hide();
         } else {
-            crate::infra::window::show(app_handle)
+            let _ = window.show();
+            let _ = window.set_focus();
+            let _ = window.emit("window-shown", ());
+
+            // Record the time the window was shown
+            if let Some(state) = app_handle.try_state::<AppState>() {
+                if let Ok(mut last_shown) = state.last_window_shown.lock() {
+                    *last_shown = Some(std::time::Instant::now());
+                }
+            }
         }
-    } else {
-        Ok(())
     }
+    Ok(())
 }
 
 /// Hide window
-pub fn hide(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
-    crate::infra::window::hide(app_handle)
+#[tauri::command]
+pub async fn hide_window(
+    app_handle: tauri::AppHandle,
+) -> Result<(), crate::error::AppError> {
+    if let Some(window) = app_handle.get_webview_window("main") {
+        let _ = window.hide();
+    }
+    Ok(())
 }
 
 /// Show window
-pub fn show(app_handle: &AppHandle) -> Result<(), crate::domain::error::AppError> {
-    crate::infra::window::show(app_handle)
+#[tauri::command]
+pub async fn show_window(
+    app_handle: tauri::AppHandle,
+) -> Result<(), crate::error::AppError> {
+    if let Some(window) = app_handle.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.set_focus();
+        let _ = window.emit("window-shown", ());
+
+        // Record the time the window was shown
+        if let Some(state) = app_handle.try_state::<AppState>() {
+            if let Ok(mut last_shown) = state.last_window_shown.lock() {
+                *last_shown = Some(std::time::Instant::now());
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Set prevent_hide flag
-pub fn set_prevent_hide(
+#[tauri::command]
+pub async fn set_prevent_hide(
+    prevent: bool,
+    state: State<'_, AppState>,
+) -> Result<(), crate::error::AppError> {
+    set_prevent_hide_flag(&state.prevent_hide, prevent)
+}
+
+// --- Infrastructure / Core Logic ---
+
+
+
+/// Set prevent_hide flag
+pub fn set_prevent_hide_flag(
     prevent_hide_mutex: &std::sync::Mutex<bool>,
     prevent: bool,
-) -> Result<(), crate::domain::error::AppError> {
+) -> Result<(), crate::error::AppError> {
     if let Ok(mut flag) = prevent_hide_mutex.lock() {
         *flag = prevent;
         Ok(())
     } else {
-        Err(crate::domain::error::AppError::System(
+        Err(crate::error::AppError::System(
             "Failed to lock prevent_hide flag".to_string(),
         ))
     }
@@ -88,7 +136,7 @@ pub fn setup_window_events(
                 // When window close request is sent
                 tauri::WindowEvent::CloseRequested { api, .. } => {
                     api.prevent_close();
-                    let _ = hide(&window_clone.app_handle());
+                    let _ = window_clone.hide();
                 }
                 // When focus changes
                 tauri::WindowEvent::Focused(focused) => {
@@ -104,6 +152,6 @@ pub fn setup_window_events(
             }
         });
         // Hide window on startup
-        let _ = hide(&window.app_handle());
+        let _ = window.hide();
     }
 }

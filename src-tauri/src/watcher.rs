@@ -1,4 +1,4 @@
-use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+﻿use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::thread;
@@ -18,7 +18,7 @@ impl FileWatcher {
     pub fn new<P: AsRef<Path>>(
         file_path: P,
         app_handle: tauri::AppHandle,
-    ) -> Result<Self, crate::domain::error::AppError> {
+    ) -> Result<Self, crate::error::AppError> {
         // Channel to send events
         let (tx, rx) = mpsc::channel();
         // File watcher to monitor file changes
@@ -34,7 +34,7 @@ impl FileWatcher {
             Config::default(),
         )
         .map_err(|e| {
-            crate::domain::error::AppError::System(format!("Failed to create file watcher: {}", e))
+            crate::error::AppError::System(format!("Failed to create file watcher: {}", e))
         })?;
 
         let file_path = file_path.as_ref().to_path_buf();
@@ -50,7 +50,7 @@ impl FileWatcher {
         watcher
             .watch(watch_path, RecursiveMode::NonRecursive)
             .map_err(|e| {
-                crate::domain::error::AppError::System(format!("Failed to watch file: {}", e))
+                crate::error::AppError::System(format!("Failed to watch file: {}", e))
             })?;
 
         let file_name = file_path
@@ -128,10 +128,10 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let file_path = temp_dir.path().join("test.json");
 
-        // ファイルを作成
+        // 繝輔ぃ繧､繝ｫ繧剃ｽ懈・
         fs::write(&file_path, "{}").unwrap();
 
-        // モックのAppHandleが必要なため、実際のファイルウォッチャーのテストは統合テストで行う
+        // 繝｢繝・け縺ｮAppHandle縺悟ｿ・ｦ√↑縺溘ａ縲∝ｮ滄圀縺ｮ繝輔ぃ繧､繝ｫ繧ｦ繧ｩ繝・メ繝｣繝ｼ縺ｮ繝・せ繝医・邨ｱ蜷医ユ繧ｹ繝医〒陦後≧
         assert!(file_path.exists());
     }
 
@@ -140,13 +140,13 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let file_path = temp_dir.path().join("test.json");
 
-        // ファイルを作成
+        // 繝輔ぃ繧､繝ｫ繧剃ｽ懈・
         fs::write(&file_path, "{}").unwrap();
 
-        // ファイルが存在することを確認
+        // 繝輔ぃ繧､繝ｫ縺悟ｭ伜惠縺吶ｋ縺薙→繧堤｢ｺ隱・
         assert!(file_path.exists());
 
-        // ファイルを削除
+        // 繝輔ぃ繧､繝ｫ繧貞炎髯､
         fs::remove_file(&file_path).unwrap();
         assert!(!file_path.exists());
     }

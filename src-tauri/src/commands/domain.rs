@@ -1,4 +1,4 @@
-use schemars::JsonSchema;
+﻿use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub const CATEGORY_URL: &str = "url";
@@ -21,6 +21,7 @@ pub const CMD_SCOOT_KILL: &str = "scoot://kill";
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Command {
+    #[serde(default, skip)]
     pub id: String,
     pub name: String,
     pub category: String,
@@ -42,17 +43,86 @@ pub struct Command {
         alias = "show_window"
     )]
     pub show_window: Option<bool>,
-    // TODO: Remove `alias = "is_editable"` in v1.0.0 (Legacy config support)
-    #[serde(default = "default_editable", alias = "is_editable")]
-    pub is_editable: bool,
-}
-
-fn default_editable() -> bool {
-    true
 }
 
 /// Command list
 pub type Commands = Vec<Command>;
+
+/// Get the built-in commands for Scoot
+pub fn get_builtin_commands() -> Vec<Command> {
+    vec![
+        Command {
+            id: String::new(),
+            name: "Add Command".to_string(),
+            category: "scoot".to_string(),
+            command: CMD_SCOOT_ADD_COMMAND.to_string(),
+            description: "Add a new command to the launcher".to_string(),
+            prompt: None,
+            working_dir: None,
+            show_window: None,
+        },
+        Command {
+            id: String::new(),
+            name: "Open Commands.json".to_string(),
+            category: "scoot".to_string(),
+            command: CMD_SCOOT_OPEN_COMMANDS.to_string(),
+            description: "Open commands.json configuration file".to_string(),
+            prompt: None,
+            working_dir: None,
+            show_window: None,
+        },
+        Command {
+            id: String::new(),
+            name: "Open Config.json".to_string(),
+            category: "scoot".to_string(),
+            command: CMD_SCOOT_OPEN_CONFIG.to_string(),
+            description: "Open config.json configuration file".to_string(),
+            prompt: None,
+            working_dir: None,
+            show_window: None,
+        },
+        Command {
+            id: String::new(),
+            name: "Open README".to_string(),
+            category: "scoot".to_string(),
+            command: CMD_SCOOT_OPEN_README.to_string(),
+            description: "Open application README".to_string(),
+            prompt: None,
+            working_dir: None,
+            show_window: None,
+        },
+        Command {
+            id: String::new(),
+            name: "Open Logs".to_string(),
+            category: "scoot".to_string(),
+            command: CMD_SCOOT_OPEN_LOG.to_string(),
+            description: "Open application log directory".to_string(),
+            prompt: None,
+            working_dir: None,
+            show_window: None,
+        },
+        Command {
+            id: String::new(),
+            name: "Reload".to_string(),
+            category: "scoot".to_string(),
+            command: CMD_SCOOT_RELOAD.to_string(),
+            description: "Reload commands and configuration".to_string(),
+            prompt: None,
+            working_dir: None,
+            show_window: None,
+        },
+        Command {
+            id: String::new(),
+            name: "Kill Scoot".to_string(),
+            category: "scoot".to_string(),
+            command: CMD_SCOOT_KILL.to_string(),
+            description: "Terminate the application".to_string(),
+            prompt: None,
+            working_dir: None,
+            show_window: None,
+        },
+    ]
+}
 
 /// Command methods
 impl Command {
@@ -81,22 +151,22 @@ impl Command {
     }
 
     /// Validate command format
-    pub fn validate(&self) -> Result<(), crate::domain::error::AppError> {
+    pub fn validate(&self) -> Result<(), crate::error::AppError> {
         // Required fields validation
         if self.name.trim().is_empty() {
-            return Err(crate::domain::error::AppError::Validation(
+            return Err(crate::error::AppError::Validation(
                 "Command name is required and cannot be empty or contain only whitespace."
                     .to_string(),
             ));
         }
         if self.command.trim().is_empty() {
-            return Err(crate::domain::error::AppError::Validation(
+            return Err(crate::error::AppError::Validation(
                 "Command content is required and cannot be empty or contain only whitespace."
                     .to_string(),
             ));
         }
         if self.category.trim().is_empty() {
-            return Err(crate::domain::error::AppError::Validation(
+            return Err(crate::error::AppError::Validation(
                 "Command category is required and cannot be empty or contain only whitespace."
                     .to_string(),
             ));
@@ -104,7 +174,7 @@ impl Command {
 
         // Name length limit
         if self.name.len() > 100 {
-            return Err(crate::domain::error::AppError::Validation(format!(
+            return Err(crate::error::AppError::Validation(format!(
                 "Command name is too long ({} characters). Maximum allowed is 100 characters.",
                 self.name.len()
             )));
@@ -112,7 +182,7 @@ impl Command {
 
         // Category length limit
         if self.category.len() > 50 {
-            return Err(crate::domain::error::AppError::Validation(format!(
+            return Err(crate::error::AppError::Validation(format!(
                 "Command category is too long ({} characters). Maximum allowed is 50 characters.",
                 self.category.len()
             )));
@@ -128,7 +198,7 @@ impl Command {
                 | CATEGORY_SCOOT
                 | CATEGORY_APPLICATION
         ) {
-            return Err(crate::domain::error::AppError::Validation(format!(
+            return Err(crate::error::AppError::Validation(format!(
                 "Invalid category '{}'. Supported categories are: url, file, bookmark, command, scoot, application.",
                 self.category
             )));
@@ -136,7 +206,7 @@ impl Command {
 
         // Command content length limit
         if self.command.len() > 1000 {
-            return Err(crate::domain::error::AppError::Validation(format!(
+            return Err(crate::error::AppError::Validation(format!(
                 "Command content is too long ({} characters). Maximum allowed is 1000 characters.",
                 self.command.len()
             )));
@@ -144,23 +214,23 @@ impl Command {
 
         // Description length limit
         if self.description.len() > 500 {
-            return Err(crate::domain::error::AppError::Validation(format!("Command description is too long ({} characters). Maximum allowed is 500 characters.", self.description.len())));
+            return Err(crate::error::AppError::Validation(format!("Command description is too long ({} characters). Maximum allowed is 500 characters.", self.description.len())));
         }
 
         // Prompt validation
         if let Some(ref prompt) = self.prompt {
             if prompt.trim().is_empty() {
-                return Err(crate::domain::error::AppError::Validation("Prompt cannot be empty if specified. Either provide a valid prompt or leave it blank.".to_string()));
+                return Err(crate::error::AppError::Validation("Prompt cannot be empty if specified. Either provide a valid prompt or leave it blank.".to_string()));
             }
             if prompt.len() > 10 {
-                return Err(crate::domain::error::AppError::Validation(format!(
+                return Err(crate::error::AppError::Validation(format!(
                     "Prompt is too long ({} characters). Maximum allowed is 10 characters.",
                     prompt.len()
                 )));
             }
             // Prompt contains whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.
             if prompt.contains(' ') || prompt.contains('\t') || prompt.contains('\n') {
-                return Err(crate::domain::error::AppError::Validation("Prompt cannot contain whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.".to_string()));
+                return Err(crate::error::AppError::Validation("Prompt cannot contain whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.".to_string()));
             }
 
             // Special characters check
@@ -168,7 +238,7 @@ impl Command {
                 .chars()
                 .any(|c| !c.is_alphanumeric() && c != '-' && c != '_')
             {
-                return Err(crate::domain::error::AppError::Validation(
+                return Err(crate::error::AppError::Validation(
                     "Prompt can only contain letters, numbers, hyphens (-), and underscores (_)."
                         .to_string(),
                 ));
@@ -187,7 +257,7 @@ impl Command {
                 CMD_SCOOT_KILL,
             ];
             if !valid_scoot_commands.contains(&self.command.as_str()) {
-                return Err(crate::domain::error::AppError::Validation(format!(
+                return Err(crate::error::AppError::Validation(format!(
                     "Invalid scoot command '{}'. Valid commands are: {}",
                     self.command,
                     valid_scoot_commands.join(", ")
@@ -213,7 +283,6 @@ mod tests {
             prompt: None,
             working_dir: None,
             show_window: None,
-            is_editable: true,
         }
     }
 

@@ -1,8 +1,8 @@
-use crate::store::state::AppState;
+use crate::state::AppState;
 use tauri::{
     menu::{MenuBuilder, MenuItem},
     tray::{TrayIconBuilder, TrayIconEvent},
-    App, Manager,
+    App, Emitter, Manager,
 };
 
 /// Setup system tray
@@ -40,25 +40,40 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         .tooltip("Scoot - Command Launcher")
         .on_menu_event(move |app_handle, event| match event.id().as_ref() {
             "show" => {
-                let _ = crate::services::window::show(app_handle);
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                    let _ = window.emit("window-shown", ());
+
+                    // Record the time the window was shown
+                    if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
+                        if let Ok(mut last_shown) = state.last_window_shown.lock() {
+                            *last_shown = Some(std::time::Instant::now());
+                        }
+                    }
+                }
             }
             "add_command" => {
-                let _ = crate::services::system::open_add_command_dialog(app_handle);
+                let _ = crate::system::open_add_command_dialog(app_handle);
             }
             "open_commands" => {
-                let _ = crate::services::system::open_commands_json(app_handle);
+                let _ = crate::system::open_commands_json(app_handle);
             }
             "open_config" => {
-                let _ = crate::services::system::open_config_json(app_handle);
+                let _ = crate::system::open_config_json(app_handle);
             }
             "readme" => {
-                let _ = crate::services::system::open_readme(app_handle);
+                tauri::async_runtime::block_on(async {
+                    let _ = crate::system::open_readme(app_handle.clone()).await;
+                });
             }
             "open_log" => {
-                let _ = crate::services::system::open_log(app_handle);
+                let _ = crate::system::open_log(app_handle);
             }
             "quit" => {
-                crate::services::system::quit_app(app_handle);
+                tauri::async_runtime::block_on(async {
+                    let _ = crate::system::quit_app_command(app_handle.clone()).await;
+                });
             }
             _ => {}
         })
@@ -93,9 +108,21 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
 
-                // Toggle window visibility from tray
-                if let Err(e) = crate::services::window::toggle_visibility(&app_handle) {
-                    log::error!("Failed to toggle window visibility from tray: {}", e);
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    if window.is_visible().unwrap_or(false) {
+                        let _ = window.hide();
+                    } else {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                        let _ = window.emit("window-shown", ());
+
+                        // Record the time the window was shown
+                        if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
+                            if let Ok(mut last_shown) = state.last_window_shown.lock() {
+                                *last_shown = Some(std::time::Instant::now());
+                            }
+                        }
+                    }
                 }
             }
         });

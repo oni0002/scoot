@@ -1,7 +1,7 @@
-use crate::domain::config::Config;
-use crate::infra::config::ConfigManager;
-use crate::infra::watcher::FileWatcher;
-use crate::store::commands::CommandManager;
+﻿use crate::config::domain::Config;
+use crate::config::store::ConfigManager;
+use crate::watcher::FileWatcher;
+use crate::commands::store::CommandManager;
 use std::sync::Mutex;
 
 pub struct AppState {
@@ -40,7 +40,7 @@ impl AppState {
     }
 
     /// Set prevent_hide flag
-    pub fn set_prevent_hide(&self, prevent: bool) -> Result<(), crate::domain::error::AppError> {
+    pub fn set_prevent_hide(&self, prevent: bool) -> Result<(), crate::error::AppError> {
         if let Ok(mut flag) = self.prevent_hide.lock() {
             *flag = prevent;
         }

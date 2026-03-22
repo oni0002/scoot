@@ -7,7 +7,6 @@ export interface Command {
     prompt?: string;
     workingDir?: string;
     showWindow?: boolean;
-    isEditable: boolean;
 }
 
 export type Commands = Command[];

@@ -1,5 +1,5 @@
-use crate::domain::command::Command;
-use crate::domain::config::BookmarkConfig;
+﻿use crate::commands::domain::Command;
+use crate::config::domain::BookmarkConfig;
 
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -27,12 +27,12 @@ struct ChromiumBookmarkRoots {
 }
 
 /// Load bookmarks
-pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain::error::AppError> {
+pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::error::AppError> {
     let bookmark_path = get_bookmark_path(&config.browser)?;
 
     // If the bookmark file doesn't exist, return an error
     if !bookmark_path.exists() {
-        return Err(crate::domain::error::AppError::System(format!(
+        return Err(crate::error::AppError::System(format!(
             "Bookmark file not found: {:?}",
             bookmark_path
         )));
@@ -40,7 +40,7 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
 
     // Read the bookmark file
     let content = fs::read_to_string(&bookmark_path).await.map_err(|e| {
-        crate::domain::error::AppError::System(format!("Failed to read bookmark file: {}", e))
+        crate::error::AppError::System(format!("Failed to read bookmark file: {}", e))
     })?;
 
     // JSON parse (execute in a worker thread)
@@ -48,13 +48,13 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
         tokio::task::spawn_blocking(move || serde_json::from_str(&content))
             .await
             .map_err(|e| {
-                crate::domain::error::AppError::System(format!(
+                crate::error::AppError::System(format!(
                     "Failed to spawn blocking task: {}",
                     e
                 ))
             })?
             .map_err(|e| {
-                crate::domain::error::AppError::System(format!(
+                crate::error::AppError::System(format!(
                     "Failed to parse bookmark file: {}",
                     e
                 ))
@@ -64,7 +64,7 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
     let mut seen_urls = std::collections::HashSet::new();
 
     // Load bookmarks from the bookmark bar
-    collect_commands(
+    collect(
         &root.roots.bookmark_bar,
         &mut commands,
         &mut seen_urls,
@@ -72,7 +72,7 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
     );
 
     // Load bookmarks from the other bookmarks
-    collect_commands(
+    collect(
         &root.roots.other,
         &mut commands,
         &mut seen_urls,
@@ -81,7 +81,7 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
 
     // Load bookmarks from the synced bookmarks (if they exist)
     if let Some(synced) = &root.roots.synced {
-        collect_commands(synced, &mut commands, &mut seen_urls, &config.prompt);
+        collect(synced, &mut commands, &mut seen_urls, &config.prompt);
     }
 
     Ok(commands)
@@ -89,9 +89,9 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::domain
 
 /// Get the path to the bookmark file
 /// Only brave, chrome, and edge are supported
-fn get_bookmark_path(browser: &str) -> Result<PathBuf, crate::domain::error::AppError> {
+fn get_bookmark_path(browser: &str) -> Result<PathBuf, crate::error::AppError> {
     let home_dir = dirs::home_dir().ok_or_else(|| {
-        crate::domain::error::AppError::System("Could not find home directory".to_string())
+        crate::error::AppError::System("Could not find home directory".to_string())
     })?;
     let bookmark_path = match browser {
         "brave" => {
@@ -100,7 +100,7 @@ fn get_bookmark_path(browser: &str) -> Result<PathBuf, crate::domain::error::App
         "chrome" => home_dir.join("AppData/Local/Google/Chrome/User Data/Default/Bookmarks"),
         "edge" => home_dir.join("AppData/Local/Microsoft/Edge/User Data/Default/Bookmarks"),
         _ => {
-            return Err(crate::domain::error::AppError::System(format!(
+            return Err(crate::error::AppError::System(format!(
                 "Unsupported browser: {}",
                 browser
             )));
@@ -110,7 +110,7 @@ fn get_bookmark_path(browser: &str) -> Result<PathBuf, crate::domain::error::App
 }
 
 /// Collect commands from bookmarks
-fn collect_commands(
+fn collect(
     bookmark: &ChromiumBookmark,
     commands: &mut Vec<Command>,
     seen_urls: &mut std::collections::HashSet<String>,
@@ -124,15 +124,14 @@ fn collect_commands(
             }
 
             let command = Command {
-                id: format!("bookmark-{}", uuid::Uuid::new_v4()),
+                id: String::new(),
                 name: bookmark.name.clone(),
                 category: "bookmark".to_string(),
                 command: url.clone(),
-                description: format!("Bookmark: {}", url),
+                description: url.clone(),
                 prompt: prompt.clone(),
                 working_dir: None,
                 show_window: None,
-                is_editable: false,
             };
             commands.push(command);
             seen_urls.insert(url.clone());
@@ -140,7 +139,7 @@ fn collect_commands(
     } else if bookmark.bookmark_type == "folder" {
         if let Some(children) = &bookmark.children {
             for child in children {
-                collect_commands(child, commands, seen_urls, prompt);
+                collect(child, commands, seen_urls, prompt);
             }
         }
     }

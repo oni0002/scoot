@@ -1,0 +1,242 @@
+﻿use crate::config::store::ConfigManager;
+use crate::commands::domain::{Command, Commands};
+use crate::commands::store::CommandManager;
+use crate::state::AppState;
+use tauri::State;
+
+// --- Tauri Commands ---
+
+/// Get all commands
+#[tauri::command]
+pub fn get_all_commands(
+    state: State<'_, AppState>,
+) -> Result<Vec<Command>, crate::error::AppError> {
+    let manager = state.commands.lock().unwrap();
+    Ok(manager.get_all_commands())
+}
+
+/// Add command
+#[tauri::command]
+pub async fn add_command(
+    command: Command,
+    state: State<'_, AppState>,
+) -> Result<String, crate::error::AppError> {
+    let (id, commands) = {
+        let mut manager = state
+            .commands
+            .lock()
+            .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+        // Validate
+        manager.validate_command(&command)?;
+
+        // Add command
+        let id = manager.add_user_command(command);
+        let commands = manager.get_user_commands();
+        (id, commands)
+    };
+
+    // Save to config file
+    state.config_manager.save_commands(&commands).await?;
+
+    Ok(id)
+}
+
+/// Update command
+#[tauri::command]
+pub async fn update_command(
+    command: Command,
+    state: State<'_, AppState>,
+) -> Result<(), crate::error::AppError> {
+    let commands = {
+        let mut manager = state
+            .commands
+            .lock()
+            .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+        // Validate
+        manager.validate_command(&command)?;
+
+        // Update command
+        manager.update_user_command(command)?;
+        manager.get_user_commands()
+    };
+
+    // Save to config file
+    state.config_manager.save_commands(&commands).await?;
+
+    Ok(())
+}
+
+/// Delete command
+#[tauri::command]
+pub async fn delete_command(
+    id: String,
+    state: State<'_, AppState>,
+) -> Result<(), crate::error::AppError> {
+    let commands = {
+        let mut manager = state
+            .commands
+            .lock()
+            .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+        // Delete command
+        manager.delete_user_command(&id)?;
+        manager.get_user_commands()
+    };
+
+    // Save to config file
+    state.config_manager.save_commands(&commands).await?;
+
+    Ok(())
+}
+
+/// Search commands by prompt
+#[tauri::command]
+pub fn get_commands_by_prompt(
+    prompt: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<Command>, crate::error::AppError> {
+    let manager = state.commands.lock().unwrap();
+    Ok(manager.get_commands_by_prompt(&prompt))
+}
+
+/// Get commands
+#[tauri::command]
+pub async fn get_commands(
+    state: State<'_, AppState>,
+) -> Result<Commands, crate::error::AppError> {
+    state.config_manager.load_commands().await
+}
+
+/// Save commands
+#[tauri::command]
+pub async fn save_commands(
+    commands: Commands,
+    state: State<'_, AppState>,
+) -> Result<(), crate::error::AppError> {
+    // Save the commands
+    state.config_manager.save_commands(&commands).await?;
+    // Update CommandManager
+    let mut manager = state
+        .commands
+        .lock()
+        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+    manager.set_user_commands(commands);
+    Ok(())
+}
+
+/// Get commands.json path
+#[tauri::command]
+pub fn get_commands_file_path(
+    state: State<'_, AppState>,
+) -> Result<String, crate::error::AppError> {
+    Ok(state.config_manager.get_commands_path().to_string())
+}
+
+/// Get commands.json schema
+#[tauri::command]
+pub fn get_commands_schema() -> Result<serde_json::Value, crate::error::AppError> {
+    Ok(crate::config::domain::generate_commands_schema())
+}
+
+/// Validate commands.json
+#[tauri::command]
+pub fn validate_commands(
+    config: serde_json::Value,
+) -> Result<serde_json::Value, crate::error::AppError> {
+    match crate::config::domain::commands_from_json_with_validation(&config.to_string()) {
+        Ok(_) => Ok(serde_json::json!({ "valid": true, "errors": [] })),
+        Err(error) => Ok(serde_json::json!({ "valid": false, "errors": [error] })),
+    }
+}
+
+/// Open commands.json
+#[tauri::command]
+pub async fn open_commands_json(
+    app_handle: tauri::AppHandle,
+) -> Result<(), crate::error::AppError> {
+    crate::system::open_commands_json(&app_handle)
+}
+
+// --- Infrastructure / Core Logic ---
+
+/// Reload commands, bookmarks, and apps
+pub async fn reload(
+    config_manager: &ConfigManager,
+    command_manager: &std::sync::Mutex<CommandManager>,
+    config: &crate::config::domain::Config,
+) -> Result<(), crate::error::AppError> {
+    // Load commands
+    log::debug!("Loading commands.");
+    let commands = match config_manager.load_commands().await {
+        Ok(cmds) => cmds,
+        Err(e) => {
+            log::error!(
+                "Failed to load commands.json: {}. Proceeding with empty commands.",
+                e
+            );
+            crate::commands::domain::Commands::new()
+        }
+    };
+
+    // Load bookmarks
+    log::debug!("Loading bookmarks.");
+    let bookmarks = if config.bookmarks.enabled {
+        crate::commands::bookmark::load(&config.bookmarks)
+            .await
+            .unwrap_or_else(|e| {
+                log::warn!("Failed to load bookmarks: {}", e);
+                Vec::new()
+            })
+    } else {
+        Vec::new()
+    };
+
+    // Scan applications
+    log::debug!("Loading applications.");
+    let app_commands = if config.applications.enabled {
+        crate::commands::application::load(
+            &config.applications.directories,
+            &config.applications.extensions,
+        )
+        .await
+        .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
+    // Reflect in CommandManager
+    let mut manager = command_manager
+        .lock()
+        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+    manager.set_user_commands(commands);
+    manager.set_bookmark_commands(bookmarks);
+    manager.set_application_commands(app_commands);
+
+    Ok(())
+}
+
+/// Reload bookmarks only
+pub async fn reload_bookmarks(
+    command_manager: &std::sync::Mutex<CommandManager>,
+    config: &crate::config::domain::Config,
+) -> Result<(), crate::error::AppError> {
+    // Load bookmarks
+    log::debug!("Loading bookmarks.");
+    let bookmarks = if config.bookmarks.enabled {
+        crate::commands::bookmark::load(&config.bookmarks)
+            .await
+            .unwrap_or_else(|e| {
+                log::warn!("Failed to load bookmarks: {}", e);
+                Vec::new()
+            })
+    } else {
+        Vec::new()
+    };
+
+    // Reflect in CommandManager
+    let mut manager = command_manager
+        .lock()
+        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+    manager.set_bookmark_commands(bookmarks);
+
+    Ok(())
+}

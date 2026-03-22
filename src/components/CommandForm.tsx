@@ -91,16 +91,17 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             return;
         }
 
+        const isCmdCategory = formData.category.trim() === 'cmd';
+
         const commandToSave: Command = {
-            id: formData.id || `cmd-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+            id: formData.id,
             name: formData.name.trim(),
             category: formData.category.trim(),
             command: formData.command.trim(),
             description: formData.description.trim(),
             prompt: formData.prompt.trim() || undefined,
-            workingDir: formData.workingDir.trim() || undefined,
-            showWindow: formData.showWindow,
-            isEditable: true,
+            workingDir: isCmdCategory ? (formData.workingDir.trim() || undefined) : undefined,
+            showWindow: isCmdCategory ? formData.showWindow : undefined,
         };
 
         onSave(commandToSave);
