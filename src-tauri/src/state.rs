@@ -1,14 +1,14 @@
-﻿use crate::config::domain::Config;
-use crate::config::store::ConfigManager;
+use crate::commands::store::{CommandRegistry, CommandStore};
+use crate::config::domain::Config;
+use crate::config::store::ConfigStore;
 use crate::watcher::FileWatcher;
-use crate::commands::store::CommandManager;
 use std::sync::Mutex;
 
 pub struct AppState {
-    pub commands: Mutex<CommandManager>,
+    pub commands: Mutex<CommandRegistry>,
     pub config: Mutex<Config>,
-    pub config_manager: ConfigManager,
-    pub _commands_file_watcher: Option<FileWatcher>,
+    pub config_store: ConfigStore,
+    pub command_store: CommandStore,
     pub _config_file_watcher: Option<FileWatcher>,
     pub shortcut: Mutex<Option<String>>,
     pub last_window_shown: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
@@ -19,17 +19,17 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(
-        command_manager: CommandManager,
+        command_registry: CommandRegistry,
+        command_store: CommandStore,
         config: Config,
-        config_manager: ConfigManager,
-        commands_file_watcher: Option<FileWatcher>,
+        config_store: ConfigStore,
         config_file_watcher: Option<FileWatcher>,
     ) -> Self {
         Self {
-            commands: Mutex::new(command_manager),
+            commands: Mutex::new(command_registry),
+            command_store,
             config: Mutex::new(config),
-            config_manager,
-            _commands_file_watcher: commands_file_watcher,
+            config_store,
             _config_file_watcher: config_file_watcher,
             shortcut: Mutex::new(None),
             last_window_shown: std::sync::Arc::new(std::sync::Mutex::new(None)),

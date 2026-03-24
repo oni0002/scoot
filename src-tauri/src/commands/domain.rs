@@ -1,4 +1,4 @@
-﻿use schemars::JsonSchema;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub const CATEGORY_URL: &str = "url";
@@ -21,7 +21,7 @@ pub const CMD_SCOOT_KILL: &str = "scoot://kill";
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Command {
-    #[serde(default, skip)]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub id: String,
     pub name: String,
     pub category: String,
@@ -48,8 +48,19 @@ pub struct Command {
 /// Command list
 pub type Commands = Vec<Command>;
 
+/// Generate Commands JSON schema
+pub fn generate_commands_schema() -> serde_json::Value {
+    let schema = schemars::schema_for!(Vec<Command>);
+    serde_json::to_value(schema).unwrap_or_default()
+}
+
+/// Deserialize JSON string with schema validation
+pub fn deserialize_json(json_str: &str) -> Result<Commands, crate::error::AppError> {
+    crate::validation::parse_and_validate::<Commands>(json_str)
+}
+
 /// Get the built-in commands for Scoot
-pub fn get_builtin_commands() -> Vec<Command> {
+pub fn get_scoot_commands() -> Vec<Command> {
     vec![
         Command {
             id: String::new(),

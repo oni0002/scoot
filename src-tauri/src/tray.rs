@@ -57,10 +57,14 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                 let _ = crate::system::open_add_command_dialog(app_handle);
             }
             "open_commands" => {
-                let _ = crate::system::open_commands_json(app_handle);
+                tauri::async_runtime::block_on(async {
+                    let _ = crate::commands::ipc::open_commands_json(app_handle.clone()).await;
+                });
             }
             "open_config" => {
-                let _ = crate::system::open_config_json(app_handle);
+                tauri::async_runtime::block_on(async {
+                    let _ = crate::config::ipc::open_config_json(app_handle.clone()).await;
+                });
             }
             "readme" => {
                 tauri::async_runtime::block_on(async {
@@ -72,7 +76,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
             }
             "quit" => {
                 tauri::async_runtime::block_on(async {
-                    let _ = crate::system::quit_app_command(app_handle.clone()).await;
+                    let _ = crate::system::quit_app(app_handle.clone()).await;
                 });
             }
             _ => {}

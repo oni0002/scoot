@@ -1,23 +1,13 @@
 use crate::state::AppState;
 use regex::Regex;
-use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Manager, State};
+use std::path::PathBuf;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_opener::OpenerExt;
-
-// --- Tauri Commands ---
 
 /// Reload config
 #[tauri::command]
 pub async fn reload_config(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     reload(&app_handle).await
-}
-
-/// Get file watcher status
-#[tauri::command]
-pub async fn get_file_watcher_status(
-    state: State<'_, AppState>,
-) -> Result<bool, crate::error::AppError> {
-    Ok(state._commands_file_watcher.is_some() || state._config_file_watcher.is_some())
 }
 
 /// Open README
@@ -30,7 +20,7 @@ pub async fn open_readme(app_handle: tauri::AppHandle) -> Result<(), crate::erro
 
 /// Quit app
 #[tauri::command]
-pub async fn quit_app_command(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
+pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     log::info!("Terminating application...");
 
     // Hide windows (for user responsiveness)
@@ -45,11 +35,16 @@ pub async fn quit_app_command(app_handle: tauri::AppHandle) -> Result<(), crate:
     // Try to save settings
     if let Some(state) = app_handle.try_state::<AppState>() {
         // try_lock (deadlock avoidance)
-        if let Ok(manager) = state.commands.try_lock() {
-            let commands_config = manager.get_user_commands();
-            let _ = tauri::async_runtime::block_on(async {
-                state.config_manager.save_commands(&commands_config).await
-            });
+        let commands_config_opt = {
+            if let Ok(manager) = state.commands.try_lock() {
+                Some(manager.get_user_commands())
+            } else {
+                None
+            }
+        };
+
+        if let Some(commands_config) = commands_config_opt {
+            let _ = state.command_store.save(&commands_config).await;
         }
     }
 
@@ -63,7 +58,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
 
     // Reload config (Config object is received)
     let config = if let Some(state) = app_handle.try_state::<AppState>() {
-        let new_config = crate::config::store::reload(&state.config_manager, &state.config).await?;
+        let new_config = crate::config::store::reload(&state.config_store, &state.config).await?;
         // Register hotkey again
         if let Err(e) = crate::shortcut::setup_global_shortcuts(app_handle, &new_config.hotkey) {
             log::warn!("Failed to re-register hotkey: {}", e);
@@ -77,7 +72,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
 
     // Reload commands (Config is passed)
     if let Some(state) = app_handle.try_state::<AppState>() {
-        crate::commands::ipc::reload(&state.config_manager, &state.commands, &config).await?;
+        crate::commands::ipc::reload(&state.command_store, &state.commands, &config).await?;
     } else {
         return Err(crate::error::AppError::System(
             "Failed to get AppState".to_string(),
@@ -87,58 +82,16 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
     if let Err(e) = app_handle.emit("config-reloaded", ()) {
         log::error!("Failed to emit config-reloaded: {}", e);
     } else {
-        log::info!("Config reloaded successfully, event emitted.");
+        log::info!("Reloaded config and commands");
     }
 
-    Ok(())
-}
-
-/// Open commands.json
-pub fn open_commands_json(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
-    if let Some(state) = app_handle.try_state::<AppState>() {
-        let commands_path = state.config_manager.get_commands_path();
-
-        ensure_file_exists(std::path::Path::new(&commands_path), || {
-            let default_commands = crate::commands::domain::Commands::default();
-            tauri::async_runtime::block_on(async {
-                state
-                    .config_manager
-                    .save_commands(&default_commands)
-                    .await
-                    .map_err(|e| crate::error::AppError::System(e.to_string()))
-            })
-        })?;
-
-        open_path(app_handle, &commands_path)?;
-    }
-    Ok(())
-}
-
-/// Open config.json
-pub fn open_config_json(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
-    if let Some(state) = app_handle.try_state::<AppState>() {
-        let config_path = state.config_manager.get_config_path();
-
-        ensure_file_exists(std::path::Path::new(&config_path), || {
-            let default_config = crate::config::domain::Config::default();
-            tauri::async_runtime::block_on(async {
-                state
-                    .config_manager
-                    .save(&default_config)
-                    .await
-                    .map_err(|e| crate::error::AppError::System(e.to_string()))
-            })
-        })?;
-
-        open_path(app_handle, &config_path)?;
-    }
     Ok(())
 }
 
 /// Open log (or log directory)
 pub fn open_log(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
     let log_dir = get_log_dir(app_handle)?;
-    ensure_directory_exists(&log_dir)?;
+    std::fs::create_dir_all(&log_dir).map_err(|e| crate::error::AppError::System(e.to_string()))?;
 
     let log_file = log_dir.join("scoot.log");
     let target_path = if log_file.exists() { log_file } else { log_dir };
@@ -159,51 +112,6 @@ pub fn open_add_command_dialog(app_handle: &AppHandle) -> Result<(), crate::erro
     app_handle.emit("open-add-command-dialog", ()).map_err(|e| {
         crate::error::AppError::System(format!("Failed to emit add command event: {}", e))
     })
-}
-
-/// Start bookmark auto-refresh task
-pub fn start_bookmark_update_task(app_handle: AppHandle) {
-    tauri::async_runtime::spawn(async move {
-        log::debug!("Starting bookmark auto-refresh task");
-        loop {
-            // Get refresh interval from current config
-            let interval_minutes = if let Some(state) = app_handle.try_state::<AppState>() {
-                if let Ok(config) = state.config.lock() {
-                    // Minimum value limit (1 minute)
-                    std::cmp::max(config.bookmarks.refresh_interval_minutes, 1)
-                } else {
-                    30 // Lock acquisition failure
-                }
-            } else {
-                30 // State acquisition failure
-            };
-
-            // Wait for specified time
-            tokio::time::sleep(tokio::time::Duration::from_secs(interval_minutes * 60)).await;
-
-            log::debug!("Executing scheduled bookmark refresh...");
-
-            // Get config and reload
-            let config_opt = if let Some(state) = app_handle.try_state::<AppState>() {
-                state.config.lock().ok().map(|c| c.clone())
-            } else {
-                None
-            };
-
-            if let Some(config) = config_opt {
-                // Reload bookmarks only
-                if let Some(state) = app_handle.try_state::<AppState>() {
-                    if let Err(e) =
-                        crate::commands::ipc::reload_bookmarks(&state.commands, &config).await
-                    {
-                        log::error!("Failed to auto-refresh bookmarks: {}", e);
-                    }
-                }
-            } else {
-                log::warn!("Skipping bookmark refresh due to failure in retrieving AppState or Config lock");
-            }
-        }
-    });
 }
 
 /// Setup event listeners
@@ -262,31 +170,6 @@ pub fn open_url(app_handle: &AppHandle, url: &str) -> Result<(), crate::error::A
         .map_err(|e| crate::error::AppError::System(format!("Failed to open URL '{}': {}", url, e)))
 }
 
-/// Ensure the file exists, create it with default content if not
-pub fn ensure_file_exists<F>(path: &Path, create_content: F) -> Result<(), crate::error::AppError>
-where
-    F: FnOnce() -> Result<(), crate::error::AppError>,
-{
-    if !path.exists() {
-        if let Some(parent) = path.parent() {
-            if !parent.exists() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|e| crate::error::AppError::System(e.to_string()))?;
-            }
-        }
-        create_content()?;
-    }
-    Ok(())
-}
-
-/// Ensure the directory exists, create it if not
-pub fn ensure_directory_exists(path: &Path) -> Result<(), crate::error::AppError> {
-    if !path.exists() {
-        std::fs::create_dir_all(path).map_err(|e| crate::error::AppError::System(e.to_string()))?;
-    }
-    Ok(())
-}
-
 /// Resolve the path to a resource file
 pub fn resolve_resource(
     app_handle: &AppHandle,
@@ -320,93 +203,6 @@ pub fn get_log_dir(_app_handle: &AppHandle) -> Result<PathBuf, crate::error::App
         .ok_or_else(|| {
             crate::error::AppError::System("Failed to determine log directory".to_string())
         })
-}
-
-/// Execute a shell command
-pub async fn execute_shell_command(
-    command: &str,
-    working_dir: &Option<String>,
-    show_window: bool,
-) -> Result<String, crate::error::AppError> {
-    use std::process::Command as StdCommand;
-    log::debug!("Executing shell command: {}", command);
-
-    // If the command is empty, return an error
-    if command.trim().is_empty() {
-        return Err(crate::error::AppError::Validation(
-            "System command cannot be empty.".to_string(),
-        ));
-    }
-
-    // Build the command
-    let mut cmd_builder = if cfg!(target_os = "windows") {
-        use std::os::windows::process::CommandExt;
-        // PowerShell to call directly
-        let mut cmd = StdCommand::new("powershell");
-        // Skip profile loading for faster execution
-        let mut args = vec!["-NoProfile"];
-        // If show_window is true, add -NoExit (to prevent window closure)
-        if show_window {
-            args.push("-NoExit");
-        }
-
-        args.push("-Command");
-        args.push(command);
-
-        cmd.args(args);
-
-        if show_window {
-            // Create a new console window (CREATE_NEW_CONSOLE)
-            cmd.creation_flags(0x00000010);
-        } else {
-            // Do not show the window (CREATE_NO_WINDOW)
-            cmd.creation_flags(0x08000000);
-        }
-        cmd
-    } else {
-        let mut cmd = StdCommand::new("sh");
-        cmd.args(["-c", command]);
-        cmd
-    };
-
-    // Set the working directory
-    if let Some(dir) = working_dir {
-        // Remove double quotes if present
-        let trimmed_dir = dir.trim();
-        let clean_dir =
-            if trimmed_dir.starts_with('"') && trimmed_dir.ends_with('"') && trimmed_dir.len() >= 2
-            {
-                &trimmed_dir[1..trimmed_dir.len() - 1]
-            } else {
-                trimmed_dir
-            };
-
-        if !clean_dir.is_empty() {
-            if std::path::Path::new(clean_dir).exists() {
-                cmd_builder.current_dir(clean_dir);
-            } else {
-                // If the working directory does not exist, issue a warning
-                log::warn!(
-                    "Warning: Working directory '{}' does not exist. Ignoring.",
-                    clean_dir
-                );
-            }
-        }
-    }
-
-    // Execute the command asynchronously
-    match cmd_builder.spawn() {
-        Ok(_) => {
-            let success_msg = "Command launched successfully (background).".to_string();
-            log::debug!("{}", success_msg);
-            Ok(success_msg)
-        }
-        Err(e) => {
-            let error_msg = format!("Failed to spawn system command '{}': {}.", command, e);
-            log::error!("Error: {}", error_msg);
-            Err(crate::error::AppError::CommandExecution(error_msg))
-        }
-    }
 }
 
 /// Expand Windows environment variables like %APPDATA%

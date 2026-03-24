@@ -1,4 +1,4 @@
-﻿use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::thread;
@@ -49,9 +49,7 @@ impl FileWatcher {
         // Watch the target file
         watcher
             .watch(watch_path, RecursiveMode::NonRecursive)
-            .map_err(|e| {
-                crate::error::AppError::System(format!("Failed to watch file: {}", e))
-            })?;
+            .map_err(|e| crate::error::AppError::System(format!("Failed to watch file: {}", e)))?;
 
         let file_name = file_path
             .file_name()
@@ -81,7 +79,7 @@ impl FileWatcher {
 
                     // If the event is related to the target file (Modify, Create, Rename, Remove, etc.)
                     // Try to reload
-                    // If Remove, ConfigManager will regenerate default values
+                    // If Remove, ConfigStore will regenerate default values
                     log::debug!("Config file event ({:?}): {:?}", event.kind, event.paths);
 
                     if let Err(e) = app_handle.emit("config-file-changed", ()) {
@@ -95,25 +93,6 @@ impl FileWatcher {
             _watcher: watcher,
             file_path: file_path.clone(),
         })
-    }
-
-    /// Get the path to the file being watched
-    #[allow(dead_code)]
-    pub fn get_file_path(&self) -> &Path {
-        &self.file_path
-    }
-
-    /// Check if the file exists
-    #[allow(dead_code)]
-    pub fn file_exists(&self) -> bool {
-        self.file_path.exists()
-    }
-
-    /// Get the last modified time of the file
-    #[allow(dead_code)]
-    pub fn get_last_modified(&self) -> Result<std::time::SystemTime, std::io::Error> {
-        let metadata = std::fs::metadata(&self.file_path)?;
-        metadata.modified()
     }
 }
 

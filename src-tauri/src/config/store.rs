@@ -1,16 +1,14 @@
-use crate::commands::domain::Commands;
 use crate::config::domain::Config;
 
 // --- Infrastructure / Core Logic ---
 
-pub struct ConfigManager {
-    config_path: String,   // Config file path
-    commands_path: String, // Commands file path
+pub struct ConfigStore {
+    config_path: String, // Config file path
 }
 
-/// Config manager class
-/// Validates, serializes/deserializes, and generates default values for config.json and commands.json
-impl ConfigManager {
+/// Config store
+/// Load, save, and validate config.json
+impl ConfigStore {
     pub fn new() -> Self {
         // Get the target directory
         let target_dir = std::env::current_exe()
@@ -19,14 +17,10 @@ impl ConfigManager {
             .map(|p| p.to_string_lossy().to_string())
             .unwrap_or_else(|| ".".to_string());
 
-        log::debug!("Using config: {}", target_dir);
-
-        let config_path = format!("{}/config.json", target_dir);
-        let commands_path = format!("{}/commands.json", target_dir);
+        log::debug!("App path: {}", target_dir);
 
         Self {
-            config_path,
-            commands_path,
+            config_path: format!("{}/config.json", target_dir),
         }
     }
 
@@ -37,9 +31,7 @@ impl ConfigManager {
             .await
             .unwrap_or(false)
         {
-            let default_config = Config::default();
-            self.save(&default_config).await?;
-            return Ok(default_config);
+            return self.save_default_config().await;
         }
 
         // Read config.json
@@ -51,24 +43,18 @@ impl ConfigManager {
                     self.config_path, e
                 ))
             })?;
-
         // If config.json is empty, save the default value and return it
         if content.trim().is_empty() {
-            let default_config = Config::default();
-            self.save(&default_config).await?;
-            return Ok(default_config);
+            return self.save_default_config().await;
         }
 
         // Parse config.json
-        let mut config: Config = Config::from_json_with_validation(&content).map_err(|e| {
+        let config: Config = Config::from_json_with_validation(&content).map_err(|e| {
             crate::error::AppError::System(format!(
                 "App config file '{}' validation failed: {}",
                 self.config_path, e
             ))
         })?;
-
-        // Validate and fix fuzzy_threshold
-        config.validate_and_fix()?;
 
         // Auto-upgrade format to camelCase by saving the loaded config back to the file
         // Ignore save errors during auto-upgrade
@@ -80,61 +66,11 @@ impl ConfigManager {
         Ok(config)
     }
 
-    /// Load commands
-    pub async fn load_commands(&self) -> Result<Commands, crate::error::AppError> {
-        // If commands.json does not exist, save the default value and return it
-        if !tokio::fs::try_exists(&self.commands_path)
-            .await
-            .unwrap_or(false)
-        {
-            let default_commands: Commands = Vec::new();
-            self.save_commands(&default_commands).await?;
-            return Ok(default_commands);
-        }
-
-        // Read commands.json
-        let content = tokio::fs::read_to_string(&self.commands_path)
-            .await
-            .map_err(|e| {
-                crate::error::AppError::System(format!(
-                    "Failed to read commands file '{}': {}",
-                    self.commands_path, e
-                ))
-            })?;
-
-        // If commands.json is empty, save the default value and return it
-        if content.trim().is_empty() {
-            let default_commands: Commands = Vec::new();
-            self.save_commands(&default_commands).await?;
-            return Ok(default_commands);
-        }
-
-        // Validate and parse commands.json
-        // JSON parsing may be a heavy process, so use spawn_blocking
-        let content_for_parsing = content.clone();
-        let commands = tokio::task::spawn_blocking(move || {
-            crate::config::domain::commands_from_json_with_validation(&content_for_parsing)
-        })
-        .await
-        .map_err(|e| {
-            crate::error::AppError::System(format!("Failed to spawn blocking task: {}", e))
-        })?
-        .unwrap_or_else(|e| {
-            log::error!("Failed to parse commands.json: {}", e);
-            Vec::new()
-        });
-
-        // Auto-upgrade format to camelCase by saving the loaded commands back to the file
-        let mut commands_to_save = commands.clone();
-        for cmd in &mut commands_to_save {
-            cmd.id = String::new();
-        }
-        let new_content = serde_json::to_string_pretty(&commands_to_save).unwrap_or_default();
-        if content != new_content {
-            let _ = self.save_commands(&commands).await;
-        }
-
-        Ok(commands)
+    /// Initialize default config
+    async fn save_default_config(&self) -> Result<Config, crate::error::AppError> {
+        let default_config = Config::default();
+        self.save(&default_config).await?;
+        Ok(default_config)
     }
 
     /// Save the config
@@ -142,34 +78,11 @@ impl ConfigManager {
         &self,
         config: &crate::config::domain::Config,
     ) -> Result<(), crate::error::AppError> {
-        self.save_to_json(&self.config_path, config).await
-    }
-
-    /// Save commands
-    pub async fn save_commands(
-        &self,
-        commands: &crate::commands::domain::Commands,
-    ) -> Result<(), crate::error::AppError> {
-        // Strip IDs before saving
-        let mut commands_to_save = commands.clone();
-        for cmd in &mut commands_to_save {
-            cmd.id = String::new();
-        }
-        self.save_to_json(&self.commands_path, &commands_to_save)
-            .await
-    }
-
-    /// Save to JSON
-    async fn save_to_json<T: serde::Serialize>(
-        &self,
-        path: &str,
-        data: &T,
-    ) -> Result<(), crate::error::AppError> {
-        let content = serde_json::to_string_pretty(data).map_err(|e| {
-            crate::error::AppError::System(format!("Failed to serialize data: {}", e))
+        let content = serde_json::to_string_pretty(config).map_err(|e| {
+            crate::error::AppError::System(format!("Failed to serialize config: {}", e))
         })?;
 
-        tokio::fs::write(path, content)
+        tokio::fs::write(&self.config_path, content)
             .await
             .map_err(|e| crate::error::AppError::System(format!("Failed to write to file: {}", e)))
     }
@@ -178,23 +91,16 @@ impl ConfigManager {
     pub fn get_config_path(&self) -> &str {
         &self.config_path
     }
-
-    /// Get commands file path
-    pub fn get_commands_path(&self) -> &str {
-        &self.commands_path
-    }
 }
-
-// --- App Services ---
 
 /// Reload config
 pub async fn reload(
-    config_manager: &ConfigManager,
+    config_store: &ConfigStore,
     state_config: &std::sync::Mutex<Config>,
 ) -> Result<Config, crate::error::AppError> {
     // Load config
     log::debug!("Loading configuration.");
-    let new_config = config_manager
+    let new_config = config_store
         .load()
         .await
         .map_err(|e| crate::error::AppError::System(e.to_string()))?;

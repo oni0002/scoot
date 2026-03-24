@@ -37,7 +37,7 @@ export const useAppEvents = ({
                     "open-add-command-dialog": handleAddCommand,
                     "config-reloaded": () => {
                         console.log("Event: config-reloaded received");
-                        showInfo("Commands reloaded");
+                        showInfo("Config and commands reloaded");
                         loadCommands();
                         loadConfig();
                     },

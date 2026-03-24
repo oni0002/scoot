@@ -5,9 +5,7 @@ use tauri::{Emitter, Manager, State};
 
 /// Toggle window visibility
 #[tauri::command]
-pub async fn toggle_window(
-    app_handle: tauri::AppHandle,
-) -> Result<(), crate::error::AppError> {
+pub async fn toggle_window(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     if let Some(window) = app_handle.get_webview_window("main") {
         if window.is_visible().unwrap_or(false) {
             let _ = window.hide();
@@ -29,9 +27,7 @@ pub async fn toggle_window(
 
 /// Hide window
 #[tauri::command]
-pub async fn hide_window(
-    app_handle: tauri::AppHandle,
-) -> Result<(), crate::error::AppError> {
+pub async fn hide_window(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     if let Some(window) = app_handle.get_webview_window("main") {
         let _ = window.hide();
     }
@@ -40,9 +36,7 @@ pub async fn hide_window(
 
 /// Show window
 #[tauri::command]
-pub async fn show_window(
-    app_handle: tauri::AppHandle,
-) -> Result<(), crate::error::AppError> {
+pub async fn show_window(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     if let Some(window) = app_handle.get_webview_window("main") {
         let _ = window.show();
         let _ = window.set_focus();
@@ -66,10 +60,6 @@ pub async fn set_prevent_hide(
 ) -> Result<(), crate::error::AppError> {
     set_prevent_hide_flag(&state.prevent_hide, prevent)
 }
-
-// --- Infrastructure / Core Logic ---
-
-
 
 /// Set prevent_hide flag
 pub fn set_prevent_hide_flag(

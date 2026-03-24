@@ -1,4 +1,4 @@
-﻿use crate::commands::domain::Command;
+use crate::commands::domain::Command;
 
 /// Execute command (Tauri command)
 #[tauri::command]
@@ -33,7 +33,7 @@ pub async fn execute_command(
         }
         // Shell command
         crate::commands::domain::CATEGORY_COMMAND => {
-            crate::system::execute_shell_command(
+            execute_shell_command(
                 &final_command,
                 &command.working_dir,
                 command.show_window.unwrap_or(false),
@@ -42,7 +42,7 @@ pub async fn execute_command(
         }
         // Default to shell command
         _ => {
-            crate::system::execute_shell_command(
+            execute_shell_command(
                 &final_command,
                 &command.working_dir,
                 command.show_window.unwrap_or(false),
@@ -65,11 +65,11 @@ async fn execute_scoot_command(
             Ok("Opening add command dialog".to_string())
         }
         "scoot://open-commands" => {
-            crate::system::open_commands_json(&app_handle)?;
+            crate::commands::ipc::open_commands_json(app_handle.clone()).await?;
             Ok("Opened commands.json".to_string())
         }
         "scoot://open-config" => {
-            crate::system::open_config_json(&app_handle)?;
+            crate::config::ipc::open_config_json(app_handle.clone()).await?;
             Ok("Opened config.json".to_string())
         }
         "scoot://open-readme" => {
@@ -84,7 +84,7 @@ async fn execute_scoot_command(
             .await
             .map(|_| "Configuration and commands reloaded".to_string()),
         "scoot://kill" => {
-            crate::system::quit_app_command(app_handle.clone()).await?;
+            crate::system::quit_app(app_handle.clone()).await?;
             Ok("Application terminated".to_string())
         }
         _ => Err(crate::error::AppError::CommandExecution(format!(
@@ -146,4 +146,91 @@ async fn execute_local_file(
     let success_msg = format!("Successfully opened file: {}", expanded_path);
     log::debug!("{}", success_msg);
     Ok(success_msg)
+}
+
+/// Execute a shell command
+async fn execute_shell_command(
+    command: &str,
+    working_dir: &Option<String>,
+    show_window: bool,
+) -> Result<String, crate::error::AppError> {
+    use std::process::Command as StdCommand;
+    log::debug!("Executing shell command: {}", command);
+
+    // If the command is empty, return an error
+    if command.trim().is_empty() {
+        return Err(crate::error::AppError::Validation(
+            "System command cannot be empty.".to_string(),
+        ));
+    }
+
+    // Build the command
+    let mut cmd_builder = if cfg!(target_os = "windows") {
+        use std::os::windows::process::CommandExt;
+        // PowerShell to call directly
+        let mut cmd = StdCommand::new("powershell");
+        // Skip profile loading for faster execution
+        let mut args = vec!["-NoProfile"];
+        // If show_window is true, add -NoExit (to prevent window closure)
+        if show_window {
+            args.push("-NoExit");
+        }
+
+        args.push("-Command");
+        args.push(command);
+
+        cmd.args(args);
+
+        if show_window {
+            // Create a new console window (CREATE_NEW_CONSOLE)
+            cmd.creation_flags(0x00000010);
+        } else {
+            // Do not show the window (CREATE_NO_WINDOW)
+            cmd.creation_flags(0x08000000);
+        }
+        cmd
+    } else {
+        let mut cmd = StdCommand::new("sh");
+        cmd.args(["-c", command]);
+        cmd
+    };
+
+    // Set the working directory
+    if let Some(dir) = working_dir {
+        // Remove double quotes if present
+        let trimmed_dir = dir.trim();
+        let clean_dir =
+            if trimmed_dir.starts_with('"') && trimmed_dir.ends_with('"') && trimmed_dir.len() >= 2
+            {
+                &trimmed_dir[1..trimmed_dir.len() - 1]
+            } else {
+                trimmed_dir
+            };
+
+        if !clean_dir.is_empty() {
+            if std::path::Path::new(clean_dir).exists() {
+                cmd_builder.current_dir(clean_dir);
+            } else {
+                // If the working directory does not exist, issue a warning
+                log::warn!(
+                    "Warning: Working directory '{}' does not exist. Ignoring.",
+                    clean_dir
+                );
+            }
+        }
+    }
+
+    // Execute the command asynchronously
+    match cmd_builder.spawn() {
+        Ok(_) => {
+            let success_msg = "Command launched successfully (background).".to_string();
+            log::debug!("{}", success_msg);
+            Ok(success_msg)
+        }
+        Err(e) => {
+            let error_msg = format!("Failed to spawn system command '{}': {}.", command, e);
+            log::error!("Error: {}", error_msg);
+            Err(crate::error::AppError::CommandExecution(error_msg))
+        }
+    }
 }

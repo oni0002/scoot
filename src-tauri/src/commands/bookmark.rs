@@ -1,4 +1,4 @@
-﻿use crate::commands::domain::Command;
+use crate::commands::domain::Command;
 use crate::config::domain::BookmarkConfig;
 
 use serde::Deserialize;
@@ -48,16 +48,10 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::error:
         tokio::task::spawn_blocking(move || serde_json::from_str(&content))
             .await
             .map_err(|e| {
-                crate::error::AppError::System(format!(
-                    "Failed to spawn blocking task: {}",
-                    e
-                ))
+                crate::error::AppError::System(format!("Failed to spawn blocking task: {}", e))
             })?
             .map_err(|e| {
-                crate::error::AppError::System(format!(
-                    "Failed to parse bookmark file: {}",
-                    e
-                ))
+                crate::error::AppError::System(format!("Failed to parse bookmark file: {}", e))
             })?;
 
     let mut commands = Vec::new();
@@ -143,4 +137,51 @@ fn collect(
             }
         }
     }
+}
+
+/// Start bookmark auto-refresh task
+pub fn start_update_task(app_handle: tauri::AppHandle) {
+    use tauri::Manager;
+    tauri::async_runtime::spawn(async move {
+        log::debug!("Starting bookmark auto-refresh task");
+        loop {
+            // Get refresh interval from current config
+            let interval_minutes =
+                if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
+                    if let Ok(config) = state.config.lock() {
+                        // Minimum value limit (1 minute)
+                        std::cmp::max(config.bookmarks.refresh_interval_minutes, 1)
+                    } else {
+                        30 // Lock acquisition failure
+                    }
+                } else {
+                    30 // State acquisition failure
+                };
+
+            // Wait for specified time
+            tokio::time::sleep(tokio::time::Duration::from_secs(interval_minutes * 60)).await;
+
+            log::debug!("Executing scheduled bookmark refresh...");
+
+            // Get config and reload
+            let config_opt = if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
+                state.config.lock().ok().map(|c| c.clone())
+            } else {
+                None
+            };
+
+            if let Some(config) = config_opt {
+                // Reload bookmarks only
+                if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
+                    if let Err(e) =
+                        crate::commands::ipc::reload_bookmarks(&state.commands, &config).await
+                    {
+                        log::error!("Failed to auto-refresh bookmarks: {}", e);
+                    }
+                }
+            } else {
+                log::warn!("Skipping bookmark refresh due to failure in retrieving AppState or Config lock");
+            }
+        }
+    });
 }

@@ -1,7 +1,7 @@
 use crate::config::domain::Config;
 use crate::state::AppState;
 use serde_json;
-use tauri::State;
+use tauri::{Manager, State};
 
 // --- Tauri Commands ---
 
@@ -31,7 +31,7 @@ pub async fn save_config(
     }
 
     // config.json
-    state.config_manager.save(&config).await
+    state.config_store.save(&config).await
 }
 
 /// Get config.json path
@@ -39,7 +39,7 @@ pub async fn save_config(
 pub async fn get_config_file_path(
     state: State<'_, AppState>,
 ) -> Result<String, crate::error::AppError> {
-    Ok(state.config_manager.get_config_path().to_string())
+    Ok(state.config_store.get_config_path().to_string())
 }
 
 /// Get config.json schema
@@ -62,5 +62,22 @@ pub async fn validate_config(
 /// Open config.json
 #[tauri::command]
 pub async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
-    crate::system::open_config_json(&app_handle)
+    if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
+        let config_path = state.config_store.get_config_path();
+
+        let path = std::path::Path::new(&config_path);
+        if !path.exists() {
+            if let Some(parent) = path.parent() {
+                if !parent.exists() {
+                    std::fs::create_dir_all(parent)
+                        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+                }
+            }
+            let default_config = crate::config::domain::Config::default();
+            let _ = state.config_store.save(&default_config).await;
+        }
+
+        crate::system::open_path(&app_handle, &config_path)?;
+    }
+    Ok(())
 }

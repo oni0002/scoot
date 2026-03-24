@@ -3,8 +3,6 @@ use crate::state::AppState;
 use tauri::{App, AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
-// --- Infrastructure / Core Logic ---
-
 /// Register a global shortcut
 ///
 /// ## args
@@ -142,7 +140,7 @@ pub fn setup_global_shortcuts(
                 let _ = window.show();
                 let _ = window.set_focus();
                 let _ = window.emit("window-shown", ());
-    
+
                 // Record the time the window was shown
                 if let Some(state) = h.try_state::<AppState>() {
                     if let Ok(mut last_shown) = state.last_window_shown.lock() {

@@ -5,11 +5,12 @@ pub mod shortcut;
 pub mod state;
 pub mod system;
 pub mod tray;
+pub mod validation;
 pub mod watcher;
 pub mod window;
 
-use crate::commands::store::CommandManager;
-use crate::config::store::ConfigManager;
+use crate::commands::store::{CommandRegistry, CommandStore};
+use crate::config::store::ConfigStore;
 use crate::state::AppState;
 use crate::watcher::FileWatcher;
 use tauri::{Emitter, Manager};
@@ -60,30 +61,29 @@ pub fn run() {
         .setup(|app| {
             log::info!("Initializing Scoot");
             // Initialize application state
-            let config_manager = ConfigManager::new();
-            let mut command_manager = CommandManager::new();
+            let config_store = ConfigStore::new();
+            let mut command_registry = CommandRegistry::new();
+            let command_store = CommandStore::new();
             // Inject Scoot commands (Dependency Injection)
-            command_manager.set_scoot_commands(crate::commands::domain::get_builtin_commands());
+            command_registry.set_scoot_commands(crate::commands::domain::get_scoot_commands());
 
-            // Load Config (async)
-            let config = tauri::async_runtime::block_on(async { config_manager.load().await })
+            // Load Config
+            let config = tauri::async_runtime::block_on(async { config_store.load().await })
                 .unwrap_or_else(|e| {
                     log::error!("Failed to load initial config: {}", e);
                     crate::config::domain::Config::default()
                 });
 
-            let commands_path = config_manager.get_commands_path();
-            let config_path = config_manager.get_config_path();
-            // File watchers
-            let commands_file_watcher = FileWatcher::new(commands_path, app.handle().clone()).ok();
+            // config.json watcher
+            let config_path = config_store.get_config_path();
             let config_file_watcher = FileWatcher::new(config_path, app.handle().clone()).ok();
 
             // State generation
             let app_state = AppState::new(
-                command_manager,
+                command_registry,
+                command_store,
                 config,
-                config_manager,
-                commands_file_watcher,
+                config_store,
                 config_file_watcher,
             );
 
@@ -110,7 +110,7 @@ pub fn run() {
             );
             // Set event listeners and background tasks
             crate::system::setup_event_listeners(app)?;
-            crate::system::start_bookmark_update_task(app.handle().clone());
+            crate::commands::bookmark::start_update_task(app.handle().clone());
             // Set up system tray
             crate::tray::setup_system_tray(app)?;
             // Set up global shortcuts
@@ -140,11 +140,12 @@ pub fn run() {
             crate::config::ipc::open_config_json,
             // System
             crate::system::reload_config,
-            crate::system::get_file_watcher_status,
             crate::system::open_readme,
-            crate::system::quit_app_command,
+            crate::system::quit_app,
             // Window
             crate::window::toggle_window,
+            crate::window::hide_window,
+            crate::window::show_window,
             crate::window::set_prevent_hide,
         ])
         .run(tauri::generate_context!())

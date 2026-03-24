@@ -1,31 +1,117 @@
-﻿use crate::commands::domain::Command;
+use crate::commands::domain::Command;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
-/// Global ID counter for generating unique command IDs
-static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
+use crate::commands::domain::Commands;
 
-/// Generate a unique ID
-fn generate_id() -> String {
-    ID_COUNTER.fetch_add(1, Ordering::Relaxed).to_string()
+// --- File Storage ---
+
+pub struct CommandStore {
+    commands_path: String,
 }
 
-/// CommandManager struct
-pub struct CommandManager {
-    // User defined commands
+impl CommandStore {
+    pub fn new() -> Self {
+        let target_dir = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| ".".to_string());
+
+        Self {
+            commands_path: format!("{}/commands.json", target_dir),
+        }
+    }
+
+    /// Load commands
+    pub async fn load(&self) -> Result<Commands, crate::error::AppError> {
+        // If commands.json does not exist, save the default value and return it
+        if !tokio::fs::try_exists(&self.commands_path)
+            .await
+            .unwrap_or(false)
+        {
+            return self.save_default_commands().await;
+        }
+
+        // Read commands.json
+        let content = tokio::fs::read_to_string(&self.commands_path)
+            .await
+            .map_err(|e| {
+                crate::error::AppError::System(format!(
+                    "Failed to read commands file '{}': {}",
+                    self.commands_path, e
+                ))
+            })?;
+
+        // If commands.json is empty, save the default value and return it
+        if content.trim().is_empty() {
+            return self.save_default_commands().await;
+        }
+
+        // Validate and parse commands.json
+        let content_for_parsing = content.clone();
+        let commands = tokio::task::spawn_blocking(move || {
+            crate::commands::domain::deserialize_json(&content_for_parsing)
+        })
+        .await
+        .map_err(|e| {
+            crate::error::AppError::System(format!("Failed to spawn blocking task: {}", e))
+        })?
+        .unwrap_or_else(|e| {
+            log::error!("Failed to parse commands.json: {}", e);
+            Vec::new()
+        });
+
+        // Auto-upgrade format to camelCase by saving the loaded commands back to the file
+        let mut commands_to_save = commands.clone();
+        for cmd in &mut commands_to_save {
+            cmd.id = String::new();
+        }
+        let new_content = serde_json::to_string_pretty(&commands_to_save).unwrap_or_default();
+        if content != new_content {
+            let _ = self.save(&commands).await;
+        }
+
+        Ok(commands)
+    }
+
+    /// Save commands
+    pub async fn save(&self, commands: &Commands) -> Result<(), crate::error::AppError> {
+        let content = serde_json::to_string_pretty(commands).map_err(|e| {
+            crate::error::AppError::System(format!("Failed to serialize data: {}", e))
+        })?;
+
+        tokio::fs::write(&self.commands_path, content)
+            .await
+            .map_err(|e| crate::error::AppError::System(format!("Failed to write to file: {}", e)))
+    }
+
+    /// Initialize default commands
+    async fn save_default_commands(&self) -> Result<Commands, crate::error::AppError> {
+        let default_commands: Commands = Vec::new();
+        self.save(&default_commands).await?;
+        Ok(default_commands)
+    }
+
+    /// Get commands file path
+    pub fn get_path(&self) -> &str {
+        &self.commands_path
+    }
+}
+
+/// CommandRegistry struct
+pub struct CommandRegistry {
+    next_id: usize,
     pub user_commands: HashMap<String, Command>,
-    // Bookmark commands
     pub bookmark_commands: HashMap<String, Command>,
-    // Scoot commands
     pub scoot_commands: HashMap<String, Command>,
-    // Application commands
     pub application_commands: HashMap<String, Command>,
 }
 
-/// CommandManager implementation
-impl CommandManager {
+/// CommandRegistry implementation
+impl CommandRegistry {
     pub fn new() -> Self {
         Self {
+            next_id: 0,
             user_commands: HashMap::new(),
             bookmark_commands: HashMap::new(),
             scoot_commands: HashMap::new(),
@@ -34,32 +120,30 @@ impl CommandManager {
     }
 
     /// Assign a new ID to a command
-    fn assign_id(command: &mut Command) {
-        command.id = generate_id();
+    fn assign_id(&mut self, command: &mut Command) {
+        self.next_id += 1;
+        command.id = self.next_id.to_string();
     }
 
     /// Set Scoot commands
     pub fn set_scoot_commands(&mut self, commands: Vec<Command>) {
         self.scoot_commands.clear();
         for mut command in commands {
-            Self::assign_id(&mut command);
+            self.assign_id(&mut command);
             self.scoot_commands.insert(command.id.clone(), command);
         }
     }
 
     /// Add user command
     pub fn add_user_command(&mut self, mut command: Command) -> String {
-        Self::assign_id(&mut command);
+        self.assign_id(&mut command);
         let id = command.id.clone();
         self.user_commands.insert(id.clone(), command);
         id
     }
 
     /// Update user command
-    pub fn update_user_command(
-        &mut self,
-        command: Command,
-    ) -> Result<(), crate::error::AppError> {
+    pub fn update_user_command(&mut self, command: Command) -> Result<(), crate::error::AppError> {
         if !self.user_commands.contains_key(&command.id) {
             return Err(crate::error::AppError::NotFound(
                 "Command not found".to_string(),
@@ -68,6 +152,23 @@ impl CommandManager {
 
         self.user_commands.insert(command.id.clone(), command);
         Ok(())
+    }
+
+    /// Set user commands (with validation)
+    pub fn set_user_commands(&mut self, commands: Vec<Command>) {
+        self.user_commands.clear();
+        for command in commands {
+            // Category validation
+            if self.validate_command(&command).is_ok() {
+                self.add_user_command(command);
+            } else {
+                log::warn!(
+                    "Skipping command '{}' ({}): Validation failed",
+                    command.name,
+                    command.id
+                );
+            }
+        }
     }
 
     /// Delete user command
@@ -80,51 +181,14 @@ impl CommandManager {
         Ok(())
     }
 
-    /// Get command by ID
-    #[allow(dead_code)]
-    pub fn get_command(&self, id: &str) -> Option<&Command> {
-        self.user_commands
-            .get(id)
-            .or_else(|| self.bookmark_commands.get(id))
-            .or_else(|| self.scoot_commands.get(id))
-            .or_else(|| self.application_commands.get(id))
-    }
-
-    /// Get all commands
-    pub fn get_all_commands(&self) -> Vec<Command> {
-        self.user_commands
-            .values()
-            .chain(self.bookmark_commands.values())
-            .chain(self.scoot_commands.values())
-            .chain(self.application_commands.values())
-            .cloned()
-            .collect()
+    /// Clear user commands
+    pub fn clear_user_commands(&mut self) {
+        self.user_commands.clear();
     }
 
     /// Get user commands only (for commands.json)
     pub fn get_user_commands(&self) -> Vec<Command> {
         self.user_commands.values().cloned().collect()
-    }
-
-    /// Add bookmark command
-    pub fn add_bookmark_command(&mut self, mut command: Command) {
-        Self::assign_id(&mut command);
-        self.bookmark_commands.insert(command.id.clone(), command);
-    }
-
-    /// Clear bookmarks
-    pub fn clear_bookmarks(&mut self) {
-        self.bookmark_commands.clear();
-    }
-
-    /// Get commands by category
-    #[allow(dead_code)]
-    pub fn get_commands_by_category(&self, category: &str) -> Vec<Command> {
-        self.user_commands
-            .values()
-            .filter(|cmd| cmd.category == category)
-            .cloned()
-            .collect()
     }
 
     /// Get commands by prompt
@@ -136,12 +200,38 @@ impl CommandManager {
             .collect()
     }
 
+    /// Set application commands
+    pub fn set_application_commands(&mut self, commands: Vec<Command>) {
+        self.application_commands.clear();
+        for mut command in commands {
+            self.assign_id(&mut command);
+            self.application_commands
+                .insert(command.id.clone(), command);
+        }
+    }
+
+    /// Add bookmark command
+    pub fn add_bookmark_command(&mut self, mut command: Command) {
+        self.assign_id(&mut command);
+        self.bookmark_commands.insert(command.id.clone(), command);
+    }
+
+    /// Set bookmark commands
+    pub fn set_bookmark_commands(&mut self, commands: Vec<Command>) {
+        self.bookmark_commands.clear();
+        for command in commands {
+            self.add_bookmark_command(command);
+        }
+    }
+
+    /// Clear bookmarks
+    pub fn clear_bookmark_commands(&mut self) {
+        self.bookmark_commands.clear();
+    }
+
     /// Validate command
-    pub fn validate_command(
-        &self,
-        command: &Command,
-    ) -> Result<(), crate::error::AppError> {
-        // Domain level validation (format etc.)
+    pub fn validate_command(&self, command: &Command) -> Result<(), crate::error::AppError> {
+        // Domain level validation
         command.validate()?;
 
         // Store level validation (prompt uniqueness)
@@ -169,68 +259,15 @@ impl CommandManager {
         })
     }
 
-    /// Get categories
-    #[allow(dead_code)]
-    pub fn get_categories(&self) -> Vec<String> {
-        let mut categories: Vec<String> = self
-            .user_commands
-            .values()
-            .map(|cmd| cmd.category.clone())
-            .collect::<std::collections::HashSet<_>>()
-            .into_iter()
-            .collect();
-        categories.sort();
-        categories
-    }
-
-    /// Get command count by category
-    #[allow(dead_code)]
-    pub fn count_by_category(&self, category: &str) -> usize {
+    /// Get all commands
+    pub fn get_all_commands(&self) -> Vec<Command> {
         self.user_commands
             .values()
-            .filter(|cmd| cmd.category == category)
-            .count()
-    }
-
-    /// Clear user commands
-    pub fn clear_user_commands(&mut self) {
-        self.user_commands.clear();
-    }
-
-    /// Set application commands
-    pub fn set_application_commands(&mut self, commands: Vec<Command>) {
-        self.application_commands.clear();
-        for mut command in commands {
-            Self::assign_id(&mut command);
-            self.application_commands
-                .insert(command.id.clone(), command);
-        }
-    }
-
-    /// Set bookmark commands
-    pub fn set_bookmark_commands(&mut self, commands: Vec<Command>) {
-        self.bookmark_commands.clear();
-        for mut command in commands {
-            Self::assign_id(&mut command);
-            self.bookmark_commands.insert(command.id.clone(), command);
-        }
-    }
-
-    /// Set user commands (with validation)
-    pub fn set_user_commands(&mut self, commands: Vec<Command>) {
-        self.user_commands.clear();
-        for command in commands {
-            // Category validation
-            if self.validate_command(&command).is_ok() {
-                self.add_user_command(command);
-            } else {
-                log::warn!(
-                    "Skipping command '{}' ({}): Validation failed",
-                    command.name,
-                    command.id
-                );
-            }
-        }
+            .chain(self.bookmark_commands.values())
+            .chain(self.scoot_commands.values())
+            .chain(self.application_commands.values())
+            .cloned()
+            .collect()
     }
 }
 
@@ -253,7 +290,7 @@ mod tests {
 
     #[test]
     fn test_duplicate_prompt_check() {
-        let mut manager = CommandManager::new();
+        let mut manager = CommandRegistry::new();
 
         // 1. 繧ｳ繝槭Φ繝陰繧定ｿｽ蜉 (prompt: p1)
         let cmd_a = create_dummy_command(Some("p1"));
@@ -286,7 +323,7 @@ mod tests {
 
     #[test]
     fn test_set_scoot_commands() {
-        let mut manager = CommandManager::new();
+        let mut manager = CommandRegistry::new();
         let scoot_cmd = create_dummy_command(None);
 
         manager.set_scoot_commands(vec![scoot_cmd]);
@@ -298,7 +335,7 @@ mod tests {
 
     #[test]
     fn test_add_user_command_id_generation() {
-        let mut manager = CommandManager::new();
+        let mut manager = CommandRegistry::new();
         let cmd = create_dummy_command(None);
 
         let id = manager.add_user_command(cmd);
@@ -306,4 +343,3 @@ mod tests {
         assert!(manager.get_user_commands().iter().any(|c| c.id == id));
     }
 }
-

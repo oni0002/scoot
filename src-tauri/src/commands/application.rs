@@ -1,4 +1,4 @@
-﻿use crate::commands::domain::Command;
+use crate::commands::domain::Command;
 use std::path::Path;
 use walkdir::WalkDir;
 
@@ -44,9 +44,7 @@ pub async fn load(
         commands
     })
     .await
-    .map_err(|e| {
-        crate::error::AppError::System(format!("Failed to scan applications: {}", e))
-    })?;
+    .map_err(|e| crate::error::AppError::System(format!("Failed to scan applications: {}", e)))?;
 
     Ok(commands)
 }

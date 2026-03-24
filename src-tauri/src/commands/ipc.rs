@@ -1,10 +1,7 @@
-﻿use crate::config::store::ConfigManager;
 use crate::commands::domain::{Command, Commands};
-use crate::commands::store::CommandManager;
+use crate::commands::store::CommandRegistry;
 use crate::state::AppState;
-use tauri::State;
-
-// --- Tauri Commands ---
+use tauri::{Manager, State};
 
 /// Get all commands
 #[tauri::command]
@@ -36,7 +33,7 @@ pub async fn add_command(
     };
 
     // Save to config file
-    state.config_manager.save_commands(&commands).await?;
+    state.command_store.save(&commands).await?;
 
     Ok(id)
 }
@@ -61,7 +58,7 @@ pub async fn update_command(
     };
 
     // Save to config file
-    state.config_manager.save_commands(&commands).await?;
+    state.command_store.save(&commands).await?;
 
     Ok(())
 }
@@ -83,7 +80,7 @@ pub async fn delete_command(
     };
 
     // Save to config file
-    state.config_manager.save_commands(&commands).await?;
+    state.command_store.save(&commands).await?;
 
     Ok(())
 }
@@ -100,10 +97,8 @@ pub fn get_commands_by_prompt(
 
 /// Get commands
 #[tauri::command]
-pub async fn get_commands(
-    state: State<'_, AppState>,
-) -> Result<Commands, crate::error::AppError> {
-    state.config_manager.load_commands().await
+pub async fn get_commands(state: State<'_, AppState>) -> Result<Commands, crate::error::AppError> {
+    state.command_store.load().await
 }
 
 /// Save commands
@@ -113,8 +108,8 @@ pub async fn save_commands(
     state: State<'_, AppState>,
 ) -> Result<(), crate::error::AppError> {
     // Save the commands
-    state.config_manager.save_commands(&commands).await?;
-    // Update CommandManager
+    state.command_store.save(&commands).await?;
+    // Update CommandRegistry
     let mut manager = state
         .commands
         .lock()
@@ -128,13 +123,13 @@ pub async fn save_commands(
 pub fn get_commands_file_path(
     state: State<'_, AppState>,
 ) -> Result<String, crate::error::AppError> {
-    Ok(state.config_manager.get_commands_path().to_string())
+    Ok(state.command_store.get_path().to_string())
 }
 
 /// Get commands.json schema
 #[tauri::command]
 pub fn get_commands_schema() -> Result<serde_json::Value, crate::error::AppError> {
-    Ok(crate::config::domain::generate_commands_schema())
+    Ok(crate::commands::domain::generate_commands_schema())
 }
 
 /// Validate commands.json
@@ -142,7 +137,7 @@ pub fn get_commands_schema() -> Result<serde_json::Value, crate::error::AppError
 pub fn validate_commands(
     config: serde_json::Value,
 ) -> Result<serde_json::Value, crate::error::AppError> {
-    match crate::config::domain::commands_from_json_with_validation(&config.to_string()) {
+    match crate::commands::domain::deserialize_json(&config.to_string()) {
         Ok(_) => Ok(serde_json::json!({ "valid": true, "errors": [] })),
         Err(error) => Ok(serde_json::json!({ "valid": false, "errors": [error] })),
     }
@@ -153,20 +148,35 @@ pub fn validate_commands(
 pub async fn open_commands_json(
     app_handle: tauri::AppHandle,
 ) -> Result<(), crate::error::AppError> {
-    crate::system::open_commands_json(&app_handle)
-}
+    if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
+        let commands_path = state.command_store.get_path();
 
-// --- Infrastructure / Core Logic ---
+        let path = std::path::Path::new(&commands_path);
+        if !path.exists() {
+            if let Some(parent) = path.parent() {
+                if !parent.exists() {
+                    std::fs::create_dir_all(parent)
+                        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+                }
+            }
+            let default_commands = crate::commands::domain::Commands::default();
+            let _ = state.command_store.save(&default_commands).await;
+        }
+
+        crate::system::open_path(&app_handle, &commands_path)?;
+    }
+    Ok(())
+}
 
 /// Reload commands, bookmarks, and apps
 pub async fn reload(
-    config_manager: &ConfigManager,
-    command_manager: &std::sync::Mutex<CommandManager>,
+    command_store: &crate::commands::store::CommandStore,
+    command_registry: &std::sync::Mutex<CommandRegistry>,
     config: &crate::config::domain::Config,
 ) -> Result<(), crate::error::AppError> {
     // Load commands
-    log::debug!("Loading commands.");
-    let commands = match config_manager.load_commands().await {
+    log::debug!("Loading commands");
+    let commands = match command_store.load().await {
         Ok(cmds) => cmds,
         Err(e) => {
             log::error!(
@@ -178,7 +188,7 @@ pub async fn reload(
     };
 
     // Load bookmarks
-    log::debug!("Loading bookmarks.");
+    log::debug!("Loading bookmarks");
     let bookmarks = if config.bookmarks.enabled {
         crate::commands::bookmark::load(&config.bookmarks)
             .await
@@ -191,7 +201,7 @@ pub async fn reload(
     };
 
     // Scan applications
-    log::debug!("Loading applications.");
+    log::debug!("Loading applications");
     let app_commands = if config.applications.enabled {
         crate::commands::application::load(
             &config.applications.directories,
@@ -203,8 +213,8 @@ pub async fn reload(
         Vec::new()
     };
 
-    // Reflect in CommandManager
-    let mut manager = command_manager
+    // Reflect in CommandRegistry
+    let mut manager = command_registry
         .lock()
         .map_err(|e| crate::error::AppError::System(e.to_string()))?;
     manager.set_user_commands(commands);
@@ -216,7 +226,7 @@ pub async fn reload(
 
 /// Reload bookmarks only
 pub async fn reload_bookmarks(
-    command_manager: &std::sync::Mutex<CommandManager>,
+    command_registry: &std::sync::Mutex<CommandRegistry>,
     config: &crate::config::domain::Config,
 ) -> Result<(), crate::error::AppError> {
     // Load bookmarks
@@ -232,8 +242,8 @@ pub async fn reload_bookmarks(
         Vec::new()
     };
 
-    // Reflect in CommandManager
-    let mut manager = command_manager
+    // Reflect in CommandRegistry
+    let mut manager = command_registry
         .lock()
         .map_err(|e| crate::error::AppError::System(e.to_string()))?;
     manager.set_bookmark_commands(bookmarks);
