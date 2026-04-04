@@ -14,7 +14,6 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
     const searchEngine = useRef(new SearchEngine(commands, fuzzyThreshold));
     const promptProcessor = useRef(new PromptProcessor(searchEngine.current));
 
-    // 状態リセット
     const resetState = useCallback(() => {
         setQuery('');
         setResults([]);
@@ -23,7 +22,6 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
         inputRef.current?.focus();
     }, []);
 
-    // 検索とプロンプトモード判定を一括処理
     const updateSearchState = useCallback((newQuery: string, currentPromptMode: { prompt: string; command: Command } | null) => {
         const trimmed = newQuery.trim();
 
@@ -38,7 +36,6 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
 
         const parts = trimmed.split(/\s+/);
 
-        // プロンプトモード判定
         let nextPromptMode = currentPromptMode;
         let shouldSearch = true;
 
@@ -72,43 +69,31 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
             setSelectedIndex(0);
         }
 
-        // 検索実行
-        if (shouldSearch) {
-            // プロンプトモード中は検索結果をクリア
-            if (nextPromptMode) {
-                setResults([]);
-                setSelectedIndex(0);
-            } else {
-                const searchResults = promptProcessor.current.processSearch(newQuery, maxResults);
-                setResults(searchResults);
-                setSelectedIndex(0);
-            }
-        } else if (nextPromptMode) {
-            // プロンプトモード確定時など、検索を行わない場合でも結果をクリアする
+        if (nextPromptMode) {
             setResults([]);
+            setSelectedIndex(0);
+        } else if (shouldSearch) {
+            const searchResults = promptProcessor.current.processSearch(newQuery, maxResults);
+            setResults(searchResults);
             setSelectedIndex(0);
         }
     }, [commands]);
 
-    // エンジン更新
     useEffect(() => {
         searchEngine.current.updateCommands(commands);
         promptProcessor.current.updateCommands(commands);
         searchEngine.current.updateThreshold(fuzzyThreshold);
 
-        // コマンドリスト更新時に検索結果も更新（クエリがある場合のみ）
         if (query && !promptMode) {
             updateSearchState(query, promptMode);
         }
     }, [commands, fuzzyThreshold]); // Removed query/promptMode from deps to avoid loop, logic handled inside update
 
-    // クエリ変更処理
     const handleQueryChange = useCallback((newQuery: string) => {
         setQuery(newQuery);
         updateSearchState(newQuery, promptMode);
     }, [updateSearchState, promptMode]);
 
-    // 選択項目の移動
     const moveSelection = useCallback((direction: 'up' | 'down') => {
         if (results.length === 0) return;
 
@@ -118,7 +103,6 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
 
         setSelectedIndex(newIndex);
 
-        // スクロール調整
         document.querySelector(`[data-result-index="${newIndex}"]`)
             ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, [results.length, selectedIndex]);

@@ -46,49 +46,37 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
 
   // Command Execution Logic
   const executeCommand = useCallback((targetIndex?: number) => {
-    if (promptMode) {
-      // プロンプト部分を除いた引数を抽出
-      const promptPrefix = promptMode.prompt + ' ';
-      const argsString = query.startsWith(promptPrefix)
-        ? query.slice(promptPrefix.length).trim()
-        : query.trim();
-      const args = argsString ? argsString.split(/\s+/) : [];
-      executeContextCommand(promptMode.command, args);
-      resetState();
+    let commandToExecute: Command;
+    let argsToPass: string[] = [];
 
-      if (promptMode.command.command === 'scoot://add-command') {
+    if (promptMode) {
+      commandToExecute = promptMode.command;
+      argsToPass = promptProcessor.current.parseInput(query).args;
+    } else {
+      const effectiveIndex = targetIndex !== undefined ? targetIndex : selectedIndex;
+      if (results.length === 0 || effectiveIndex >= results.length) return;
+
+      const selectedResult = results[effectiveIndex];
+
+      if (selectedResult.command.prompt && !query.startsWith(selectedResult.command.prompt + ' ')) {
+        setPromptMode({
+          prompt: selectedResult.command.prompt,
+          command: selectedResult.command
+        });
+        setQuery(selectedResult.command.prompt + ' ');
+        setResults([]);
+        setSelectedIndex(0);
         return;
       }
 
-      TauriAPI.hideWindow();
-      return;
+      commandToExecute = selectedResult.command;
+      argsToPass = promptProcessor.current.parseInput(query).args;
     }
 
-    // 引数でインデックスが指定された場合はそれを使用、なければ現在のstateを使用
-    const effectiveIndex = targetIndex !== undefined ? targetIndex : selectedIndex;
-
-    if (results.length === 0 || effectiveIndex >= results.length) return;
-
-    const selectedResult = results[effectiveIndex];
-
-    // プロンプトモードへの移行チェック
-    if (selectedResult.command.prompt && !query.startsWith(selectedResult.command.prompt + ' ')) {
-      setPromptMode({
-        prompt: selectedResult.command.prompt,
-        command: selectedResult.command
-      });
-      setQuery(selectedResult.command.prompt + ' ');
-      setResults([]);
-      setSelectedIndex(0);
-      return;
-    }
-
-    // 通常の実行
-    const parsed = promptProcessor.current.parseInput(query);
-    executeContextCommand(selectedResult.command, parsed.args);
+    executeContextCommand(commandToExecute, argsToPass);
     resetState();
 
-    if (selectedResult.command.command === 'scoot://add-command' || selectedResult.command.command === 'scoot://reload') {
+    if (commandToExecute.command === 'scoot://add-command' || commandToExecute.command === 'scoot://reload') {
       return;
     }
 
