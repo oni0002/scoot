@@ -39,7 +39,6 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
         setCopied(true);
         setTimeout(() => setCopied(false), 3000);
     };
-    // プレビュー生成ロジック
     const getPreviewCommand = (command: Command, args: string[]) => {
         let cmd = command.command;
         if (!cmd) return '';

@@ -17,20 +17,16 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
 }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  // ダイアログ表示中はウィンドウを非表示にしない
   usePreventHide(isOpen);
 
   useEffect(() => {
     if (isOpen) {
-      // ダイアログを開く
       dialogRef.current?.showModal();
     } else {
-      // ダイアログを閉じる
       dialogRef.current?.close();
     }
   }, [isOpen]);
 
-  // ダイアログが閉じられた時のイベントハンドラー
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;

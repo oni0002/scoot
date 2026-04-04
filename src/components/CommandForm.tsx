@@ -28,12 +28,10 @@ export const CommandForm: React.FC<CommandFormProps> = ({
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // フォームが表示されている間はウィンドウ非表示を防ぐ
     usePreventHide(true);
 
     useEffect(() => {
         if (command) {
-            // Editing existing command
             setFormData({
                 id: command.id,
                 name: command.name,
@@ -45,7 +43,6 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                 showWindow: command.showWindow || false,
             });
         } else {
-            // Adding new command
             setFormData({
                 id: '',
                 name: '',
@@ -141,7 +138,6 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             console.error('Failed to open file dialog:', err);
         } finally {
             await TauriAPI.setPreventHide(false);
-            // フォームにフォーカスを戻す（コンテナ等へのフォーカス移動を検討）
         }
     };
 
