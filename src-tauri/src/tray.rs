@@ -37,6 +37,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
 
     let mut builder = TrayIconBuilder::with_id("scoot-main")
         .menu(&menu)
+        .show_menu_on_left_click(false)
         .tooltip("Scoot - Command Launcher")
         .on_menu_event(move |app_handle, event| match event.id().as_ref() {
             "show" => {
