@@ -234,6 +234,16 @@ impl CommandRegistry {
         // Domain level validation
         command.validate()?;
 
+        // Store level validation (command target uniqueness among user commands)
+        for existing_cmd in self.user_commands.values() {
+            if existing_cmd.id != command.id && existing_cmd.command == command.command {
+                return Err(crate::error::AppError::Validation(format!(
+                    "This command path/URL is already registered as '{}'.",
+                    existing_cmd.name
+                )));
+            }
+        }
+
         // Store level validation (prompt uniqueness)
         if let Some(ref prompt) = command.prompt {
             if self.is_prompt_used(prompt, Some(&command.id)) {
@@ -280,7 +290,7 @@ mod tests {
             id: String::new(),
             name: "Test Command".to_string(),
             category: "command".to_string(),
-            command: "echo test".to_string(),
+            command: format!("echo test {}", prompt.unwrap_or("")),
             description: "Test".to_string(),
             prompt: prompt.map(|s| s.to_string()),
             working_dir: None,
@@ -298,7 +308,8 @@ mod tests {
         let id_a = manager.add_user_command(cmd_a);
 
         // 2. 繧ｳ繝槭Φ繝隠繧定ｿｽ蜉 (prompt: p1) -> 驥崎､・お繝ｩ繝ｼ
-        let cmd_b_dup = create_dummy_command(Some("p1"));
+        let mut cmd_b_dup = create_dummy_command(Some("p1"));
+        cmd_b_dup.command = "echo cmd_b_dup".to_string(); // bypass command duplicate check
         let res = manager.validate_command(&cmd_b_dup);
         assert!(res.is_err());
         assert!(res.unwrap_err().to_string().contains("already used"));
@@ -341,5 +352,21 @@ mod tests {
         let id = manager.add_user_command(cmd);
         assert!(!id.is_empty());
         assert!(manager.get_user_commands().iter().any(|c| c.id == id));
+    }
+
+    #[test]
+    fn test_duplicate_command_check() {
+        let mut manager = CommandRegistry::new();
+
+        let mut cmd1 = create_dummy_command(Some("p1"));
+        cmd1.command = "https://google.com".to_string();
+        assert!(manager.validate_command(&cmd1).is_ok());
+        manager.add_user_command(cmd1.clone());
+
+        let mut cmd2 = create_dummy_command(Some("p2"));
+        cmd2.command = "https://google.com".to_string(); // Duplicate command target
+        let res = manager.validate_command(&cmd2);
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("already registered"));
     }
 }

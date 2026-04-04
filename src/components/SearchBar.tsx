@@ -56,7 +56,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     />
                 </label>
 
-                {/* ヘッダー3点ボタンとメニュー */}
+                {/* Dropdown menu */}
                 <div className="dropdown dropdown-end">
                     <div tabIndex={0} role="button" className="btn btn-ghost btn-sm btn-square p-2">
                         <LuEllipsisVertical />

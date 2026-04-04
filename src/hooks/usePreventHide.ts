@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { TauriAPI } from '../api/tauri';
 
 /**
- * ダイアログなどの表示中にウィンドウが自動的に隠れるのを防ぐためのフック
- * @param shouldPrevent trueの場合、ウィンドウの自動非表示を無効化する
+ * hook to prevent window from auto-hiding while dialogs are shown
+ * @param shouldPrevent if true, disable auto-hide
  */
 export const usePreventHide = (shouldPrevent: boolean) => {
     useEffect(() => {
@@ -14,8 +14,7 @@ export const usePreventHide = (shouldPrevent: boolean) => {
         }
 
         return () => {
-            // shouldPreventがtrueだった場合のクリーンアップ、
-            // またはコンポーネントのアンマウント時にfalseに戻す
+            // cleanup for when shouldPrevent was true, or when component unmounts
             if (shouldPrevent) {
                 TauriAPI.setPreventHide(false);
             }

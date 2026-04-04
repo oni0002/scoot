@@ -6,23 +6,19 @@ export const useWindowEvents = (isDialogOpen: boolean, resetState: () => void, i
         inputRef.current?.focus();
 
         const handleDocumentClick = (e: MouseEvent) => {
-            // ダイアログが開いている場合はウィンドウを閉じない
             if (isDialogOpen) return;
 
-            // メニューのクリックは無視
             const target = e.target as HTMLElement;
             if (target.closest('.dropdown, .dropdown-content')) {
                 return;
             }
 
-            // SearchWindow要素の境界を正確に判定
             const searchWindow = document.querySelector('.h-full');
             if (searchWindow) {
                 const rect = searchWindow.getBoundingClientRect();
                 const clickX = e.clientX;
                 const clickY = e.clientY;
 
-                // クリック位置がSearchWindow要素の境界外かどうかを確認
                 const isOutside = clickX < rect.left ||
                     clickX > rect.right ||
                     clickY < rect.top ||
@@ -35,7 +31,6 @@ export const useWindowEvents = (isDialogOpen: boolean, resetState: () => void, i
         };
 
         const handleGlobalKeyDown = (e: KeyboardEvent) => {
-            // ダイアログが開いている場合はグローバルキーを無効化
             if (isDialogOpen) return;
 
             if (e.altKey && e.code === 'Space') {

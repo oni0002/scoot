@@ -19,19 +19,19 @@ export class PromptProcessor {
 
   parseInput(input: string): PromptParseResult {
     const trimmedInput = input.trim();
-    
+
     if (!trimmedInput) {
       return { query: '', args: [] };
     }
 
     const inputParts = trimmedInput.split(/\s+/);
-    
+
     if (inputParts.length === 1) {
       return { query: inputParts[0], args: [] };
     }
 
     const [potentialPrompt, ...remainingParts] = inputParts;
-    
+
     if (this.isPromptRegistered(potentialPrompt)) {
       return {
         prompt: potentialPrompt,
@@ -52,7 +52,7 @@ export class PromptProcessor {
     if (parsedInput.prompt) {
       return this.executePromptSearch(parsedInput.prompt, parsedInput.query, maxResults);
     }
-    
+
     return this.searchEngine.search(parsedInput.query, maxResults);
   }
 
@@ -64,7 +64,7 @@ export class PromptProcessor {
     const prompts = this.commandList
       .map(cmd => cmd.prompt)
       .filter((prompt): prompt is string => Boolean(prompt));
-    
+
     return [...new Set(prompts)].sort();
   }
 
@@ -76,11 +76,9 @@ export class PromptProcessor {
     const promptCommands = this.getCommandsWithPrompt(prompt);
 
     if (promptCommands.length === 0) {
-      // プロンプトが見つからない場合は、元の入力全体で検索
       return this.searchEngine.search(`${prompt} ${query}`, maxResults);
     }
 
-    // プロンプトが見つかった場合は、そのコマンドを返す（引数は後でプレースホルダー置換される）
     return promptCommands.slice(0, maxResults).map(command => ({
       command,
       score: 0,

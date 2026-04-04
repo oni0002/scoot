@@ -16,7 +16,6 @@ interface SearchResultItemProps {
     totalCount: number;
 }
 
-// ハイライト処理ユーティリティ (SearchWindowから移動)
 const highlightMatches = (text: string, matches: SearchResult['matches']): string => {
     const nameMatch = matches?.find(match => match.key === 'name');
     if (!nameMatch) return text;
@@ -71,7 +70,7 @@ export const SearchResultItem = React.memo(({
                 </div>
             </div>
 
-            <div className={`flex items-center gap-2 ml-2 flex-shrink-0 ${isHovered ? 'mr-8' : ''}`}>
+            <div className={`flex items-center gap-2 ml-2 flex-shrink-0 ${isHovered ? 'mr-14' : ''}`}>
                 {result.command.prompt && (
                     <div className="badge badge-sm badge-primary">
                         {result.command.prompt}
@@ -82,9 +81,16 @@ export const SearchResultItem = React.memo(({
                 </div>
             </div>
 
-            {/* 3点ボタンとメニュー */}
+            {/* Quick Actions & Dropdown menu */}
             {isHovered && (
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 z-[1]">
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 z-[1] flex items-center gap-1">
+                    <button
+                        className="btn btn-ghost btn-xs btn-square p-1"
+                        onClick={(e) => onCopy?.(result.command, e)}
+                        title="Copy"
+                    >
+                        <LuCopy />
+                    </button>
                     <div className={`dropdown ${totalCount > 4 && index >= totalCount - 2 ? 'dropdown-top' : ''} dropdown-end`}>
                         <div tabIndex={0} role="button" className="btn btn-ghost btn-xs btn-square p-1">
                             <LuEllipsisVertical />
