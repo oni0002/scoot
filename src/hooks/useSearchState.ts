@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Command, SearchResult } from '../types';
 import { SearchEngine } from '../services/SearchEngine';
 import { PromptProcessor } from '../services/PromptProcessor';
+import { DirectOpenDetector } from '../services/DirectOpenDetector';
 
 
 export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxResults: number) => {
@@ -74,6 +75,12 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
             setSelectedIndex(0);
         } else if (shouldSearch) {
             const searchResults = promptProcessor.current.processSearch(newQuery, maxResults);
+
+            const dynamicItem = DirectOpenDetector.detect(newQuery);
+            if (dynamicItem) {
+                searchResults.push({ command: dynamicItem, score: -1, matches: [] });
+            }
+
             setResults(searchResults);
             setSelectedIndex(0);
         }

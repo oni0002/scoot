@@ -102,7 +102,7 @@ export const SearchResultItem = React.memo(({
                                     Copy
                                 </a>
                             </li>
-                            {!['bookmark', 'application', 'scoot'].includes(result.command.category) && (
+                            {!['bookmark', 'application', 'scoot'].includes(result.command.category) && result.command.id !== 'dynamic-direct-open' && (
                                 <>
                                     <li></li>
                                     <li>
