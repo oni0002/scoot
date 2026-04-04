@@ -101,7 +101,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
     >
       {getIcon()}
       <div className="min-w-0 flex-1">
-        <div className="text-sm leading-snug truncate">{notification.message}</div>
+        <div className="text-sm leading-snug whitespace-normal break-all sm:break-words">{notification.message}</div>
       </div>
     </div>
   );

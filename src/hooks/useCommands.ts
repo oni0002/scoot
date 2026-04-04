@@ -38,8 +38,7 @@ export function useCommands() {
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
             console.error('Failed to add command:', errorMessage);
-            // 個別の操作エラーは全体のエラー状態に影響させない
-            showError('Failed to add command.', NOTIFICATION_DURATION.LONG);
+            showError(`Failed to add command: ${errorMessage}`, NOTIFICATION_DURATION.LONG);
             return false;
         }
     }, [loadCommands, showSuccess, showError]);
@@ -53,7 +52,7 @@ export function useCommands() {
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
             console.error('Failed to update command:', errorMessage);
-            showError('Failed to update command.', NOTIFICATION_DURATION.LONG);
+            showError(`Failed to update command: ${errorMessage}`, NOTIFICATION_DURATION.LONG);
             return false;
         }
     }, [loadCommands, showSuccess, showError]);
@@ -75,12 +74,10 @@ export function useCommands() {
     const executeCommand = useCallback(async (command: Command, args: string[] = []) => {
         try {
             await TauriAPI.executeCommand(command, args);
-            // 成功時にエラーをクリアする必要もない（ロードエラーとは無関係のため）
             return true;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
             console.error(`Failed to execute command "${command.name}":`, errorMessage);
-            // 実行エラーはトースト通知のみとし、アプリ全体のエラー画面には遷移させない
             showError(`Failed to execute "${command.name}".`, NOTIFICATION_DURATION.LONG);
             return false;
         }
