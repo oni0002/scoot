@@ -18,6 +18,8 @@ pub struct Config {
     pub fuzzy_threshold: f64,
     pub bookmarks: BookmarkConfig,
     pub applications: ApplicationConfig,
+    #[serde(default)]
+    pub ignored: Vec<String>,
     #[schemars(regex(
         pattern = r"^(light|dark|cupcake|bumblebee|emerald|corporate|synthwave|retro|cyberpunk|valentine|halloween|garden|forest|aqua|lofi|pastel|fantasy|wireframe|black|luxury|dracula|cmyk|autumn|business|acid|lemonade|night|coffee|winter|dim|nord|sunset)$"
     ))]
@@ -84,6 +86,7 @@ impl Default for Config {
             fuzzy_threshold: 0.5,
             bookmarks: BookmarkConfig::default(),
             applications: ApplicationConfig::default(),
+            ignored: Vec::new(),
             theme: DEFAULT_THEME.to_string(),
             hotkey: DEFAULT_SHORTCUT.to_string(),
         }

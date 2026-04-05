@@ -15,6 +15,7 @@ interface SearchWindowProps {
   onDeleteCommand?: (command: Command) => void;
   onAddCommand?: () => void;
   onCopyCommand?: (command: Command) => void;
+  onIgnoreCommand?: (command: Command) => void;
   onReloadCommands?: () => void;
   isDialogOpen?: boolean;
 }
@@ -26,6 +27,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
   onDeleteCommand,
   onAddCommand,
   onCopyCommand,
+  onIgnoreCommand,
   onReloadCommands,
   isDialogOpen = false,
 }) => {
@@ -204,6 +206,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         onCopy={handleCopyCommand}
         onEdit={handleEditCommand}
         onDelete={handleDeleteCommand}
+        onIgnore={onIgnoreCommand}
       />
     </div>
   );

@@ -16,6 +16,7 @@ interface SearchResultListProps {
     onCopy?: (command: Command, event: React.MouseEvent) => void;
     onEdit?: (command: Command, event: React.MouseEvent) => void;
     onDelete?: (command: Command, event: React.MouseEvent) => void;
+    onIgnore?: (command: Command, event: React.MouseEvent) => void;
 }
 
 export const SearchResultList: React.FC<SearchResultListProps> = ({
@@ -30,7 +31,8 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     onMouseLeave,
     onCopy,
     onEdit,
-    onDelete
+    onDelete,
+    onIgnore
 }) => {
     const [copied, setCopied] = useState(false);
 
@@ -164,6 +166,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                             onCopy={onCopy}
                             onEdit={onEdit}
                             onDelete={onDelete}
+                            onIgnore={onIgnore}
                             totalCount={results.length}
                         />
                     ))}

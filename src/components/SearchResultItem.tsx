@@ -13,6 +13,7 @@ interface SearchResultItemProps {
     onCopy?: (command: Command, event: React.MouseEvent) => void;
     onEdit?: (command: Command, event: React.MouseEvent) => void;
     onDelete?: (command: Command, event: React.MouseEvent) => void;
+    onIgnore?: (command: Command, event: React.MouseEvent) => void;
     totalCount: number;
 }
 
@@ -43,6 +44,7 @@ export const SearchResultItem = React.memo(({
     onCopy,
     onEdit,
     onDelete,
+    onIgnore,
     totalCount
 }: SearchResultItemProps) => {
     return (
@@ -104,7 +106,6 @@ export const SearchResultItem = React.memo(({
                             </li>
                             {!['bookmark', 'application', 'scoot'].includes(result.command.category) && result.command.id !== 'dynamic-direct-open' && (
                                 <>
-                                    <li></li>
                                     <li>
                                         <a onClick={(e) => onEdit?.(result.command, e)}>Edit</a>
                                     </li>
@@ -112,6 +113,13 @@ export const SearchResultItem = React.memo(({
                                         <a className="text-error" onClick={(e) => onDelete?.(result.command, e)}>Delete</a>
                                     </li>
                                 </>
+                            )}
+                            {['bookmark', 'application'].includes(result.command.category) && (
+                                <li>
+                                    <a onClick={(e) => onIgnore?.(result.command, e)}>
+                                        Ignore
+                                    </a>
+                                </li>
                             )}
                         </ul>
                     </div>

@@ -131,6 +131,7 @@ pub fn run() {
             crate::commands::ipc::get_commands_schema,
             crate::commands::ipc::validate_commands,
             crate::commands::ipc::open_commands_json,
+            crate::commands::ipc::ignore_command,
             // Config
             crate::config::ipc::get_config,
             crate::config::ipc::save_config,

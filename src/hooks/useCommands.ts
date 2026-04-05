@@ -71,6 +71,20 @@ export function useCommands() {
         }
     }, [loadCommands, showSuccess, showError]);
 
+    const ignoreCommand = useCallback(async (command: Command) => {
+        try {
+            await TauriAPI.ignoreCommand(command.command);
+            showSuccess(`"${command.name}" ignored successfully.`);
+            await loadCommands();
+            return true;
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
+            console.error(`Failed to ignore command "${command.name}":`, errorMessage);
+            showError(`Could not ignore "${command.name}".`, NOTIFICATION_DURATION.LONG);
+            return false;
+        }
+    }, [loadCommands, showSuccess, showError]);
+
     const executeCommand = useCallback(async (command: Command, args: string[] = []) => {
         try {
             await TauriAPI.executeCommand(command, args);
@@ -92,6 +106,7 @@ export function useCommands() {
         addCommand,
         updateCommand,
         deleteCommand,
+        ignoreCommand,
         executeCommand
     };
 }

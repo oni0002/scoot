@@ -11,6 +11,7 @@ interface CommandContextType {
     addCommand: (command: Command) => Promise<boolean>;
     updateCommand: (command: Command) => Promise<boolean>;
     deleteCommand: (id: string, name: string) => Promise<boolean>;
+    ignoreCommand: (command: Command) => Promise<boolean>;
     executeCommand: (command: Command, args?: string[]) => Promise<boolean>;
 }
 

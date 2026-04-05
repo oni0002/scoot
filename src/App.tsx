@@ -29,6 +29,7 @@ const AppContent = () => {
     addCommand,
     updateCommand,
     deleteCommand,
+    ignoreCommand,
   } = useCommandContext();
 
   const [currentView, setCurrentView] = useState<'search' | 'form'>('search');
@@ -185,6 +186,7 @@ const AppContent = () => {
           onDeleteCommand={handleDeleteCommandFromSearch}
           onAddCommand={handleAddCommand}
           onCopyCommand={handleCopyCommand}
+          onIgnoreCommand={ignoreCommand}
           onReloadCommands={handleReloadCommands}
           isDialogOpen={showDeleteDialog}
         />
