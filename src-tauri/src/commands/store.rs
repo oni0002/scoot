@@ -309,31 +309,25 @@ mod tests {
     fn test_duplicate_prompt_check() {
         let mut manager = CommandRegistry::new();
 
-        // 1. 繧�E�繝槭Φ繝陰繧定ｿ�E�蜉 (prompt: p1)
         let cmd_a = create_dummy_command(Some("p1"));
         assert!(manager.validate_command(&cmd_a).is_ok());
         let id_a = manager.add_user_command(cmd_a);
 
-        // 2. 繧�E�繝槭Φ繝隠繧定ｿ�E�蜉 (prompt: p1) -> 驥崎､・お繝ｩ繝ｼ
         let mut cmd_b_dup = create_dummy_command(Some("p1"));
         cmd_b_dup.command = "echo cmd_b_dup".to_string(); // bypass command duplicate check
         let res = manager.validate_command(&cmd_b_dup);
         assert!(res.is_err());
         assert!(res.unwrap_err().to_string().contains("already used"));
 
-        // 3. 繧�E�繝槭Φ繝隠繧定ｿ�E�蜉 (prompt: p2) -> 謌仙粥
         let cmd_b = create_dummy_command(Some("p2"));
         assert!(manager.validate_command(&cmd_b).is_ok());
         let _id_b = manager.add_user_command(cmd_b);
-
-        // 4. 繧�E�繝槭Φ繝陰繧呈峩譁E�� (prompt: p2) -> 驥崎､・お繝ｩ繝ｼ
         let mut cmd_a_update = manager.user_commands.get(&id_a).unwrap().clone();
         cmd_a_update.prompt = Some("p2".to_string());
         let res = manager.validate_command(&cmd_a_update);
         assert!(res.is_err());
         assert!(res.unwrap_err().to_string().contains("already used"));
 
-        // 5. 繧�E�繝槭Φ繝陰繧呈峩譁E�� (prompt: p1) -> 謌仙粥 (閾�E�蛻・・霁E��)
         let mut cmd_a_same = manager.user_commands.get(&id_a).unwrap().clone();
         cmd_a_same.description = "Updated".to_string();
         assert!(manager.validate_command(&cmd_a_same).is_ok());
@@ -348,7 +342,7 @@ mod tests {
 
         let all = manager.get_all_commands();
         assert_eq!(all.len(), 1);
-        assert!(!all[0].id.is_empty()); // ID縺瑚�E蜍�E函謌�E�E�E��後※縺・�E�縺薙�E
+        assert!(!all[0].id.is_empty());
     }
 
     #[test]
