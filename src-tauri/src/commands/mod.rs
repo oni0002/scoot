@@ -3,4 +3,5 @@ pub mod bookmark;
 pub mod domain;
 pub mod execution;
 pub mod ipc;
+pub mod markdown;
 pub mod store;

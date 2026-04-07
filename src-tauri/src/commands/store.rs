@@ -111,6 +111,7 @@ pub struct CommandRegistry {
     pub bookmark_commands: HashMap<String, Command>,
     pub scoot_commands: HashMap<String, Command>,
     pub application_commands: HashMap<String, Command>,
+    pub markdown_commands: HashMap<String, Command>,
 }
 
 /// CommandRegistry implementation
@@ -122,6 +123,7 @@ impl CommandRegistry {
             bookmark_commands: HashMap::new(),
             scoot_commands: HashMap::new(),
             application_commands: HashMap::new(),
+            markdown_commands: HashMap::new(),
         }
     }
 
@@ -235,6 +237,15 @@ impl CommandRegistry {
         self.bookmark_commands.clear();
     }
 
+    /// Set markdown commands
+    pub fn set_markdown_commands(&mut self, commands: Vec<Command>) {
+        self.markdown_commands.clear();
+        for mut command in commands {
+            self.assign_id(&mut command);
+            self.markdown_commands.insert(command.id.clone(), command);
+        }
+    }
+
     /// Validate command
     pub fn validate_command(&self, command: &Command) -> Result<(), crate::error::AppError> {
         // Domain level validation
@@ -282,6 +293,7 @@ impl CommandRegistry {
             .chain(self.bookmark_commands.values())
             .chain(self.scoot_commands.values())
             .chain(self.application_commands.values())
+            .chain(self.markdown_commands.values())
             .cloned()
             .collect()
     }

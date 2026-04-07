@@ -19,6 +19,8 @@ pub struct Config {
     pub bookmarks: BookmarkConfig,
     pub applications: ApplicationConfig,
     #[serde(default)]
+    pub markdown: MarkdownConfig,
+    #[serde(default)]
     pub ignored: Vec<String>,
     #[schemars(regex(
         pattern = r"^(light|dark|cupcake|bumblebee|emerald|corporate|synthwave|retro|cyberpunk|valentine|halloween|garden|forest|aqua|lofi|pastel|fantasy|wireframe|black|luxury|dracula|cmyk|autumn|business|acid|lemonade|night|coffee|winter|dim|nord|sunset)$"
@@ -66,6 +68,24 @@ impl Default for ApplicationConfig {
     }
 }
 
+/// Markdown config struct
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MarkdownConfig {
+    pub enabled: bool,
+    pub paths: Vec<String>,
+}
+
+/// MarkdownConfig default values
+impl Default for MarkdownConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            paths: Vec::new(),
+        }
+    }
+}
+
 /// BookmarkConfig default values
 impl Default for BookmarkConfig {
     fn default() -> Self {
@@ -86,6 +106,7 @@ impl Default for Config {
             fuzzy_threshold: 0.5,
             bookmarks: BookmarkConfig::default(),
             applications: ApplicationConfig::default(),
+            markdown: MarkdownConfig::default(),
             ignored: Vec::new(),
             theme: DEFAULT_THEME.to_string(),
             hotkey: DEFAULT_SHORTCUT.to_string(),

@@ -1,4 +1,4 @@
-﻿use crate::commands::domain::{Command, Commands};
+use crate::commands::domain::{Command, Commands};
 use crate::commands::store::CommandRegistry;
 use crate::state::AppState;
 use tauri::{Manager, State};
@@ -230,6 +230,24 @@ pub async fn reload(
         .filter(|c| !config.ignored.contains(&c.command))
         .collect();
 
+    // Load markdown links
+    log::debug!("Loading markdown links");
+    let markdown_commands = if config.markdown.enabled {
+        crate::commands::markdown::load(&config.markdown)
+            .await
+            .unwrap_or_else(|e| {
+                log::warn!("Failed to load markdown links: {}", e);
+                Vec::new()
+            })
+    } else {
+        Vec::new()
+    };
+
+    let markdown_commands: Vec<_> = markdown_commands
+        .into_iter()
+        .filter(|c| !config.ignored.contains(&c.command))
+        .collect();
+
     // Filter ignored scoot commands
     let scoot_commands: Vec<_> = crate::commands::domain::get_scoot_commands()
         .into_iter()
@@ -244,6 +262,7 @@ pub async fn reload(
     manager.set_bookmark_commands(bookmarks);
     manager.set_application_commands(app_commands);
     manager.set_scoot_commands(scoot_commands);
+    manager.set_markdown_commands(markdown_commands);
 
     Ok(())
 }
