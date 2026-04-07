@@ -100,7 +100,6 @@ export const SearchResultItem = React.memo(({
                         <ul tabIndex={0} className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-40 p-2 shadow">
                             <li>
                                 <a onClick={(e) => onCopy?.(result.command, e)}>
-                                    <LuCopy className="w-4 h-4" />
                                     Copy
                                 </a>
                             </li>

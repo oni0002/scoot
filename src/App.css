@@ -13,7 +13,9 @@
 }
 
 /* Alternative fix: completely remove scrollbar-gutter */
-html, body, * {
+html,
+body,
+* {
   scrollbar-gutter: auto !important;
 }
 

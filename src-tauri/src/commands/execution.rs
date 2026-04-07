@@ -23,9 +23,7 @@ pub async fn execute_command(
 
     // Other commands - dispatch by category
     match command.category.as_str() {
-        crate::commands::domain::CATEGORY_URL => {
-            execute_url(&app_handle, &final_command).await
-        }
+        crate::commands::domain::CATEGORY_URL => execute_url(&app_handle, &final_command).await,
         crate::commands::domain::CATEGORY_FILE => {
             execute_local_file(&app_handle, &final_command).await
         }

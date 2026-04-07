@@ -6,6 +6,7 @@ A simple, fast, and keyboard-centric command launcher for Windows.
 - **Fuzzy Search** - Find what you need quickly with fuzzy matching.
 - **Applications** - Automatically scans your Start Menu for installed programs.
 - **Bookmarks** - Search your browser bookmarks (Chrome, Brave, Edge).
+- **Markdown Links** - Search your markdown files for links.
 - **Custom Commands** - Open files, URLs, or run shell scripts effortlessly.
 - **Prompt Mode** - Pass dynamic arguments to your commands (e.g., `g react` opens `https://google.com/search?q=react`).
 
@@ -36,11 +37,10 @@ Settings are defined in `config.json`. You can open this file via the `Open conf
   "fuzzyThreshold": 0.4,
   "theme": "dark",
   "hotkey": "Alt+Space",
+  "reloadIntervalMinutes": 60,
   "bookmarks": {
     "enabled": true,
-    "browser": "brave",
-    "prompt": "b",
-    "refreshIntervalMinutes": 60
+    "browser": "brave"
   },
   "applications": {
     "enabled": true,
@@ -49,6 +49,10 @@ Settings are defined in `config.json`. You can open this file via the `Open conf
       "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs"
     ],
     "extensions": ["lnk"]
+  },
+  "markdown": {
+    "enabled": true,
+    "paths": ["C:\\Users\\YourName\\Documents\\links.md"]
   }
 }
 ```
@@ -80,5 +84,5 @@ Example: Google Search
 
 - **Prompt**: `g`
 - **Command**: `https://www.google.com/search?q={$*}`
-- **Usage**: Type `g react hooks` in Scoot.
-- **Result**: Opens `https://www.google.com/search?q=react hooks` in your browser.
+- **Usage**: Type `g react` in Scoot.
+- **Result**: Opens `https://www.google.com/search?q=react` in your browser.

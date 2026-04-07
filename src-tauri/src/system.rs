@@ -180,7 +180,6 @@ pub fn start_update_task(app_handle: tauri::AppHandle) {
     });
 }
 
-
 /// Open the specified path (file, directory, URL) with the default application
 pub fn open_path(app_handle: &AppHandle, path: &str) -> Result<(), crate::error::AppError> {
     app_handle

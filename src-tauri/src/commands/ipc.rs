@@ -224,7 +224,7 @@ pub async fn reload(
         .into_iter()
         .filter(|c| !config.ignored.contains(&c.command))
         .collect();
-    
+
     let app_commands: Vec<_> = app_commands
         .into_iter()
         .filter(|c| !config.ignored.contains(&c.command))
@@ -309,7 +309,10 @@ pub async fn ignore_command(
     log::info!("Ignoring command: {}", command_path);
     if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
         let config_to_save = {
-            let mut config = state.config.lock().map_err(|e| crate::error::AppError::System(e.to_string()))?;
+            let mut config = state
+                .config
+                .lock()
+                .map_err(|e| crate::error::AppError::System(e.to_string()))?;
             if !config.ignored.contains(&command_path) {
                 config.ignored.push(command_path.clone());
                 Some(config.clone())
@@ -321,12 +324,10 @@ pub async fn ignore_command(
         if let Some(config) = config_to_save {
             // Save config
             state.config_store.save(&config).await?;
-            
+
             // Reload registries specifically by calling reload
             let _ = reload(&state.command_store, &state.commands, &config).await;
         }
     }
     Ok(())
 }
-
-

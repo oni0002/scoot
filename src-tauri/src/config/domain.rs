@@ -6,7 +6,7 @@ pub const DEFAULT_SHORTCUT: &str = "Alt+Space";
 
 /// Config struct
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct Config {
     #[schemars(range(min = 1, max = 100))]
     // TODO: Remove `alias = "max_results"` in v1.0.0 (Legacy config support)
@@ -18,9 +18,7 @@ pub struct Config {
     pub fuzzy_threshold: f64,
     pub bookmarks: BookmarkConfig,
     pub applications: ApplicationConfig,
-    #[serde(default)]
     pub markdown: MarkdownConfig,
-    #[serde(default)]
     pub ignored: Vec<String>,
     #[schemars(regex(
         pattern = r"^(light|dark|cupcake|bumblebee|emerald|corporate|synthwave|retro|cyberpunk|valentine|halloween|garden|forest|aqua|lofi|pastel|fantasy|wireframe|black|luxury|dracula|cmyk|autumn|business|acid|lemonade|night|coffee|winter|dim|nord|sunset)$"
@@ -30,13 +28,7 @@ pub struct Config {
         pattern = r"^((Cmd|Command|Ctrl|Control|Alt|Shift|Super|Option|cmd|command|ctrl|control|alt|shift|super|option)\+)+([A-Z0-9a-z]|Space|Enter|Tab|F[1-9]|F1[0-2]|space|enter|tab|f[1-9]|f1[0-2])$"
     ))]
     pub hotkey: String,
-    #[schemars(range(min = 1))]
-    #[serde(default = "default_reload_interval")]
     pub reload_interval_minutes: u64,
-}
-
-fn default_reload_interval() -> u64 {
-    30
 }
 
 /// Bookmark config struct
