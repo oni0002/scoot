@@ -2,6 +2,7 @@ export interface Command {
     id: string;
     name: string;
     category: string;
+    source?: string;
     command: string;
     description: string;
     prompt?: string;

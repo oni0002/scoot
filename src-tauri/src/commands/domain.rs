@@ -1,12 +1,18 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+// Category constants (execution type)
 pub const CATEGORY_URL: &str = "url";
 pub const CATEGORY_FILE: &str = "file";
-pub const CATEGORY_BOOKMARK: &str = "bookmark";
 pub const CATEGORY_COMMAND: &str = "command";
 pub const CATEGORY_SCOOT: &str = "scoot";
-pub const CATEGORY_APPLICATION: &str = "application";
+
+// Source constants (data origin)
+pub const SOURCE_USER: &str = "user";
+pub const SOURCE_BOOKMARK: &str = "bookmark";
+pub const SOURCE_APPLICATION: &str = "application";
+pub const SOURCE_MARKDOWN: &str = "markdown";
+pub const SOURCE_SCOOT: &str = "scoot";
 
 // Scoot command constants
 pub const CMD_SCOOT_ADD_COMMAND: &str = "scoot://add-command";
@@ -25,6 +31,8 @@ pub struct Command {
     pub id: String,
     pub name: String,
     pub category: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub source: String,
     pub command: String,
     pub description: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -65,7 +73,8 @@ pub fn get_scoot_commands() -> Vec<Command> {
         Command {
             id: String::new(),
             name: "Add Command".to_string(),
-            category: "scoot".to_string(),
+            category: CATEGORY_SCOOT.to_string(),
+            source: SOURCE_SCOOT.to_string(),
             command: CMD_SCOOT_ADD_COMMAND.to_string(),
             description: "Add a new command to the launcher".to_string(),
             prompt: None,
@@ -75,7 +84,8 @@ pub fn get_scoot_commands() -> Vec<Command> {
         Command {
             id: String::new(),
             name: "Open Commands.json".to_string(),
-            category: "scoot".to_string(),
+            category: CATEGORY_SCOOT.to_string(),
+            source: SOURCE_SCOOT.to_string(),
             command: CMD_SCOOT_OPEN_COMMANDS.to_string(),
             description: "Open commands.json configuration file".to_string(),
             prompt: None,
@@ -85,7 +95,8 @@ pub fn get_scoot_commands() -> Vec<Command> {
         Command {
             id: String::new(),
             name: "Open Config.json".to_string(),
-            category: "scoot".to_string(),
+            category: CATEGORY_SCOOT.to_string(),
+            source: SOURCE_SCOOT.to_string(),
             command: CMD_SCOOT_OPEN_CONFIG.to_string(),
             description: "Open config.json configuration file".to_string(),
             prompt: None,
@@ -95,7 +106,8 @@ pub fn get_scoot_commands() -> Vec<Command> {
         Command {
             id: String::new(),
             name: "Open README".to_string(),
-            category: "scoot".to_string(),
+            category: CATEGORY_SCOOT.to_string(),
+            source: SOURCE_SCOOT.to_string(),
             command: CMD_SCOOT_OPEN_README.to_string(),
             description: "Open application README".to_string(),
             prompt: None,
@@ -105,7 +117,8 @@ pub fn get_scoot_commands() -> Vec<Command> {
         Command {
             id: String::new(),
             name: "Open Logs".to_string(),
-            category: "scoot".to_string(),
+            category: CATEGORY_SCOOT.to_string(),
+            source: SOURCE_SCOOT.to_string(),
             command: CMD_SCOOT_OPEN_LOG.to_string(),
             description: "Open application log directory".to_string(),
             prompt: None,
@@ -115,7 +128,8 @@ pub fn get_scoot_commands() -> Vec<Command> {
         Command {
             id: String::new(),
             name: "Reload".to_string(),
-            category: "scoot".to_string(),
+            category: CATEGORY_SCOOT.to_string(),
+            source: SOURCE_SCOOT.to_string(),
             command: CMD_SCOOT_RELOAD.to_string(),
             description: "Reload commands and configuration".to_string(),
             prompt: None,
@@ -125,7 +139,8 @@ pub fn get_scoot_commands() -> Vec<Command> {
         Command {
             id: String::new(),
             name: "Kill Scoot".to_string(),
-            category: "scoot".to_string(),
+            category: CATEGORY_SCOOT.to_string(),
+            source: SOURCE_SCOOT.to_string(),
             command: CMD_SCOOT_KILL.to_string(),
             description: "Terminate the application".to_string(),
             prompt: None,
@@ -202,15 +217,10 @@ impl Command {
         // Category validity check
         if !matches!(
             self.category.as_str(),
-            CATEGORY_URL
-                | CATEGORY_FILE
-                | CATEGORY_BOOKMARK
-                | CATEGORY_COMMAND
-                | CATEGORY_SCOOT
-                | CATEGORY_APPLICATION
+            CATEGORY_URL | CATEGORY_FILE | CATEGORY_COMMAND | CATEGORY_SCOOT
         ) {
             return Err(crate::error::AppError::Validation(format!(
-                "Invalid category '{}'. Supported categories are: url, file, bookmark, command, scoot, application.",
+                "Invalid category '{}'. Supported categories are: url, file, command, scoot.",
                 self.category
             )));
         }
@@ -288,7 +298,8 @@ mod tests {
         Command {
             id: "test".to_string(),
             name: "Test".to_string(),
-            category: "general".to_string(),
+            category: "command".to_string(),
+            source: "user".to_string(),
             command: cmd.to_string(),
             description: "Test command".to_string(),
             prompt: None,

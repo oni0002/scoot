@@ -79,7 +79,7 @@ export const SearchResultItem = React.memo(({
                     </div>
                 )}
                 <div className="badge badge-sm badge-outline">
-                    {result.command.category}
+                    {result.command.source || result.command.category}
                 </div>
             </div>
 
@@ -104,7 +104,7 @@ export const SearchResultItem = React.memo(({
                                     Copy
                                 </a>
                             </li>
-                            {!['bookmark', 'application', 'scoot'].includes(result.command.category) && result.command.id !== 'dynamic-direct-open' && (
+                            {result.command.source === 'user' && result.command.id !== 'dynamic-direct-open' && (
                                 <>
                                     <li>
                                         <a onClick={(e) => onEdit?.(result.command, e)}>Edit</a>
@@ -114,7 +114,7 @@ export const SearchResultItem = React.memo(({
                                     </li>
                                 </>
                             )}
-                            {['bookmark', 'application'].includes(result.command.category) && (
+                            {['bookmark', 'application', 'markdown'].includes(result.command.source || '') && (
                                 <li>
                                     <a onClick={(e) => onIgnore?.(result.command, e)}>
                                         Ignore

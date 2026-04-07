@@ -120,7 +120,8 @@ fn collect(
             let command = Command {
                 id: String::new(),
                 name: bookmark.name.clone(),
-                category: "bookmark".to_string(),
+                category: "url".to_string(),
+                source: "bookmark".to_string(),
                 command: url.clone(),
                 description: url.clone(),
                 prompt: prompt.clone(),

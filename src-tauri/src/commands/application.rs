@@ -64,8 +64,9 @@ fn create_command(path: &Path) -> Option<Command> {
     Some(Command {
         id: String::new(),
         name: file_stem,
-        category: "application".to_string(), // Dedicated category
-        command: full_path, // Use the path itself as the command (Windows will resolve it)
+        category: "file".to_string(),
+        source: "application".to_string(),
+        command: full_path,
         description: parent,
         prompt: None,
         working_dir: None,

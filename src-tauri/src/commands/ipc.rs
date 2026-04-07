@@ -176,7 +176,7 @@ pub async fn reload(
 ) -> Result<(), crate::error::AppError> {
     // Load commands
     log::debug!("Loading commands");
-    let commands = match command_store.load().await {
+    let mut commands = match command_store.load().await {
         Ok(cmds) => cmds,
         Err(e) => {
             log::error!(
@@ -186,6 +186,10 @@ pub async fn reload(
             crate::commands::domain::Commands::new()
         }
     };
+    // Assign source to user commands
+    for cmd in &mut commands {
+        cmd.source = crate::commands::domain::SOURCE_USER.to_string();
+    }
 
     // Load bookmarks
     log::debug!("Loading bookmarks");

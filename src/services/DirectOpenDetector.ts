@@ -27,6 +27,7 @@ export class DirectOpenDetector {
         id: `dynamic-direct-open`,
         name: `Open: ${trimmed}`,
         category: category,
+        source: 'user',
         command: trimmed,
         description: `Open ${category}`
       };

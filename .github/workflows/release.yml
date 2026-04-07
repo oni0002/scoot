@@ -82,4 +82,4 @@ jobs:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         with:
           files: upload_assets/*
-          draft: false
+          draft: true

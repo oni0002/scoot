@@ -14,24 +14,21 @@ pub async fn execute_command(
         command.command.clone()
     };
 
-    // Scoot command
-    if command.category == crate::commands::domain::CATEGORY_SCOOT
+    // Scoot command (check by source)
+    if command.source == crate::commands::domain::SOURCE_SCOOT
         || final_command.starts_with("scoot://")
     {
         return execute_scoot_command(&app_handle, &final_command).await;
     }
 
-    // Other commands
+    // Other commands - dispatch by category
     match command.category.as_str() {
-        // URL, bookmark
-        crate::commands::domain::CATEGORY_URL | crate::commands::domain::CATEGORY_BOOKMARK => {
+        crate::commands::domain::CATEGORY_URL => {
             execute_url(&app_handle, &final_command).await
         }
-        // File, application
-        crate::commands::domain::CATEGORY_FILE | crate::commands::domain::CATEGORY_APPLICATION => {
+        crate::commands::domain::CATEGORY_FILE => {
             execute_local_file(&app_handle, &final_command).await
         }
-        // Shell command
         crate::commands::domain::CATEGORY_COMMAND => {
             execute_shell_command(
                 &final_command,
