@@ -88,7 +88,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             return;
         }
 
-        const isCmdCategory = formData.category.trim() === 'cmd';
+        const isCmdCategory = formData.category.trim() === 'command';
 
         const commandToSave: Command = {
             id: formData.id,
