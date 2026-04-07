@@ -230,6 +230,12 @@ pub async fn reload(
         .filter(|c| !config.ignored.contains(&c.command))
         .collect();
 
+    // Filter ignored scoot commands
+    let scoot_commands: Vec<_> = crate::commands::domain::get_scoot_commands()
+        .into_iter()
+        .filter(|c| !config.ignored.contains(&c.command))
+        .collect();
+
     // Reflect in CommandRegistry
     let mut manager = command_registry
         .lock()
@@ -237,6 +243,7 @@ pub async fn reload(
     manager.set_user_commands(commands);
     manager.set_bookmark_commands(bookmarks);
     manager.set_application_commands(app_commands);
+    manager.set_scoot_commands(scoot_commands);
 
     Ok(())
 }

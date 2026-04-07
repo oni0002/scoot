@@ -114,7 +114,7 @@ export const SearchResultItem = React.memo(({
                                     </li>
                                 </>
                             )}
-                            {['bookmark', 'application', 'markdown'].includes(result.command.source || '') && (
+                            {['bookmark', 'application', 'markdown', 'scoot'].includes(result.command.source || '') && (
                                 <li>
                                     <a onClick={(e) => onIgnore?.(result.command, e)}>
                                         Ignore
