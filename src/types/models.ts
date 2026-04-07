@@ -24,10 +24,16 @@ export interface BookmarkConfig {
     refreshIntervalMinutes: number;
 }
 
+export interface MarkdownConfig {
+    enabled: boolean;
+    paths: string[];
+}
+
 export interface Config {
     maxResults: number;
     fuzzyThreshold: number;
     bookmarks: BookmarkConfig;
     applications: ApplicationConfig;
+    markdown: MarkdownConfig;
     theme: string;
 }

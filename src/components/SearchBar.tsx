@@ -49,7 +49,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         placeholder={
                             promptMode
                                 ? `${promptMode.command.name} - ${promptMode.command.description}`
-                                : "Type to query..."
+                                : "Where do you wanna scoot?"
                         }
                         className="grow"
                         autoFocus
