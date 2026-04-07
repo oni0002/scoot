@@ -30,6 +30,13 @@ pub struct Config {
         pattern = r"^((Cmd|Command|Ctrl|Control|Alt|Shift|Super|Option|cmd|command|ctrl|control|alt|shift|super|option)\+)+([A-Z0-9a-z]|Space|Enter|Tab|F[1-9]|F1[0-2]|space|enter|tab|f[1-9]|f1[0-2])$"
     ))]
     pub hotkey: String,
+    #[schemars(range(min = 1))]
+    #[serde(default = "default_reload_interval")]
+    pub reload_interval_minutes: u64,
+}
+
+fn default_reload_interval() -> u64 {
+    30
 }
 
 /// Bookmark config struct
@@ -38,11 +45,6 @@ pub struct Config {
 pub struct BookmarkConfig {
     pub enabled: bool,
     pub browser: String,
-    pub prompt: Option<String>,
-    #[schemars(range(min = 1))]
-    // TODO: Remove `alias = "refresh_interval_minutes"` in v1.0.0 (Legacy config support)
-    #[serde(alias = "refresh_interval_minutes")]
-    pub refresh_interval_minutes: u64,
 }
 
 /// Application config struct
@@ -92,8 +94,6 @@ impl Default for BookmarkConfig {
         Self {
             enabled: true,
             browser: "brave".to_string(),
-            prompt: None,
-            refresh_interval_minutes: 30,
         }
     }
 }
@@ -110,6 +110,7 @@ impl Default for Config {
             ignored: Vec::new(),
             theme: DEFAULT_THEME.to_string(),
             hotkey: DEFAULT_SHORTCUT.to_string(),
+            reload_interval_minutes: 30,
         }
     }
 }

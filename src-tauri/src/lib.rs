@@ -110,7 +110,7 @@ pub fn run() {
             );
             // Set event listeners and background tasks
             crate::system::setup_event_listeners(app)?;
-            crate::commands::bookmark::start_update_task(app.handle().clone());
+            crate::system::start_update_task(app.handle().clone());
             // Set up system tray
             crate::tray::setup_system_tray(app)?;
             // Set up global shortcuts

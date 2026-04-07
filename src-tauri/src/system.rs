@@ -152,6 +152,35 @@ pub fn setup_event_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
+/// Start background task for periodic global reload
+pub fn start_update_task(app_handle: tauri::AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        loop {
+            // Get reload interval from config
+            let interval_minutes = if let Some(state) = app_handle.try_state::<AppState>() {
+                if let Ok(config) = state.config.lock() {
+                    std::cmp::max(config.reload_interval_minutes, 1)
+                } else {
+                    30 // Lock failure
+                }
+            } else {
+                30 // State failure
+            };
+
+            // Wait for specified time
+            tokio::time::sleep(std::time::Duration::from_secs(interval_minutes * 60)).await;
+
+            log::debug!("Executing scheduled global reload...");
+
+            // Perform full reload
+            if let Err(e) = reload(&app_handle).await {
+                log::error!("Failed to auto-reload system: {}", e);
+            }
+        }
+    });
+}
+
+
 /// Open the specified path (file, directory, URL) with the default application
 pub fn open_path(app_handle: &AppHandle, path: &str) -> Result<(), crate::error::AppError> {
     app_handle

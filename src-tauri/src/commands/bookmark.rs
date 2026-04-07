@@ -62,7 +62,6 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::error:
         &root.roots.bookmark_bar,
         &mut commands,
         &mut seen_urls,
-        &config.prompt,
     );
 
     // Load bookmarks from the other bookmarks
@@ -70,12 +69,11 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::error:
         &root.roots.other,
         &mut commands,
         &mut seen_urls,
-        &config.prompt,
     );
 
     // Load bookmarks from the synced bookmarks (if they exist)
     if let Some(synced) = &root.roots.synced {
-        collect(synced, &mut commands, &mut seen_urls, &config.prompt);
+        collect(synced, &mut commands, &mut seen_urls);
     }
 
     Ok(commands)
@@ -108,7 +106,6 @@ fn collect(
     bookmark: &ChromiumBookmark,
     commands: &mut Vec<Command>,
     seen_urls: &mut std::collections::HashSet<String>,
-    prompt: &Option<String>,
 ) {
     if bookmark.bookmark_type == "url" {
         if let Some(url) = &bookmark.url {
@@ -124,7 +121,7 @@ fn collect(
                 source: "bookmark".to_string(),
                 command: url.clone(),
                 description: url.clone(),
-                prompt: prompt.clone(),
+                prompt: None,
                 working_dir: None,
                 show_window: None,
             };
@@ -134,55 +131,10 @@ fn collect(
     } else if bookmark.bookmark_type == "folder" {
         if let Some(children) = &bookmark.children {
             for child in children {
-                collect(child, commands, seen_urls, prompt);
+                collect(child, commands, seen_urls);
             }
         }
     }
 }
 
-/// Start bookmark auto-refresh task
-pub fn start_update_task(app_handle: tauri::AppHandle) {
-    use tauri::Manager;
-    tauri::async_runtime::spawn(async move {
-        log::debug!("Starting bookmark auto-refresh task");
-        loop {
-            // Get refresh interval from current config
-            let interval_minutes =
-                if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
-                    if let Ok(config) = state.config.lock() {
-                        // Minimum value limit (1 minute)
-                        std::cmp::max(config.bookmarks.refresh_interval_minutes, 1)
-                    } else {
-                        30 // Lock acquisition failure
-                    }
-                } else {
-                    30 // State acquisition failure
-                };
 
-            // Wait for specified time
-            tokio::time::sleep(tokio::time::Duration::from_secs(interval_minutes * 60)).await;
-
-            log::debug!("Executing scheduled bookmark refresh...");
-
-            // Get config and reload
-            let config_opt = if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
-                state.config.lock().ok().map(|c| c.clone())
-            } else {
-                None
-            };
-
-            if let Some(config) = config_opt {
-                // Reload bookmarks only
-                if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
-                    if let Err(e) =
-                        crate::commands::ipc::reload_bookmarks(&state.commands, &config).await
-                    {
-                        log::error!("Failed to auto-refresh bookmarks: {}", e);
-                    }
-                }
-            } else {
-                log::warn!("Skipping bookmark refresh due to failure in retrieving AppState or Config lock");
-            }
-        }
-    });
-}

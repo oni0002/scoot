@@ -20,8 +20,6 @@ export interface ApplicationConfig {
 export interface BookmarkConfig {
     enabled: boolean;
     browser: 'brave' | 'chrome' | 'firefox' | 'edge';
-    prompt?: string;
-    refreshIntervalMinutes: number;
 }
 
 export interface MarkdownConfig {
@@ -36,4 +34,5 @@ export interface Config {
     applications: ApplicationConfig;
     markdown: MarkdownConfig;
     theme: string;
+    reloadIntervalMinutes: number;
 }
