@@ -1,4 +1,4 @@
-use crate::commands::domain::{Command, Commands};
+﻿use crate::commands::domain::{Command, Commands};
 use crate::commands::store::CommandRegistry;
 use crate::state::AppState;
 use tauri::{Manager, State};
@@ -15,9 +15,10 @@ pub fn get_all_commands(
 /// Add command
 #[tauri::command]
 pub async fn add_command(
-    command: Command,
+    mut command: Command,
     state: State<'_, AppState>,
 ) -> Result<String, crate::error::AppError> {
+    command.source = crate::commands::domain::SOURCE_USER.to_string();
     let (id, commands) = {
         let mut manager = state
             .commands
@@ -41,9 +42,10 @@ pub async fn add_command(
 /// Update command
 #[tauri::command]
 pub async fn update_command(
-    command: Command,
+    mut command: Command,
     state: State<'_, AppState>,
 ) -> Result<(), crate::error::AppError> {
+    command.source = crate::commands::domain::SOURCE_USER.to_string();
     let commands = {
         let mut manager = state
             .commands
