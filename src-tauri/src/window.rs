@@ -1,4 +1,4 @@
-﻿use crate::state::AppState;
+use crate::state::AppState;
 use tauri::{Emitter, Manager, State};
 
 // --- Tauri Commands ---
