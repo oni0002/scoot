@@ -133,9 +133,7 @@ pub fn run() {
             crate::system::open_readme,
             crate::system::quit_app,
             // Window
-            crate::window::toggle_window,
             crate::window::hide_window,
-            crate::window::show_window,
             crate::window::set_prevent_hide,
         ])
         .run(tauri::generate_context!())

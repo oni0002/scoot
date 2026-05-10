@@ -32,16 +32,8 @@ export class TauriAPI {
     return await invoke('reload_all');
   }
 
-  static async toggleWindow(): Promise<void> {
-    return await invoke('toggle_window');
-  }
-
   static async hideWindow(): Promise<void> {
     return await invoke('hide_window');
-  }
-
-  static async showWindow(): Promise<void> {
-    return await invoke('show_window');
   }
 
   static async openCommandsJson(): Promise<void> {
