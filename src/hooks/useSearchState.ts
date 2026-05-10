@@ -1,8 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Command, SearchResult } from '../types';
-import { SearchEngine } from '../services/SearchEngine';
-import { PromptProcessor } from '../services/PromptProcessor';
-import { DirectOpenDetector } from '../services/DirectOpenDetector';
+import { createFuse, fuseSearch, detectDirectOpen } from '../services/search';
 
 export type SearchMode =
   | { mode: 'idle' }
@@ -14,8 +12,8 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
     const [searchMode, setSearchMode] = useState<SearchMode>({ mode: 'idle' });
 
     const inputRef = useRef<HTMLInputElement>(null);
-    const searchEngine = useRef(new SearchEngine(commands, fuzzyThreshold));
-    const promptProcessor = useRef(new PromptProcessor(searchEngine.current));
+
+    const fuse = useMemo(() => createFuse(commands, fuzzyThreshold), [commands, fuzzyThreshold]);
 
     const resetState = useCallback(() => {
         setQuery('');
@@ -45,13 +43,13 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
             return currentMode;
         }
 
-        const searchResults = promptProcessor.current.processSearch(newQuery, maxResults);
-        const dynamicItem = DirectOpenDetector.detect(newQuery);
+        const searchResults = fuseSearch(fuse, newQuery, commands, maxResults);
+        const dynamicItem = detectDirectOpen(newQuery);
         if (dynamicItem) {
             searchResults.push({ command: dynamicItem, score: -1, matches: [] });
         }
         return { mode: 'search', results: searchResults, selectedIndex: 0 };
-    }, [commands, maxResults]);
+    }, [commands, maxResults, fuse]);
 
     const handleQueryChange = useCallback((newQuery: string) => {
         setQuery(newQuery);
@@ -59,10 +57,6 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
     }, [computeMode]);
 
     useEffect(() => {
-        searchEngine.current.updateCommands(commands);
-        promptProcessor.current.updateCommands(commands);
-        searchEngine.current.updateThreshold(fuzzyThreshold);
-
         setSearchMode(prev => {
             if (!query || prev.mode === 'prompt') return prev;
             return computeMode(query, prev);
@@ -82,7 +76,6 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
         });
     }, []);
 
-    // Derived values for easy access by consumers
     const results = searchMode.mode === 'search' ? searchMode.results : [];
     const selectedIndex = searchMode.mode === 'search' ? searchMode.selectedIndex : 0;
     const promptMode = searchMode.mode === 'prompt'
@@ -98,8 +91,6 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
         selectedIndex,
         promptMode,
         inputRef,
-        searchEngine,
-        promptProcessor,
         resetState,
         handleQueryChange,
         moveSelection,

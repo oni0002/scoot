@@ -68,7 +68,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
   const {
     query, setQuery, searchMode, setSearchMode,
     results, selectedIndex, promptMode,
-    resetState, inputRef, promptProcessor,
+    resetState, inputRef,
   } = searchState;
 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -80,7 +80,6 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     results,
     selectedIndex,
     promptMode,
-    promptProcessor,
     setQuery,
     setSearchMode,
     resetState,

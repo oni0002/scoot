@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { Command, SearchResult } from '../types';
 import { SearchMode } from './useSearchState';
-import { PromptProcessor } from '../services/PromptProcessor';
 import { TauriAPI } from '../api/tauri';
 
 interface UseCommandExecutionProps {
@@ -9,7 +8,6 @@ interface UseCommandExecutionProps {
     results: SearchResult[];
     selectedIndex: number;
     promptMode: { prompt: string; command: Command } | null;
-    promptProcessor: React.RefObject<PromptProcessor>;
     setQuery: (query: string) => void;
     setSearchMode: React.Dispatch<React.SetStateAction<SearchMode>>;
     resetState: () => void;
@@ -21,7 +19,6 @@ export const useCommandExecution = ({
     results,
     selectedIndex,
     promptMode,
-    promptProcessor,
     setQuery,
     setSearchMode,
     resetState,
@@ -33,7 +30,8 @@ export const useCommandExecution = ({
 
         if (promptMode) {
             commandToExecute = promptMode.command;
-            argsToPass = promptProcessor.current.parseInput(query).args;
+            const rest = query.slice(promptMode.prompt.length + 1).trim();
+            argsToPass = rest ? rest.split(/\s+/) : [];
         } else {
             const effectiveIndex = targetIndex !== undefined ? targetIndex : selectedIndex;
             if (results.length === 0 || effectiveIndex >= results.length) return;
@@ -47,7 +45,8 @@ export const useCommandExecution = ({
             }
 
             commandToExecute = selectedResult.command;
-            argsToPass = promptProcessor.current.parseInput(query).args;
+            const parts = query.trim().split(/\s+/).filter(a => a);
+            argsToPass = parts.length <= 1 ? [] : parts;
         }
 
         const keepWindowOpen = await executeCommand(commandToExecute, argsToPass);
@@ -56,7 +55,7 @@ export const useCommandExecution = ({
         if (keepWindowOpen === false) {
             TauriAPI.hideWindow();
         }
-    }, [results, selectedIndex, query, executeCommand, promptMode, resetState, setSearchMode, setQuery, promptProcessor]);
+    }, [results, selectedIndex, query, executeCommand, promptMode, resetState, setSearchMode, setQuery]);
 
     return { runSelectedCommand };
 };
