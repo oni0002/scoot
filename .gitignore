@@ -7,18 +7,45 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Build directories
 node_modules
 dist
 dist-ssr
 *.local
+build/
+.next/
+out/
+.nuxt/
+.svelte-kit/
 
-# Editor directories and files
+# Package manager
+.npm/
+.pnpm/
+.yarn/
+
+# Tauri
+src-tauri/gen/
+src-tauri/target/
+target/
+
+# Editor
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.agent/
+.claude/
+work/
+
+# Env
+.env
+.env.local
+.env.production
+.env.*.local
+

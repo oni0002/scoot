@@ -147,6 +147,7 @@ async fn execute_local_file(
 async fn execute_shell_command(
     command: &str,
     working_dir: &Option<String>,
+    #[cfg_attr(not(target_os = "windows"), allow(unused_variables))]
     show_window: bool,
 ) -> Result<String, crate::error::AppError> {
     use std::process::Command as StdCommand;
@@ -160,31 +161,27 @@ async fn execute_shell_command(
     }
 
     // Build the command
-    let mut cmd_builder = if cfg!(target_os = "windows") {
+    #[cfg(target_os = "windows")]
+    let mut cmd_builder = {
         use std::os::windows::process::CommandExt;
-        // PowerShell to call directly
         let mut cmd = StdCommand::new("powershell");
-        // Skip profile loading for faster execution
         let mut args = vec!["-NoProfile"];
-        // If show_window is true, add -NoExit (to prevent window closure)
         if show_window {
             args.push("-NoExit");
         }
-
         args.push("-Command");
         args.push(command);
-
         cmd.args(args);
-
         if show_window {
-            // Create a new console window (CREATE_NEW_CONSOLE)
-            cmd.creation_flags(0x00000010);
+            cmd.creation_flags(0x00000010); // CREATE_NEW_CONSOLE
         } else {
-            // Do not show the window (CREATE_NO_WINDOW)
-            cmd.creation_flags(0x08000000);
+            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         }
         cmd
-    } else {
+    };
+
+    #[cfg(not(target_os = "windows"))]
+    let mut cmd_builder = {
         let mut cmd = StdCommand::new("sh");
         cmd.args(["-c", command]);
         cmd
