@@ -9,11 +9,11 @@ interface UseCommandExecutionProps {
     results: SearchResult[];
     selectedIndex: number;
     promptMode: { prompt: string; command: Command } | null;
-    promptProcessor: React.MutableRefObject<PromptProcessor>;
+    promptProcessor: React.RefObject<PromptProcessor>;
     setQuery: (query: string) => void;
     setSearchMode: React.Dispatch<React.SetStateAction<SearchMode>>;
     resetState: () => void;
-    executeCommand: (command: Command, args: string[]) => void;
+    executeCommand: (command: Command, args: string[]) => Promise<boolean>;
 }
 
 export const useCommandExecution = ({
@@ -27,7 +27,7 @@ export const useCommandExecution = ({
     resetState,
     executeCommand,
 }: UseCommandExecutionProps) => {
-    const runSelectedCommand = useCallback((targetIndex?: number) => {
+    const runSelectedCommand = useCallback(async (targetIndex?: number) => {
         let commandToExecute: Command;
         let argsToPass: string[] = [];
 
@@ -50,14 +50,12 @@ export const useCommandExecution = ({
             argsToPass = promptProcessor.current.parseInput(query).args;
         }
 
-        executeCommand(commandToExecute, argsToPass);
+        const keepWindowOpen = await executeCommand(commandToExecute, argsToPass);
         resetState();
 
-        if (commandToExecute.command === 'scoot://add-command' || commandToExecute.command === 'scoot://reload') {
-            return;
+        if (!keepWindowOpen) {
+            TauriAPI.hideWindow();
         }
-
-        TauriAPI.hideWindow();
     }, [results, selectedIndex, query, executeCommand, promptMode, resetState, setSearchMode, setQuery, promptProcessor]);
 
     return { runSelectedCommand };

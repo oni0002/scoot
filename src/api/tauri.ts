@@ -20,7 +20,7 @@ export class TauriAPI {
     return await invoke('delete_command', { id });
   }
 
-  static async executeCommand(command: Command, args: string[] = []): Promise<string> {
+  static async executeCommand(command: Command, args: string[] = []): Promise<{ keepWindowOpen: boolean }> {
     return await invoke('execute_command', { command, args });
   }
 

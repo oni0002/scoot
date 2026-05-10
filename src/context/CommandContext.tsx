@@ -12,7 +12,7 @@ interface CommandContextType {
     updateCommand: (command: Command) => Promise<boolean>;
     deleteCommand: (id: string, name: string) => Promise<boolean>;
     ignoreCommand: (command: Command) => Promise<boolean>;
-    executeCommand: (command: Command, args?: string[]) => Promise<boolean>;
+    executeCommand: (command: Command, args?: string[]) => Promise<boolean>; // returns keepWindowOpen
 }
 
 const CommandContext = createContext<CommandContextType | undefined>(undefined);

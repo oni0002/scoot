@@ -1,4 +1,20 @@
 use crate::commands::domain::Command;
+use serde::Serialize;
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExecuteResult {
+    pub keep_window_open: bool,
+}
+
+impl ExecuteResult {
+    fn hide() -> Self {
+        Self { keep_window_open: false }
+    }
+    fn keep_open() -> Self {
+        Self { keep_window_open: true }
+    }
+}
 
 /// Execute command (Tauri command)
 #[tauri::command]
@@ -6,7 +22,7 @@ pub async fn execute_command(
     command: Command,
     args: Vec<String>,
     app_handle: tauri::AppHandle,
-) -> Result<String, crate::error::AppError> {
+) -> Result<ExecuteResult, crate::error::AppError> {
     // Build command
     let final_command = if command.has_placeholders() {
         command.substitute_args(&args)
@@ -22,7 +38,7 @@ pub async fn execute_command(
     }
 
     // Other commands - dispatch by category
-    match command.category.as_str() {
+    let result = match command.category.as_str() {
         crate::commands::domain::CATEGORY_URL => execute_url(&app_handle, &final_command).await,
         crate::commands::domain::CATEGORY_FILE => {
             execute_local_file(&app_handle, &final_command).await
@@ -35,7 +51,6 @@ pub async fn execute_command(
             )
             .await
         }
-        // Default to shell command
         _ => {
             execute_shell_command(
                 &final_command,
@@ -44,44 +59,46 @@ pub async fn execute_command(
             )
             .await
         }
-    }
+    };
+    result.map(|_| ExecuteResult::hide())
 }
 
 /// Execute internal scoot command
 async fn execute_scoot_command(
     app_handle: &tauri::AppHandle,
     command: &str,
-) -> Result<String, crate::error::AppError> {
+) -> Result<ExecuteResult, crate::error::AppError> {
     log::debug!("Executing scoot command: {}", command);
 
     match command {
         "scoot://add-command" => {
             crate::lifecycle::open_add_command_dialog(&app_handle)?;
-            Ok("Opening add command dialog".to_string())
+            Ok(ExecuteResult::keep_open())
         }
         "scoot://open-commands" => {
             crate::commands::ipc::open_commands_json(app_handle.clone()).await?;
-            Ok("Opened commands.json".to_string())
+            Ok(ExecuteResult::hide())
         }
         "scoot://open-config" => {
             crate::config::ipc::open_config_json(app_handle.clone()).await?;
-            Ok("Opened config.json".to_string())
+            Ok(ExecuteResult::hide())
         }
         "scoot://open-readme" => {
             let resource_path = crate::os::resolve_resource(&app_handle, "README.md")?;
             crate::os::open_path(&app_handle, &resource_path.to_string_lossy())?;
-            Ok("Opened README.md".to_string())
+            Ok(ExecuteResult::hide())
         }
         "scoot://open-log" => {
             crate::lifecycle::open_log(&app_handle)?;
-            Ok("Log file opened".to_string())
+            Ok(ExecuteResult::hide())
         }
-        "scoot://reload" => crate::lifecycle::reload(&app_handle)
-            .await
-            .map(|_| "Configuration and commands reloaded".to_string()),
+        "scoot://reload" => {
+            crate::lifecycle::reload(&app_handle).await?;
+            Ok(ExecuteResult::keep_open())
+        }
         "scoot://kill" => {
             crate::system::quit_app((*app_handle).clone()).await?;
-            Ok("Application terminated".to_string())
+            Ok(ExecuteResult::hide())
         }
         _ => Err(crate::error::AppError::CommandExecution(format!(
             "Unknown scoot command: {}",
@@ -94,7 +111,7 @@ async fn execute_scoot_command(
 async fn execute_url(
     app_handle: &tauri::AppHandle,
     url: &str,
-) -> Result<String, crate::error::AppError> {
+) -> Result<(), crate::error::AppError> {
     log::debug!("Opening URL: {}", url);
 
     crate::os::open_url(app_handle, url).map_err(|e| {
@@ -106,16 +123,15 @@ async fn execute_url(
         crate::error::AppError::CommandExecution(error_msg)
     })?;
 
-    let success_msg = format!("Successfully opened URL: {}", url);
-    log::debug!("{}", success_msg);
-    Ok(success_msg)
+    log::debug!("Successfully opened URL: {}", url);
+    Ok(())
 }
 
 /// Execute local file
 async fn execute_local_file(
     app_handle: &tauri::AppHandle,
     file_path: &str,
-) -> Result<String, crate::error::AppError> {
+) -> Result<(), crate::error::AppError> {
     log::debug!("Opening file: {}", file_path);
 
     // Expand environment variables
@@ -139,9 +155,8 @@ async fn execute_local_file(
         crate::error::AppError::CommandExecution(error_msg)
     })?;
 
-    let success_msg = format!("Successfully opened file: {}", expanded_path);
-    log::debug!("{}", success_msg);
-    Ok(success_msg)
+    log::debug!("Successfully opened file: {}", expanded_path);
+    Ok(())
 }
 
 /// Execute a shell command
@@ -150,7 +165,7 @@ async fn execute_shell_command(
     working_dir: &Option<String>,
     #[cfg_attr(not(target_os = "windows"), allow(unused_variables))]
     show_window: bool,
-) -> Result<String, crate::error::AppError> {
+) -> Result<(), crate::error::AppError> {
     use std::process::Command as StdCommand;
     log::debug!("Executing shell command: {}", command);
 
@@ -216,9 +231,8 @@ async fn execute_shell_command(
     // Execute the command asynchronously
     match cmd_builder.spawn() {
         Ok(_) => {
-            let success_msg = "Command launched successfully (background).".to_string();
-            log::debug!("{}", success_msg);
-            Ok(success_msg)
+            log::debug!("Command launched successfully (background).");
+            Ok(())
         }
         Err(e) => {
             let error_msg = format!("Failed to spawn system command '{}': {}.", command, e);

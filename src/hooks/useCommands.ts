@@ -88,8 +88,8 @@ export function useCommands() {
 
     const executeCommand = useCallback(async (command: Command, args: string[] = []) => {
         try {
-            await TauriAPI.executeCommand(command, args);
-            return true;
+            const result = await TauriAPI.executeCommand(command, args);
+            return result.keepWindowOpen;
         } catch (err) {
             const errorMessage = getErrorMessage(err);
             console.error(`Failed to execute command "${command.name}":`, errorMessage);
