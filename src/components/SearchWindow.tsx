@@ -5,6 +5,7 @@ import { SearchBar } from './SearchBar';
 import { SearchResultList } from './SearchResultList';
 import { useCommandContext } from '../context/CommandContext';
 import { useSearchState } from '../hooks/useSearchState';
+import { useCommandExecution } from '../hooks/useCommandExecution';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { useWindowEvents } from '../hooks/useWindowEvents';
 
@@ -58,55 +59,29 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
 }) => {
   const { commands, executeCommand: executeContextCommand } = useCommandContext();
 
-  // Search Logic & State
   const searchState = useSearchState(commands, fuzzyThreshold, maxResults);
   const {
     query, setQuery, searchMode, setSearchMode,
     results, selectedIndex, promptMode,
-    resetState, inputRef, promptProcessor
+    resetState, inputRef, promptProcessor,
   } = searchState;
 
-  // UI State for mouse hover
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  // Window Events (Focus, Shortcuts, Click Outside)
   useWindowEvents(isDialogOpen, resetState, inputRef);
 
-  // Command Execution Logic
-  const runSelectedCommand = useCallback((targetIndex?: number) => {
-    let commandToExecute: Command;
-    let argsToPass: string[] = [];
+  const { runSelectedCommand } = useCommandExecution({
+    query,
+    results,
+    selectedIndex,
+    promptMode,
+    promptProcessor,
+    setQuery,
+    setSearchMode,
+    resetState,
+    executeCommand: executeContextCommand,
+  });
 
-    if (promptMode) {
-      commandToExecute = promptMode.command;
-      argsToPass = promptProcessor.current.parseInput(query).args;
-    } else {
-      const effectiveIndex = targetIndex !== undefined ? targetIndex : selectedIndex;
-      if (results.length === 0 || effectiveIndex >= results.length) return;
-
-      const selectedResult = results[effectiveIndex];
-
-      if (selectedResult.command.prompt && !query.startsWith(selectedResult.command.prompt + ' ')) {
-        setQuery(selectedResult.command.prompt + ' ');
-        setSearchMode({ mode: 'prompt', prompt: selectedResult.command.prompt, command: selectedResult.command });
-        return;
-      }
-
-      commandToExecute = selectedResult.command;
-      argsToPass = promptProcessor.current.parseInput(query).args;
-    }
-
-    executeContextCommand(commandToExecute, argsToPass);
-    resetState();
-
-    if (commandToExecute.command === 'scoot://add-command' || commandToExecute.command === 'scoot://reload') {
-      return;
-    }
-
-    TauriAPI.hideWindow();
-  }, [results, selectedIndex, query, executeContextCommand, promptMode, resetState, setSearchMode, setQuery, promptProcessor]);
-
-  // Keyboard Navigation
   const { handleKeyDown } = useKeyboardNavigation({
     moveSelection: searchState.moveSelection,
     executeCommand: runSelectedCommand,
@@ -117,7 +92,6 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     setSearchMode,
   });
 
-  // Action Handlers
   const handleResultClick = useCallback((index: number, event?: React.MouseEvent) => {
     if (event && (event.target as HTMLElement).closest('.dropdown, .dropdown-content')) {
       return;
