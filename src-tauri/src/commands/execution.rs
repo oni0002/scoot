@@ -51,14 +51,7 @@ pub async fn execute_command(
             )
             .await
         }
-        _ => {
-            execute_shell_command(
-                &final_command,
-                &command.working_dir,
-                command.show_window.unwrap_or(false),
-            )
-            .await
-        }
+        _ => unreachable!("unexpected category after validation: {}", command.category),
     };
     result.map(|_| ExecuteResult::hide())
 }
