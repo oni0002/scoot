@@ -1,4 +1,5 @@
 import Fuse, { IFuseOptions } from 'fuse.js';
+import type { FuseIndex } from 'fuse.js';
 import { Command, SearchResult } from '../types';
 
 /**
@@ -9,6 +10,7 @@ export class SearchEngine {
   private fuseInstance: Fuse<Command>;
   private commandList: Command[] = [];
   private fuseOptions: IFuseOptions<Command>;
+  private fuseIndex: FuseIndex<Command>;
 
   private static readonly DEFAULT_FUSE_OPTIONS: IFuseOptions<Command> = {
     keys: [
@@ -30,12 +32,14 @@ export class SearchEngine {
       ...SearchEngine.DEFAULT_FUSE_OPTIONS,
       threshold: this.clampThreshold(threshold),
     };
-    this.fuseInstance = new Fuse(commands, this.fuseOptions);
+    this.fuseIndex = Fuse.createIndex(SearchEngine.DEFAULT_FUSE_OPTIONS.keys!, commands);
+    this.fuseInstance = new Fuse(commands, this.fuseOptions, this.fuseIndex);
   }
 
   updateCommands(commands: Command[]): void {
     this.commandList = commands;
-    this.fuseInstance = new Fuse(commands, this.fuseOptions);
+    this.fuseIndex = Fuse.createIndex(SearchEngine.DEFAULT_FUSE_OPTIONS.keys!, commands);
+    this.fuseInstance.setCollection(commands, this.fuseIndex);
   }
 
   updateThreshold(threshold: number): void {
@@ -43,7 +47,7 @@ export class SearchEngine {
       ...this.fuseOptions,
       threshold: this.clampThreshold(threshold),
     };
-    this.fuseInstance = new Fuse(this.commandList, this.fuseOptions);
+    this.fuseInstance = new Fuse(this.commandList, this.fuseOptions, this.fuseIndex);
   }
 
   search(query: string, maxResults: number = 10): SearchResult[] {
