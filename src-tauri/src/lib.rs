@@ -5,7 +5,6 @@ pub mod lifecycle;
 pub mod os;
 pub mod shortcut;
 pub mod state;
-pub mod system;
 pub mod tray;
 pub mod validation;
 pub mod watcher;
@@ -123,10 +122,10 @@ pub fn run() {
             crate::config::ipc::get_config,
             crate::config::ipc::save_config,
             crate::config::ipc::open_config_json,
-            // System
-            crate::system::reload_all,
-            crate::system::open_readme,
-            crate::system::quit_app,
+            // Lifecycle
+            crate::lifecycle::reload_all,
+            crate::lifecycle::open_readme,
+            crate::lifecycle::quit_app,
             // Window
             crate::window::hide_window,
             crate::window::enter_modal,

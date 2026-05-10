@@ -1,6 +1,53 @@
 use crate::state::{CommandsState, ConfigState};
 use tauri::{AppHandle, Manager};
 
+/// Open README file
+pub fn open_readme_file(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
+    let resource_path = crate::os::resolve_resource(app_handle, "README.md")?;
+    crate::os::open_path(app_handle, &resource_path.to_string_lossy())
+}
+
+/// Reload config and commands (IPC)
+#[tauri::command]
+pub async fn reload_all(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
+    reload(&app_handle).await
+}
+
+/// Open README (IPC)
+#[tauri::command]
+pub async fn open_readme(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
+    open_readme_file(&app_handle)
+}
+
+/// Quit app (IPC)
+#[tauri::command]
+pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
+    log::info!("Terminating application...");
+
+    for window in app_handle.webview_windows().values() {
+        let _ = window.hide();
+    }
+
+    use tauri_plugin_global_shortcut::GlobalShortcutExt;
+    let _ = app_handle.global_shortcut().unregister_all();
+
+    if let Some(state) = app_handle.try_state::<CommandsState>() {
+        let commands_config_opt = {
+            if let Ok(manager) = state.commands.try_lock() {
+                Some(manager.get_user_commands())
+            } else {
+                None
+            }
+        };
+        if let Some(commands_config) = commands_config_opt {
+            let _ = state.command_store.save(&commands_config).await;
+        }
+    }
+
+    app_handle.exit(0);
+    Ok(())
+}
+
 /// Reload config and commands
 pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::AppError> {
     use tauri::Emitter;

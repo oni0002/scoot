@@ -59,10 +59,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                 });
             }
             "readme" => {
-                let h = app_handle.clone();
-                tauri::async_runtime::spawn(async move {
-                    let _ = crate::system::open_readme(h).await;
-                });
+                let _ = crate::lifecycle::open_readme_file(app_handle);
             }
             "open_log" => {
                 let _ = crate::lifecycle::open_log(app_handle);
@@ -70,7 +67,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
             "quit" => {
                 let h = app_handle.clone();
                 tauri::async_runtime::spawn(async move {
-                    let _ = crate::system::quit_app(h).await;
+                    let _ = crate::lifecycle::quit_app(h).await;
                 });
             }
             _ => {}

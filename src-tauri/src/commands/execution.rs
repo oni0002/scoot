@@ -77,8 +77,7 @@ async fn execute_scoot_command(
             Ok(ExecuteResult::hide())
         }
         "scoot://open-readme" => {
-            let resource_path = crate::os::resolve_resource(&app_handle, "README.md")?;
-            crate::os::open_path(&app_handle, &resource_path.to_string_lossy())?;
+            crate::lifecycle::open_readme_file(&app_handle)?;
             Ok(ExecuteResult::hide())
         }
         "scoot://open-log" => {
@@ -90,7 +89,7 @@ async fn execute_scoot_command(
             Ok(ExecuteResult::keep_open())
         }
         "scoot://kill" => {
-            crate::system::quit_app((*app_handle).clone()).await?;
+            crate::lifecycle::quit_app((*app_handle).clone()).await?;
             Ok(ExecuteResult::hide())
         }
         _ => Err(crate::error::AppError::CommandExecution(format!(
