@@ -9,7 +9,8 @@ pub mod validation;
 pub mod watcher;
 pub mod window;
 
-use crate::commands::store::{CommandRegistry, CommandStore};
+use crate::commands::registry::CommandRegistry;
+use crate::commands::store::CommandStore;
 use crate::config::store::ConfigStore;
 use crate::state::AppState;
 use crate::watcher::FileWatcher;

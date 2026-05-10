@@ -1,5 +1,5 @@
 use crate::commands::domain::{Command, Commands};
-use crate::commands::store::CommandRegistry;
+use crate::commands::registry::CommandRegistry;
 use crate::error::AppError;
 use crate::state::AppState;
 use tauri::{Manager, State};

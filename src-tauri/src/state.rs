@@ -1,4 +1,5 @@
-use crate::commands::store::{CommandRegistry, CommandStore};
+use crate::commands::registry::CommandRegistry;
+use crate::commands::store::CommandStore;
 use crate::config::domain::Config;
 use crate::config::store::ConfigStore;
 use crate::watcher::FileWatcher;
