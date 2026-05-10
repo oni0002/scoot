@@ -8,6 +8,8 @@ pub struct CommandRegistry {
     pub scoot_commands: HashMap<String, Command>,
     pub application_commands: HashMap<String, Command>,
     pub markdown_commands: HashMap<String, Command>,
+    command_index: HashMap<String, String>, // command string → id
+    prompt_index: HashMap<String, String>,  // prompt string → id
 }
 
 impl CommandRegistry {
@@ -19,6 +21,8 @@ impl CommandRegistry {
             scoot_commands: HashMap::new(),
             application_commands: HashMap::new(),
             markdown_commands: HashMap::new(),
+            command_index: HashMap::new(),
+            prompt_index: HashMap::new(),
         }
     }
 
@@ -38,15 +42,27 @@ impl CommandRegistry {
     pub fn add_user_command(&mut self, mut command: Command) -> String {
         self.assign_id(&mut command);
         let id = command.id.clone();
+        self.command_index.insert(command.command.clone(), id.clone());
+        if let Some(ref p) = command.prompt {
+            self.prompt_index.insert(p.clone(), id.clone());
+        }
         self.user_commands.insert(id.clone(), command);
         id
     }
 
     pub fn update_user_command(&mut self, command: Command) -> Result<(), crate::error::AppError> {
-        if !self.user_commands.contains_key(&command.id) {
-            return Err(crate::error::AppError::NotFound(
-                "Command not found".to_string(),
-            ));
+        let old = self.user_commands.get(&command.id).ok_or_else(|| {
+            crate::error::AppError::NotFound("Command not found".to_string())
+        })?;
+        // Remove old index entries
+        self.command_index.remove(&old.command);
+        if let Some(ref p) = old.prompt {
+            self.prompt_index.remove(p);
+        }
+        // Insert new index entries
+        self.command_index.insert(command.command.clone(), command.id.clone());
+        if let Some(ref p) = command.prompt {
+            self.prompt_index.insert(p.clone(), command.id.clone());
         }
         self.user_commands.insert(command.id.clone(), command);
         Ok(())
@@ -54,6 +70,8 @@ impl CommandRegistry {
 
     pub fn set_user_commands(&mut self, commands: Vec<Command>) {
         self.user_commands.clear();
+        self.command_index.clear();
+        self.prompt_index.clear();
         for command in commands {
             if self.validate_command(&command).is_ok() {
                 self.add_user_command(command);
@@ -68,10 +86,12 @@ impl CommandRegistry {
     }
 
     pub fn delete_user_command(&mut self, id: &str) -> Result<(), crate::error::AppError> {
-        if self.user_commands.remove(id).is_none() {
-            return Err(crate::error::AppError::NotFound(
-                "Command not found".to_string(),
-            ));
+        let command = self.user_commands.remove(id).ok_or_else(|| {
+            crate::error::AppError::NotFound("Command not found".to_string())
+        })?;
+        self.command_index.remove(&command.command);
+        if let Some(ref p) = command.prompt {
+            self.prompt_index.remove(p);
         }
         Ok(())
     }
@@ -124,11 +144,12 @@ impl CommandRegistry {
     pub fn validate_command(&self, command: &Command) -> Result<(), crate::error::AppError> {
         command.validate()?;
 
-        for existing_cmd in self.user_commands.values() {
-            if existing_cmd.id != command.id && existing_cmd.command == command.command {
+        if let Some(existing_id) = self.command_index.get(&command.command) {
+            if existing_id != &command.id {
+                let name = self.user_commands.get(existing_id).map(|c| c.name.as_str()).unwrap_or("unknown");
                 return Err(crate::error::AppError::Validation(format!(
                     "This command path/URL is already registered as '{}'.",
-                    existing_cmd.name
+                    name
                 )));
             }
         }
@@ -146,14 +167,10 @@ impl CommandRegistry {
     }
 
     pub fn is_prompt_used(&self, prompt: &str, exclude_id: Option<&str>) -> bool {
-        self.user_commands.values().any(|cmd| {
-            if let Some(exclude) = exclude_id {
-                if cmd.id == exclude {
-                    return false;
-                }
-            }
-            cmd.prompt.as_ref().map_or(false, |p| p == prompt)
-        })
+        match self.prompt_index.get(prompt) {
+            Some(id) => exclude_id.map_or(true, |ex| ex != id),
+            None => false,
+        }
     }
 
     pub fn get_all_commands(&self) -> Vec<Command> {
