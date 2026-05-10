@@ -98,9 +98,9 @@ pub fn get_commands_by_prompt(
     Ok(manager.get_commands_by_prompt(&prompt))
 }
 
-/// Get commands
+/// Get user commands
 #[tauri::command]
-pub async fn get_commands(state: State<'_, AppState>) -> Result<Commands, crate::error::AppError> {
+pub async fn get_user_commands(state: State<'_, AppState>) -> Result<Commands, crate::error::AppError> {
     state.command_store.load().await
 }
 
