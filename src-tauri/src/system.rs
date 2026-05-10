@@ -72,7 +72,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
 
     // Reload commands (Config is passed)
     if let Some(state) = app_handle.try_state::<AppState>() {
-        crate::commands::ipc::reload(&state.command_store, &state.commands, &config).await?;
+        crate::commands::loader::reload(&state.command_store, &state.commands, &config).await?;
     } else {
         return Err(crate::error::AppError::System(
             "Failed to get AppState".to_string(),
