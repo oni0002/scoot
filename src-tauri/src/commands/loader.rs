@@ -23,7 +23,7 @@ pub async fn reload(
                 "Failed to load commands.json: {}. Proceeding with empty commands.",
                 e
             );
-            crate::commands::domain::Commands::new()
+            Vec::new()
         }
     };
     for cmd in &mut commands {

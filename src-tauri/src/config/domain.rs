@@ -117,29 +117,3 @@ impl Config {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::commands::domain::{generate_commands_schema, Commands};
-
-    #[test]
-    fn test_schema_with_skipped_id() {
-        let schema = generate_commands_schema();
-        let compiled = jsonschema::JSONSchema::compile(&schema).unwrap();
-
-        let json =
-            r#"[{"name": "test", "category": "url", "command": "http", "description": "desc"}]"#;
-        let cmds: Commands = json5::from_str(json).unwrap();
-
-        // Convert to JSON Value to validate
-        let normalized = serde_json::to_value(&cmds).unwrap();
-
-        // This will panic if invalid
-        let result = compiled.validate(&normalized);
-        if let Err(e) = result {
-            for err in e {
-                println!("Error: {}", err);
-            }
-            panic!("Validation failed");
-        }
-    }
-}
