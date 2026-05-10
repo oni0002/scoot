@@ -15,8 +15,49 @@ pub async fn reload(
     command_registry: &std::sync::Mutex<CommandRegistry>,
     config: &crate::config::domain::Config,
 ) -> Result<(), AppError> {
-    log::debug!("Loading commands");
-    let mut commands = match command_store.load().await {
+    log::debug!("Loading commands, bookmarks, applications, and markdown links in parallel");
+
+    let (commands_result, bookmarks, app_commands, markdown_commands) = tokio::join!(
+        command_store.load(),
+        async {
+            if config.bookmarks.enabled {
+                crate::commands::bookmark::load(&config.bookmarks)
+                    .await
+                    .unwrap_or_else(|e| {
+                        log::warn!("Failed to load bookmarks: {}", e);
+                        Vec::new()
+                    })
+            } else {
+                Vec::new()
+            }
+        },
+        async {
+            if config.applications.enabled {
+                crate::commands::application::load(
+                    &config.applications.directories,
+                    &config.applications.extensions,
+                )
+                .await
+                .unwrap_or_default()
+            } else {
+                Vec::new()
+            }
+        },
+        async {
+            if config.markdown.enabled {
+                crate::commands::markdown::load(&config.markdown)
+                    .await
+                    .unwrap_or_else(|e| {
+                        log::warn!("Failed to load markdown links: {}", e);
+                        Vec::new()
+                    })
+            } else {
+                Vec::new()
+            }
+        },
+    );
+
+    let mut commands = match commands_result {
         Ok(cmds) => cmds,
         Err(e) => {
             log::error!(
@@ -30,45 +71,8 @@ pub async fn reload(
         cmd.source = crate::commands::domain::SOURCE_USER.to_string();
     }
 
-    log::debug!("Loading bookmarks");
-    let bookmarks = if config.bookmarks.enabled {
-        crate::commands::bookmark::load(&config.bookmarks)
-            .await
-            .unwrap_or_else(|e| {
-                log::warn!("Failed to load bookmarks: {}", e);
-                Vec::new()
-            })
-    } else {
-        Vec::new()
-    };
-
-    log::debug!("Loading applications");
-    let app_commands = if config.applications.enabled {
-        crate::commands::application::load(
-            &config.applications.directories,
-            &config.applications.extensions,
-        )
-        .await
-        .unwrap_or_default()
-    } else {
-        Vec::new()
-    };
-
     let bookmarks = filter_ignored(bookmarks, &config.ignored);
     let app_commands = filter_ignored(app_commands, &config.ignored);
-
-    log::debug!("Loading markdown links");
-    let markdown_commands = if config.markdown.enabled {
-        crate::commands::markdown::load(&config.markdown)
-            .await
-            .unwrap_or_else(|e| {
-                log::warn!("Failed to load markdown links: {}", e);
-                Vec::new()
-            })
-    } else {
-        Vec::new()
-    };
-
     let markdown_commands = filter_ignored(markdown_commands, &config.ignored);
     let scoot_commands =
         filter_ignored(crate::commands::domain::get_scoot_commands(), &config.ignored);
