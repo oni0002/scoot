@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { KEYBOARD_SHORTCUTS } from '../constants';
 import { TauriAPI } from '../api/tauri';
+import { SearchMode } from './useSearchState';
 
 interface UseKeyboardNavigationProps {
     moveSelection: (direction: 'up' | 'down') => void;
@@ -8,9 +9,8 @@ interface UseKeyboardNavigationProps {
     resetState: () => void;
     query: string;
     setQuery: (query: string) => void;
-    setResults: (results: any[]) => void;
-    setSelectedIndex: (index: number) => void;
-    promptMode: any;
+    searchMode: SearchMode;
+    setSearchMode: (mode: SearchMode) => void;
 }
 
 export const useKeyboardNavigation = ({
@@ -19,13 +19,11 @@ export const useKeyboardNavigation = ({
     resetState,
     query,
     setQuery,
-    setResults,
-    setSelectedIndex,
-    promptMode
+    searchMode,
+    setSearchMode,
 }: UseKeyboardNavigationProps) => {
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        // Ctrl+N/P for navigation
         if (e.ctrlKey) {
             if (KEYBOARD_SHORTCUTS.MOVE_DOWN_ALT.includes(e.key)) {
                 e.preventDefault();
@@ -53,17 +51,16 @@ export const useKeyboardNavigation = ({
             executeCommand();
         } else if (KEYBOARD_SHORTCUTS.CANCEL.includes(e.key)) {
             e.preventDefault();
-            if (promptMode) {
+            if (searchMode.mode === 'prompt') {
                 resetState();
             } else if (query) {
                 setQuery('');
-                setResults([]);
-                setSelectedIndex(0);
+                setSearchMode({ mode: 'idle' });
             } else {
                 TauriAPI.hideWindow();
             }
         }
-    }, [moveSelection, executeCommand, promptMode, query, resetState, setQuery, setResults, setSelectedIndex]);
+    }, [moveSelection, executeCommand, searchMode, query, resetState, setQuery, setSearchMode]);
 
     return { handleKeyDown };
 };

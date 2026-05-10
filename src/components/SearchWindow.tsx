@@ -61,8 +61,9 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
   // Search Logic & State
   const searchState = useSearchState(commands, fuzzyThreshold, maxResults);
   const {
-    query, setQuery, results, setResults, selectedIndex, setSelectedIndex,
-    promptMode, setPromptMode, resetState, inputRef, promptProcessor
+    query, setQuery, searchMode, setSearchMode,
+    results, selectedIndex, promptMode,
+    resetState, inputRef, promptProcessor
   } = searchState;
 
   // UI State for mouse hover
@@ -86,13 +87,8 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
       const selectedResult = results[effectiveIndex];
 
       if (selectedResult.command.prompt && !query.startsWith(selectedResult.command.prompt + ' ')) {
-        setPromptMode({
-          prompt: selectedResult.command.prompt,
-          command: selectedResult.command
-        });
         setQuery(selectedResult.command.prompt + ' ');
-        setResults([]);
-        setSelectedIndex(0);
+        setSearchMode({ mode: 'prompt', prompt: selectedResult.command.prompt, command: selectedResult.command });
         return;
       }
 
@@ -108,7 +104,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     }
 
     TauriAPI.hideWindow();
-  }, [results, selectedIndex, query, executeContextCommand, promptMode, resetState, setPromptMode, setQuery, setResults, setSelectedIndex, promptProcessor]);
+  }, [results, selectedIndex, query, executeContextCommand, promptMode, resetState, setSearchMode, setQuery, promptProcessor]);
 
   // Keyboard Navigation
   const { handleKeyDown } = useKeyboardNavigation({
@@ -117,9 +113,8 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     resetState,
     query,
     setQuery,
-    setResults,
-    setSelectedIndex,
-    promptMode
+    searchMode,
+    setSearchMode,
   });
 
   // Action Handlers
@@ -127,9 +122,9 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     if (event && (event.target as HTMLElement).closest('.dropdown, .dropdown-content')) {
       return;
     }
-    setSelectedIndex(index);
+    setSearchMode(prev => prev.mode === 'search' ? { ...prev, selectedIndex: index } : prev);
     runSelectedCommand(index);
-  }, [runSelectedCommand, setSelectedIndex]);
+  }, [runSelectedCommand, setSearchMode]);
 
   const handleAddCommand = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
