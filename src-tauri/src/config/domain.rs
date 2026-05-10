@@ -1,4 +1,4 @@
-use schemars::{schema_for, JsonSchema};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_THEME: &str = "dark";
@@ -103,15 +103,7 @@ impl Default for Config {
     }
 }
 
-/// Config schema validation
 impl Config {
-    /// Generate Config JSON schema
-    pub fn generate_schema() -> serde_json::Value {
-        let schema = schema_for!(Config);
-        serde_json::to_value(schema).unwrap_or_default()
-    }
-
-    /// Deserialize JSON string with schema validation
     pub fn from_json_with_validation(json_str: &str) -> Result<Self, crate::error::AppError> {
         crate::validation::parse_and_validate::<Self>(json_str)
     }

@@ -42,12 +42,6 @@ pub struct Command {
     pub show_window: Option<bool>,
 }
 
-/// Generate Commands JSON schema
-pub fn generate_commands_schema() -> serde_json::Value {
-    let schema = schemars::schema_for!(Vec<Command>);
-    serde_json::to_value(schema).unwrap_or_default()
-}
-
 /// Deserialize JSON string with schema validation
 pub fn deserialize_json(json_str: &str) -> Result<Vec<Command>, crate::error::AppError> {
     crate::validation::parse_and_validate::<Vec<Command>>(json_str)
@@ -267,21 +261,8 @@ mod tests {
 
     #[test]
     fn test_schema_with_skipped_id() {
-        let schema = generate_commands_schema();
-        let compiled = jsonschema::JSONSchema::compile(&schema).unwrap();
-
         let json =
             r#"[{"name": "test", "category": "url", "command": "http", "description": "desc"}]"#;
-        let cmds: Vec<Command> = json5::from_str(json).unwrap();
-
-        let normalized = serde_json::to_value(&cmds).unwrap();
-
-        let result = compiled.validate(&normalized);
-        if let Err(e) = result {
-            for err in e {
-                println!("Error: {}", err);
-            }
-            panic!("Validation failed");
-        }
+        assert!(deserialize_json(json).is_ok());
     }
 }
