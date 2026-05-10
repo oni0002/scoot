@@ -153,6 +153,13 @@ pub async fn open_commands_json(
     Ok(())
 }
 
+fn filter_ignored(commands: Vec<Command>, ignored: &[String]) -> Vec<Command> {
+    commands
+        .into_iter()
+        .filter(|c| !ignored.contains(&c.command))
+        .collect()
+}
+
 /// Reload commands, bookmarks, and apps
 pub async fn reload(
     command_store: &crate::commands::store::CommandStore,
@@ -203,15 +210,8 @@ pub async fn reload(
     };
 
     // Filter ignored commands
-    let bookmarks: Vec<_> = bookmarks
-        .into_iter()
-        .filter(|c| !config.ignored.contains(&c.command))
-        .collect();
-
-    let app_commands: Vec<_> = app_commands
-        .into_iter()
-        .filter(|c| !config.ignored.contains(&c.command))
-        .collect();
+    let bookmarks = filter_ignored(bookmarks, &config.ignored);
+    let app_commands = filter_ignored(app_commands, &config.ignored);
 
     // Load markdown links
     log::debug!("Loading markdown links");
@@ -226,16 +226,10 @@ pub async fn reload(
         Vec::new()
     };
 
-    let markdown_commands: Vec<_> = markdown_commands
-        .into_iter()
-        .filter(|c| !config.ignored.contains(&c.command))
-        .collect();
+    let markdown_commands = filter_ignored(markdown_commands, &config.ignored);
 
     // Filter ignored scoot commands
-    let scoot_commands: Vec<_> = crate::commands::domain::get_scoot_commands()
-        .into_iter()
-        .filter(|c| !config.ignored.contains(&c.command))
-        .collect();
+    let scoot_commands = filter_ignored(crate::commands::domain::get_scoot_commands(), &config.ignored);
 
     // Reflect in CommandRegistry
     let mut manager = command_registry
