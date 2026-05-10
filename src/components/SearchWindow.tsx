@@ -22,19 +22,13 @@ function menuHandler(action: () => Promise<void>, label: string) {
 const handleOpenCommandsJson = menuHandler(() => TauriAPI.openCommandsJson(), 'open commands.json');
 const handleOpenConfigJson = menuHandler(() => TauriAPI.openConfigJson(), 'open config.json');
 const handleShowReadme = menuHandler(() => TauriAPI.openReadme(), 'open README');
-const handleShowAbout = async (event: React.MouseEvent) => {
-  event.stopPropagation();
-  try {
-    const version = await TauriAPI.getVersion();
-    await TauriAPI.showMessage(
-      `Scoot - Command Launcher\nVersion ${version}\n\nA fast and efficient command launcher for your desktop.`,
-      'About Scoot'
-    );
-  } catch (error) {
-    console.error('Failed to show About dialog:', error);
-    alert('Scoot - Command Launcher\n(Version info unavailable)');
-  }
-};
+const handleShowAbout = menuHandler(async () => {
+  const version = await TauriAPI.getVersion();
+  await TauriAPI.showMessage(
+    `Scoot - Command Launcher\nVersion ${version}\n\nA fast and efficient command launcher for your desktop.`,
+    'About Scoot'
+  );
+}, 'show About dialog');
 
 interface SearchWindowProps {
   fuzzyThreshold?: number;
