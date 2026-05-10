@@ -1,4 +1,4 @@
-use crate::commands::domain::{Command, Commands};
+use crate::commands::domain::Command;
 use crate::error::AppError;
 use crate::state::CommandsState;
 use tauri::{Manager, State};
@@ -95,37 +95,6 @@ pub fn get_commands_by_prompt(
 ) -> Result<Vec<Command>, crate::error::AppError> {
     let manager = state.commands.lock().unwrap();
     Ok(manager.get_commands_by_prompt(&prompt))
-}
-
-/// Get user commands
-#[tauri::command]
-pub async fn get_user_commands(state: State<'_, CommandsState>) -> Result<Commands, crate::error::AppError> {
-    state.command_store.load().await
-}
-
-/// Save commands
-#[tauri::command]
-pub async fn save_commands(
-    commands: Commands,
-    state: State<'_, CommandsState>,
-) -> Result<(), crate::error::AppError> {
-    // Save the commands
-    state.command_store.save(&commands).await?;
-    // Update CommandRegistry
-    let mut manager = state
-        .commands
-        .lock()
-        .map_err(|e| AppError::lock(e))?;
-    manager.set_user_commands(commands);
-    Ok(())
-}
-
-/// Get commands.json path
-#[tauri::command]
-pub fn get_commands_file_path(
-    state: State<'_, CommandsState>,
-) -> Result<String, crate::error::AppError> {
-    Ok(state.command_store.get_path().to_string())
 }
 
 /// Open commands.json

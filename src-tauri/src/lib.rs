@@ -118,14 +118,10 @@ pub fn run() {
             crate::commands::ipc::delete_command,
             crate::commands::execution::execute_command,
             crate::commands::ipc::get_commands_by_prompt,
-            crate::commands::ipc::get_user_commands,
-            crate::commands::ipc::save_commands,
-            crate::commands::ipc::get_commands_file_path,
             crate::commands::ipc::open_commands_json,
             // Config
             crate::config::ipc::get_config,
             crate::config::ipc::save_config,
-            crate::config::ipc::get_config_file_path,
             crate::config::ipc::open_config_json,
             // System
             crate::system::reload_all,

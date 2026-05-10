@@ -34,14 +34,6 @@ pub async fn save_config(
     state.config_store.save(&config).await
 }
 
-/// Get config.json path
-#[tauri::command]
-pub async fn get_config_file_path(
-    state: State<'_, ConfigState>,
-) -> Result<String, crate::error::AppError> {
-    Ok(state.config_store.get_config_path().to_string())
-}
-
 /// Open config.json
 #[tauri::command]
 pub async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {

@@ -68,22 +68,6 @@ export class TauriAPI {
     return await invoke('save_config', { config });
   }
 
-  static async getUserCommands(): Promise<Commands> {
-    return await invoke('get_user_commands');
-  }
-
-  static async saveCommandsConfig(commands: Commands): Promise<void> {
-    return await invoke('save_commands', { commands });
-  }
-
-  static async getAppConfigFilePath(): Promise<string> {
-    return await invoke('get_config_file_path');
-  }
-
-  static async getCommandsFilePath(): Promise<string> {
-    return await invoke('get_commands_file_path');
-  }
-
   static async getVersion(): Promise<string> {
     return await getVersion();
   }
