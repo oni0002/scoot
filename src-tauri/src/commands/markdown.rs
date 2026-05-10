@@ -61,17 +61,7 @@ pub async fn load(config: &MarkdownConfig) -> Result<Vec<Command>, crate::error:
                     "file"
                 };
 
-                commands.push(Command {
-                    id: String::new(),
-                    name,
-                    category: category.to_string(),
-                    source: file_name.clone(),
-                    command: url.clone(),
-                    description: url.clone(),
-                    prompt: None,
-                    working_dir: None,
-                    show_window: None,
-                });
+                commands.push(Command::new(name, category, file_name.clone(), url.clone(), url.clone()));
             }
         }
 

@@ -69,88 +69,38 @@ pub fn deserialize_json(json_str: &str) -> Result<Commands, crate::error::AppErr
 /// Get the built-in commands for Scoot
 pub fn get_scoot_commands() -> Vec<Command> {
     vec![
-        Command {
-            id: String::new(),
-            name: "Add Command".to_string(),
-            category: CATEGORY_SCOOT.to_string(),
-            source: SOURCE_SCOOT.to_string(),
-            command: CMD_SCOOT_ADD_COMMAND.to_string(),
-            description: "Add a new command to the launcher".to_string(),
-            prompt: None,
-            working_dir: None,
-            show_window: None,
-        },
-        Command {
-            id: String::new(),
-            name: "Open Commands.json".to_string(),
-            category: CATEGORY_SCOOT.to_string(),
-            source: SOURCE_SCOOT.to_string(),
-            command: CMD_SCOOT_OPEN_COMMANDS.to_string(),
-            description: "Open commands.json configuration file".to_string(),
-            prompt: None,
-            working_dir: None,
-            show_window: None,
-        },
-        Command {
-            id: String::new(),
-            name: "Open Config.json".to_string(),
-            category: CATEGORY_SCOOT.to_string(),
-            source: SOURCE_SCOOT.to_string(),
-            command: CMD_SCOOT_OPEN_CONFIG.to_string(),
-            description: "Open config.json configuration file".to_string(),
-            prompt: None,
-            working_dir: None,
-            show_window: None,
-        },
-        Command {
-            id: String::new(),
-            name: "Open README".to_string(),
-            category: CATEGORY_SCOOT.to_string(),
-            source: SOURCE_SCOOT.to_string(),
-            command: CMD_SCOOT_OPEN_README.to_string(),
-            description: "Open application README".to_string(),
-            prompt: None,
-            working_dir: None,
-            show_window: None,
-        },
-        Command {
-            id: String::new(),
-            name: "Open Logs".to_string(),
-            category: CATEGORY_SCOOT.to_string(),
-            source: SOURCE_SCOOT.to_string(),
-            command: CMD_SCOOT_OPEN_LOG.to_string(),
-            description: "Open application log directory".to_string(),
-            prompt: None,
-            working_dir: None,
-            show_window: None,
-        },
-        Command {
-            id: String::new(),
-            name: "Reload".to_string(),
-            category: CATEGORY_SCOOT.to_string(),
-            source: SOURCE_SCOOT.to_string(),
-            command: CMD_SCOOT_RELOAD.to_string(),
-            description: "Reload commands and configuration".to_string(),
-            prompt: None,
-            working_dir: None,
-            show_window: None,
-        },
-        Command {
-            id: String::new(),
-            name: "Kill Scoot".to_string(),
-            category: CATEGORY_SCOOT.to_string(),
-            source: SOURCE_SCOOT.to_string(),
-            command: CMD_SCOOT_KILL.to_string(),
-            description: "Terminate the application".to_string(),
-            prompt: None,
-            working_dir: None,
-            show_window: None,
-        },
+        Command::new("Add Command", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_ADD_COMMAND, "Add a new command to the launcher"),
+        Command::new("Open Commands.json", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_COMMANDS, "Open commands.json configuration file"),
+        Command::new("Open Config.json", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_CONFIG, "Open config.json configuration file"),
+        Command::new("Open README", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_README, "Open application README"),
+        Command::new("Open Logs", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_LOG, "Open application log directory"),
+        Command::new("Reload", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_RELOAD, "Reload commands and configuration"),
+        Command::new("Kill Scoot", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_KILL, "Terminate the application"),
     ]
 }
 
 /// Command methods
 impl Command {
+    pub fn new(
+        name: impl Into<String>,
+        category: impl Into<String>,
+        source: impl Into<String>,
+        command: impl Into<String>,
+        description: impl Into<String>,
+    ) -> Self {
+        Command {
+            id: String::new(),
+            name: name.into(),
+            category: category.into(),
+            source: source.into(),
+            command: command.into(),
+            description: description.into(),
+            prompt: None,
+            working_dir: None,
+            show_window: None,
+        }
+    }
+
     /// Check if the command has placeholders
     pub fn has_placeholders(&self) -> bool {
         self.command.contains('{') && self.command.contains('}')

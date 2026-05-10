@@ -114,18 +114,7 @@ fn collect(
                 return;
             }
 
-            let command = Command {
-                id: String::new(),
-                name: bookmark.name.clone(),
-                category: "url".to_string(),
-                source: "bookmark".to_string(),
-                command: url.clone(),
-                description: url.clone(),
-                prompt: None,
-                working_dir: None,
-                show_window: None,
-            };
-            commands.push(command);
+            commands.push(Command::new(bookmark.name.clone(), "url", "bookmark", url.clone(), url.clone()));
             seen_urls.insert(url.clone());
         }
     } else if bookmark.bookmark_type == "folder" {

@@ -61,15 +61,5 @@ fn create_command(path: &Path) -> Option<Command> {
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| "Unknown".to_string());
 
-    Some(Command {
-        id: String::new(),
-        name: file_stem,
-        category: "file".to_string(),
-        source: "application".to_string(),
-        command: full_path,
-        description: parent,
-        prompt: None,
-        working_dir: None,
-        show_window: None,
-    })
+    Some(Command::new(file_stem, "file", "application", full_path, parent))
 }
