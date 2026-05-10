@@ -123,7 +123,7 @@ const AppContent = () => {
 
   const handleReloadCommands = useCallback(async () => {
     try {
-      await TauriAPI.reloadConfig();
+      await TauriAPI.reloadAll();
       await loadCommands();
       // showSuccess("Commands and config reloaded", 2000); // Handled by event listener
     } catch (err) {

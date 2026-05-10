@@ -28,8 +28,8 @@ export class TauriAPI {
     return await invoke('get_commands_by_prompt', { prompt });
   }
 
-  static async reloadConfig(): Promise<void> {
-    return await invoke('reload_config');
+  static async reloadAll(): Promise<void> {
+    return await invoke('reload_all');
   }
 
   static async toggleWindow(): Promise<void> {

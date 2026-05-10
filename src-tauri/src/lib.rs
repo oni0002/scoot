@@ -126,7 +126,7 @@ pub fn run() {
             crate::config::ipc::get_config_file_path,
             crate::config::ipc::open_config_json,
             // System
-            crate::system::reload_config,
+            crate::system::reload_all,
             crate::system::open_readme,
             crate::system::quit_app,
             // Window

@@ -4,9 +4,9 @@ use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_opener::OpenerExt;
 
-/// Reload config
+/// Reload config and commands
 #[tauri::command]
-pub async fn reload_config(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
+pub async fn reload_all(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     reload(&app_handle).await
 }
 
