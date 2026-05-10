@@ -8,7 +8,7 @@ use tauri::{Manager, State};
 pub fn get_all_commands(
     state: State<'_, CommandsState>,
 ) -> Result<Vec<Command>, crate::error::AppError> {
-    let manager = state.commands.lock().unwrap();
+    let manager = state.commands.lock().map_err(|e| AppError::lock(e))?;
     Ok(manager.get_all_commands())
 }
 
@@ -93,7 +93,7 @@ pub fn get_commands_by_prompt(
     prompt: String,
     state: State<'_, CommandsState>,
 ) -> Result<Vec<Command>, crate::error::AppError> {
-    let manager = state.commands.lock().unwrap();
+    let manager = state.commands.lock().map_err(|e| AppError::lock(e))?;
     Ok(manager.get_commands_by_prompt(&prompt))
 }
 
