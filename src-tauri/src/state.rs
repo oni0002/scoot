@@ -15,7 +15,7 @@ pub struct AppState {
     pub last_window_shown: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
     pub last_window_hidden: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
     pub last_tray_click: Mutex<Option<std::time::Instant>>,
-    pub prevent_hide: std::sync::Arc<std::sync::Mutex<bool>>,
+    pub prevent_hide: std::sync::Arc<std::sync::atomic::AtomicUsize>,
 }
 
 impl AppState {
@@ -36,7 +36,7 @@ impl AppState {
             last_window_shown: std::sync::Arc::new(std::sync::Mutex::new(None)),
             last_window_hidden: std::sync::Arc::new(std::sync::Mutex::new(None)),
             last_tray_click: Mutex::new(None),
-            prevent_hide: std::sync::Arc::new(std::sync::Mutex::new(false)),
+            prevent_hide: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         }
     }
 

@@ -134,7 +134,8 @@ pub fn run() {
             crate::system::quit_app,
             // Window
             crate::window::hide_window,
-            crate::window::set_prevent_hide,
+            crate::window::enter_modal,
+            crate::window::leave_modal,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

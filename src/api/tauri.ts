@@ -52,8 +52,12 @@ export class TauriAPI {
     return await invoke('quit_app');
   }
 
-  static async setPreventHide(prevent: boolean): Promise<void> {
-    return await invoke('set_prevent_hide', { prevent });
+  static async enterModal(): Promise<void> {
+    return await invoke('enter_modal');
+  }
+
+  static async leaveModal(): Promise<void> {
+    return await invoke('leave_modal');
   }
 
   static async getConfig(): Promise<Config> {

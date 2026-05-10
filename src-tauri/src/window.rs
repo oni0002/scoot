@@ -44,28 +44,21 @@ pub async fn show_window(app_handle: tauri::AppHandle) -> Result<(), crate::erro
     Ok(())
 }
 
-/// Set prevent_hide flag
+/// Increment the modal refcount to prevent auto-hide
 #[tauri::command]
-pub async fn set_prevent_hide(
-    prevent: bool,
-    state: State<'_, AppState>,
-) -> Result<(), crate::error::AppError> {
-    set_prevent_hide_flag(&state.prevent_hide, prevent)
+pub async fn enter_modal(state: State<'_, AppState>) -> Result<(), crate::error::AppError> {
+    state.prevent_hide.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    Ok(())
 }
 
-/// Set prevent_hide flag
-pub fn set_prevent_hide_flag(
-    prevent_hide_mutex: &std::sync::Mutex<bool>,
-    prevent: bool,
-) -> Result<(), crate::error::AppError> {
-    if let Ok(mut flag) = prevent_hide_mutex.lock() {
-        *flag = prevent;
-        Ok(())
-    } else {
-        Err(crate::error::AppError::System(
-            "Failed to lock prevent_hide flag".to_string(),
-        ))
+/// Decrement the modal refcount; auto-hide resumes when count reaches zero
+#[tauri::command]
+pub async fn leave_modal(state: State<'_, AppState>) -> Result<(), crate::error::AppError> {
+    let prev = state.prevent_hide.load(std::sync::atomic::Ordering::SeqCst);
+    if prev > 0 {
+        state.prevent_hide.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
     }
+    Ok(())
 }
 
 /// Handle focus change event
@@ -73,7 +66,7 @@ pub fn handle_focus_change(
     window: &tauri::WebviewWindow,
     focused: bool,
     last_window_shown: &std::sync::Mutex<Option<std::time::Instant>>,
-    prevent_hide: &std::sync::Mutex<bool>,
+    prevent_hide: &std::sync::atomic::AtomicUsize,
     last_window_hidden: &std::sync::Mutex<Option<std::time::Instant>>,
 ) {
     // If focused, do nothing
@@ -90,11 +83,9 @@ pub fn handle_focus_change(
         }
     }
 
-    // If prevent_hide is true, do nothing
-    if let Ok(flag) = prevent_hide.lock() {
-        if *flag {
-            return;
-        }
+    // If any modal is open, do nothing
+    if prevent_hide.load(std::sync::atomic::Ordering::SeqCst) > 0 {
+        return;
     }
 
     // Hide window
@@ -108,7 +99,7 @@ pub fn handle_focus_change(
 pub fn setup_window_events(
     app: &tauri::App,
     last_window_shown: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
-    prevent_hide: std::sync::Arc<std::sync::Mutex<bool>>,
+    prevent_hide: std::sync::Arc<std::sync::atomic::AtomicUsize>,
     last_window_hidden: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
 ) {
     if let Some(window) = app.get_webview_window("main") {

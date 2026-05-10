@@ -40,9 +40,8 @@ const AppContent = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingCommand, setDeletingCommand] = useState<Command | undefined>(undefined);
 
-  const handleAddCommand = useCallback(async () => {
+  const handleAddCommand = useCallback(() => {
     console.log('App: handleAddCommand called');
-    await TauriAPI.setPreventHide(true);
     setEditingCommand(undefined);
     setCurrentView('form');
   }, []);
@@ -84,9 +83,8 @@ const AppContent = () => {
     }
   }, [showDeleteDialog]);
 
-  const handleEditCommandFromSearch = useCallback(async (command: Command) => {
+  const handleEditCommandFromSearch = useCallback((command: Command) => {
     console.log('App: handleEditCommandFromSearch called', command);
-    await TauriAPI.setPreventHide(true);
     setEditingCommand(command);
     setCurrentView('form');
   }, []);

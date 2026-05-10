@@ -126,7 +126,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
 
     const handleBrowseFile = async () => {
         try {
-            await TauriAPI.setPreventHide(true);
+            await TauriAPI.enterModal();
             const selected = await open({
                 multiple: false,
                 directory: false,
@@ -137,13 +137,13 @@ export const CommandForm: React.FC<CommandFormProps> = ({
         } catch (err) {
             console.error('Failed to open file dialog:', err);
         } finally {
-            await TauriAPI.setPreventHide(false);
+            await TauriAPI.leaveModal();
         }
     };
 
     const handleBrowseFolder = async () => {
         try {
-            await TauriAPI.setPreventHide(true);
+            await TauriAPI.enterModal();
             const selected = await open({
                 multiple: false,
                 directory: true,
@@ -154,7 +154,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
         } catch (err) {
             console.error('Failed to open folder dialog:', err);
         } finally {
-            await TauriAPI.setPreventHide(false);
+            await TauriAPI.leaveModal();
         }
     };
 
