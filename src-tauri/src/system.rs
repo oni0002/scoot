@@ -114,8 +114,8 @@ pub fn open_add_command_dialog(app_handle: &AppHandle) -> Result<(), crate::erro
     })
 }
 
-/// Setup event listeners
-pub fn setup_event_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+/// Setup reload event listeners
+pub fn setup_reload_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     use std::sync::{Arc, Mutex};
     use std::time::{Duration, Instant};
     use tauri::{Emitter, Listener};

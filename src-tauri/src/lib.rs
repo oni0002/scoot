@@ -99,7 +99,7 @@ pub fn run() {
                 last_window_hidden,
             );
             // Set event listeners and background tasks
-            crate::system::setup_event_listeners(app)?;
+            crate::system::setup_reload_listeners(app)?;
             crate::system::start_periodic_reload(app.handle().clone());
             // Set up system tray
             crate::tray::setup_system_tray(app)?;
