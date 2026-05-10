@@ -33,19 +33,6 @@ impl Serialize for AppError {
     }
 }
 
-/// Helper for converting various types to AppError
-impl From<String> for AppError {
-    fn from(err: String) -> Self {
-        AppError::System(err)
-    }
-}
-
-impl From<&str> for AppError {
-    fn from(err: &str) -> Self {
-        AppError::System(err.to_string())
-    }
-}
-
 impl AppError {
     pub fn lock(e: impl std::fmt::Display) -> Self {
         AppError::System(format!("Mutex poisoned: {}", e))
