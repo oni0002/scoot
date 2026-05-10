@@ -1,6 +1,7 @@
 import React from 'react';
 import { LuEllipsisVertical, LuCopy } from "react-icons/lu";
 import { Command, SearchResult } from '../types';
+import { DIRECT_OPEN_ID } from '../constants';
 
 interface SearchResultItemProps {
     result: SearchResult;
@@ -103,7 +104,7 @@ export const SearchResultItem = React.memo(({
                                     Copy
                                 </a>
                             </li>
-                            {result.command.source === 'user' && result.command.id !== 'dynamic-direct-open' && (
+                            {result.command.source === 'user' && result.command.id !== DIRECT_OPEN_ID && (
                                 <>
                                     <li>
                                         <a onClick={(e) => onEdit?.(result.command, e)}>Edit</a>

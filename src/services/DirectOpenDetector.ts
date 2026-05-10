@@ -1,4 +1,5 @@
 import { Command } from '../types';
+import { DIRECT_OPEN_ID } from '../constants';
 
 export class DirectOpenDetector {
   // Regex patterns
@@ -24,7 +25,7 @@ export class DirectOpenDetector {
       const category = isUrl ? 'url' : 'file';
 
       return {
-        id: `dynamic-direct-open`,
+        id: DIRECT_OPEN_ID,
         name: `Open: ${trimmed}`,
         category: category,
         source: 'user',

@@ -1,3 +1,5 @@
+export const DIRECT_OPEN_ID = 'direct-open';
+
 export const NOTIFICATION_DURATION = {
     DEFAULT: 3000,
     LONG: 8000,

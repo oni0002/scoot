@@ -8,6 +8,31 @@ import { useSearchState } from '../hooks/useSearchState';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { useWindowEvents } from '../hooks/useWindowEvents';
 
+function menuHandler(action: () => Promise<void>, label: string) {
+  return async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    try { await action(); }
+    catch (e) { console.error(`Failed to ${label}:`, e); }
+  };
+}
+
+const handleOpenCommandsJson = menuHandler(() => TauriAPI.openCommandsJson(), 'open commands.json');
+const handleOpenConfigJson = menuHandler(() => TauriAPI.openConfigJson(), 'open config.json');
+const handleShowReadme = menuHandler(() => TauriAPI.openReadme(), 'open README');
+const handleShowAbout = async (event: React.MouseEvent) => {
+  event.stopPropagation();
+  try {
+    const version = await TauriAPI.getVersion();
+    await TauriAPI.showMessage(
+      `Scoot - Command Launcher\nVersion ${version}\n\nA fast and efficient command launcher for your desktop.`,
+      'About Scoot'
+    );
+  } catch (error) {
+    console.error('Failed to show About dialog:', error);
+    alert('Scoot - Command Launcher\n(Version info unavailable)');
+  }
+};
+
 interface SearchWindowProps {
   fuzzyThreshold?: number;
   maxResults?: number;
@@ -130,48 +155,6 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     event.stopPropagation();
     onReloadCommands?.();
   }, [onReloadCommands]);
-
-  const handleOpenCommandsJson = useCallback(async (event: React.MouseEvent) => {
-    event.stopPropagation();
-    try {
-      await TauriAPI.openCommandsJson();
-    } catch (error) {
-      console.error('Failed to open commands.json:', error);
-    }
-  }, []);
-
-  const handleOpenConfigJson = useCallback(async (event: React.MouseEvent) => {
-    event.stopPropagation();
-    try {
-      await TauriAPI.openConfigJson();
-    } catch (error) {
-      console.error('Failed to open config.json:', error);
-    }
-  }, []);
-
-  const handleShowReadme = useCallback(async (event: React.MouseEvent) => {
-    event.stopPropagation();
-    try {
-      await TauriAPI.openReadme();
-    } catch (error) {
-      console.error('Failed to open README:', error);
-    }
-  }, []);
-
-  const handleShowAbout = useCallback(async (event: React.MouseEvent) => {
-    event.stopPropagation();
-    try {
-      const version = await TauriAPI.getVersion();
-      await TauriAPI.showMessage(
-        `Scoot - Command Launcher\nVersion ${version}\n\nA fast and efficient command launcher for your desktop.`,
-        'About Scoot'
-      );
-    } catch (error) {
-      console.error('Failed to show About dialog:', error);
-      // Fallback
-      alert('Scoot - Command Launcher\n(Version info unavailable)');
-    }
-  }, []);
 
   return (
     <div className="h-full flex flex-col p-4">
