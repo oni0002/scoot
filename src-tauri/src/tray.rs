@@ -47,26 +47,30 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                 let _ = crate::lifecycle::open_add_command_dialog(app_handle);
             }
             "open_commands" => {
-                tauri::async_runtime::block_on(async {
-                    let _ = crate::commands::ipc::open_commands_json(app_handle.clone()).await;
+                let h = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    let _ = crate::commands::ipc::open_commands_json(h).await;
                 });
             }
             "open_config" => {
-                tauri::async_runtime::block_on(async {
-                    let _ = crate::config::ipc::open_config_json(app_handle.clone()).await;
+                let h = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    let _ = crate::config::ipc::open_config_json(h).await;
                 });
             }
             "readme" => {
-                tauri::async_runtime::block_on(async {
-                    let _ = crate::system::open_readme(app_handle.clone()).await;
+                let h = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    let _ = crate::system::open_readme(h).await;
                 });
             }
             "open_log" => {
                 let _ = crate::lifecycle::open_log(app_handle);
             }
             "quit" => {
-                tauri::async_runtime::block_on(async {
-                    let _ = crate::system::quit_app(app_handle.clone()).await;
+                let h = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    let _ = crate::system::quit_app(h).await;
                 });
             }
             _ => {}
