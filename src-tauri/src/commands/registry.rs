@@ -27,8 +27,10 @@ impl CommandRegistry {
     }
 
     fn assign_id(&mut self, command: &mut Command) {
-        self.next_id += 1;
-        command.id = self.next_id.to_string();
+        if command.id.is_empty() {
+            self.next_id += 1;
+            command.id = self.next_id.to_string();
+        }
     }
 
     pub fn set_scoot_commands(&mut self, commands: Vec<Command>) {

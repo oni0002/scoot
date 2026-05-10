@@ -45,7 +45,7 @@ impl CommandStore {
         }
 
         // Validate and parse commands.json
-        let commands = tokio::task::spawn_blocking(move || {
+        let mut commands = tokio::task::spawn_blocking(move || {
             crate::commands::domain::deserialize_json(&content)
         })
         .await
@@ -57,14 +57,24 @@ impl CommandStore {
             Vec::new()
         });
 
+        let mut needs_save = false;
+        for cmd in &mut commands {
+            if cmd.id.is_empty() {
+                cmd.id = nanoid::nanoid!();
+                needs_save = true;
+            }
+        }
+        if needs_save {
+            let _ = self.save(&commands).await;
+        }
+
         Ok(commands)
     }
 
-    /// Save commands (strips internal fields like id and source before writing)
+    /// Save commands (strips runtime-only fields like source before writing)
     pub async fn save(&self, commands: &Vec<Command>) -> Result<(), crate::error::AppError> {
         let mut commands_to_save = commands.clone();
         for cmd in &mut commands_to_save {
-            cmd.id = String::new();
             cmd.source = String::new();
         }
 
