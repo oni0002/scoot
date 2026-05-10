@@ -13,7 +13,7 @@ use crate::commands::store::{CommandRegistry, CommandStore};
 use crate::config::store::ConfigStore;
 use crate::state::AppState;
 use crate::watcher::FileWatcher;
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 
 // Entry point
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -23,17 +23,7 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
-                let _ = window.emit("window-shown", ());
-
-                if let Some(state) = app.try_state::<AppState>() {
-                    if let Ok(mut last_shown) = state.last_window_shown.lock() {
-                        *last_shown = Some(std::time::Instant::now());
-                    }
-                }
-            }
+            crate::window::show_main_window(app);
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(

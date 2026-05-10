@@ -132,21 +132,11 @@ pub fn setup_global_shortcuts(
     hotkey: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     register(app_handle, hotkey, move |h| {
-        // Callback: toggle window visibility
         if let Some(window) = h.get_webview_window("main") {
             if window.is_visible().unwrap_or(false) {
                 let _ = window.hide();
             } else {
-                let _ = window.show();
-                let _ = window.set_focus();
-                let _ = window.emit("window-shown", ());
-
-                // Record the time the window was shown
-                if let Some(state) = h.try_state::<AppState>() {
-                    if let Ok(mut last_shown) = state.last_window_shown.lock() {
-                        *last_shown = Some(std::time::Instant::now());
-                    }
-                }
+                crate::window::show_main_window(h);
             }
         }
     })

@@ -91,7 +91,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
 /// Open log (or log directory)
 pub fn open_log(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
     let log_dir = get_log_dir(app_handle)?;
-    std::fs::create_dir_all(&log_dir).map_err(|e| crate::error::AppError::System(e.to_string()))?;
+    std::fs::create_dir_all(&log_dir)?;
 
     let log_file = log_dir.join("scoot.log");
     let target_path = if log_file.exists() { log_file } else { log_dir };

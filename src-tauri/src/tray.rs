@@ -2,7 +2,7 @@ use crate::state::AppState;
 use tauri::{
     menu::{MenuBuilder, MenuItem},
     tray::{TrayIconBuilder, TrayIconEvent},
-    App, Emitter, Manager,
+    App, Manager,
 };
 
 /// Setup system tray
@@ -41,18 +41,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         .tooltip("Scoot - Command Launcher")
         .on_menu_event(move |app_handle, event| match event.id().as_ref() {
             "show" => {
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                    let _ = window.emit("window-shown", ());
-
-                    // Record the time the window was shown
-                    if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
-                        if let Ok(mut last_shown) = state.last_window_shown.lock() {
-                            *last_shown = Some(std::time::Instant::now());
-                        }
-                    }
-                }
+                crate::window::show_main_window(app_handle);
             }
             "add_command" => {
                 let _ = crate::system::open_add_command_dialog(app_handle);
@@ -117,16 +106,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                     if window.is_visible().unwrap_or(false) {
                         let _ = window.hide();
                     } else {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                        let _ = window.emit("window-shown", ());
-
-                        // Record the time the window was shown
-                        if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
-                            if let Ok(mut last_shown) = state.last_window_shown.lock() {
-                                *last_shown = Some(std::time::Instant::now());
-                            }
-                        }
+                        crate::window::show_main_window(app_handle);
                     }
                 }
             }

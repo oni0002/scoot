@@ -1,5 +1,19 @@
 use crate::state::AppState;
-use tauri::{Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
+
+pub fn show_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.set_focus();
+        let _ = window.emit("window-shown", ());
+
+        if let Some(state) = app.try_state::<AppState>() {
+            if let Ok(mut last_shown) = state.last_window_shown.lock() {
+                *last_shown = Some(std::time::Instant::now());
+            }
+        }
+    }
+}
 
 // --- Tauri Commands ---
 
@@ -10,16 +24,7 @@ pub async fn toggle_window(app_handle: tauri::AppHandle) -> Result<(), crate::er
         if window.is_visible().unwrap_or(false) {
             let _ = window.hide();
         } else {
-            let _ = window.show();
-            let _ = window.set_focus();
-            let _ = window.emit("window-shown", ());
-
-            // Record the time the window was shown
-            if let Some(state) = app_handle.try_state::<AppState>() {
-                if let Ok(mut last_shown) = state.last_window_shown.lock() {
-                    *last_shown = Some(std::time::Instant::now());
-                }
-            }
+            show_main_window(&app_handle);
         }
     }
     Ok(())
@@ -37,18 +42,7 @@ pub async fn hide_window(app_handle: tauri::AppHandle) -> Result<(), crate::erro
 /// Show window
 #[tauri::command]
 pub async fn show_window(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
-    if let Some(window) = app_handle.get_webview_window("main") {
-        let _ = window.show();
-        let _ = window.set_focus();
-        let _ = window.emit("window-shown", ());
-
-        // Record the time the window was shown
-        if let Some(state) = app_handle.try_state::<AppState>() {
-            if let Ok(mut last_shown) = state.last_window_shown.lock() {
-                *last_shown = Some(std::time::Instant::now());
-            }
-        }
-    }
+    show_main_window(&app_handle);
     Ok(())
 }
 

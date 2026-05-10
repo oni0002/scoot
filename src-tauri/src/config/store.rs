@@ -1,4 +1,5 @@
 use crate::config::domain::Config;
+use crate::error::AppError;
 
 // --- Infrastructure / Core Logic ---
 
@@ -100,16 +101,13 @@ pub async fn reload(
 ) -> Result<Config, crate::error::AppError> {
     // Load config
     log::debug!("Loading configuration.");
-    let new_config = config_store
-        .load()
-        .await
-        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+    let new_config = config_store.load().await?;
 
     // Update state config
     {
         let mut locked_config = state_config
             .lock()
-            .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+            .map_err(|e| AppError::lock(e))?;
         *locked_config = new_config.clone();
     }
 

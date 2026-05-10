@@ -45,3 +45,9 @@ impl From<&str> for AppError {
         AppError::System(err.to_string())
     }
 }
+
+impl AppError {
+    pub fn lock(e: impl std::fmt::Display) -> Self {
+        AppError::System(format!("Mutex poisoned: {}", e))
+    }
+}

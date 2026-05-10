@@ -1,4 +1,5 @@
 use crate::config::domain::Config;
+use crate::error::AppError;
 use crate::state::AppState;
 use tauri::{Manager, State};
 
@@ -11,7 +12,7 @@ pub async fn get_config(state: State<'_, AppState>) -> Result<Config, crate::err
         .config
         .lock()
         .map(|c| c.clone())
-        .map_err(|e| crate::error::AppError::System(e.to_string()))
+        .map_err(|e| AppError::lock(e))
 }
 
 /// Save config
@@ -25,7 +26,7 @@ pub async fn save_config(
         let mut locked_config = state
             .config
             .lock()
-            .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+            .map_err(|e| AppError::lock(e))?;
         *locked_config = config.clone();
     }
 
@@ -51,8 +52,7 @@ pub async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), crate:
         if !path.exists() {
             if let Some(parent) = path.parent() {
                 if !parent.exists() {
-                    std::fs::create_dir_all(parent)
-                        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+                    std::fs::create_dir_all(parent)?;
                 }
             }
             let default_config = crate::config::domain::Config::default();

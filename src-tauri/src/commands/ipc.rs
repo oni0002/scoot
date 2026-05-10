@@ -1,5 +1,6 @@
 use crate::commands::domain::{Command, Commands};
 use crate::commands::store::CommandRegistry;
+use crate::error::AppError;
 use crate::state::AppState;
 use tauri::{Manager, State};
 
@@ -23,7 +24,7 @@ pub async fn add_command(
         let mut manager = state
             .commands
             .lock()
-            .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+            .map_err(|e| AppError::lock(e))?;
         // Validate
         manager.validate_command(&command)?;
 
@@ -50,7 +51,7 @@ pub async fn update_command(
         let mut manager = state
             .commands
             .lock()
-            .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+            .map_err(|e| AppError::lock(e))?;
         // Validate
         manager.validate_command(&command)?;
 
@@ -75,7 +76,7 @@ pub async fn delete_command(
         let mut manager = state
             .commands
             .lock()
-            .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+            .map_err(|e| AppError::lock(e))?;
         // Delete command
         manager.delete_user_command(&id)?;
         manager.get_user_commands()
@@ -115,7 +116,7 @@ pub async fn save_commands(
     let mut manager = state
         .commands
         .lock()
-        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+        .map_err(|e| AppError::lock(e))?;
     manager.set_user_commands(commands);
     Ok(())
 }
@@ -140,8 +141,7 @@ pub async fn open_commands_json(
         if !path.exists() {
             if let Some(parent) = path.parent() {
                 if !parent.exists() {
-                    std::fs::create_dir_all(parent)
-                        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+                    std::fs::create_dir_all(parent)?;
                 }
             }
             let default_commands = crate::commands::domain::Commands::default();
@@ -240,7 +240,7 @@ pub async fn reload(
     // Reflect in CommandRegistry
     let mut manager = command_registry
         .lock()
-        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+        .map_err(|e| AppError::lock(e))?;
     manager.set_user_commands(commands);
     manager.set_bookmark_commands(bookmarks);
     manager.set_application_commands(app_commands);
@@ -262,7 +262,7 @@ pub async fn ignore_command(
             let mut config = state
                 .config
                 .lock()
-                .map_err(|e| crate::error::AppError::System(e.to_string()))?;
+                .map_err(|e| AppError::lock(e))?;
             if !config.ignored.contains(&command_path) {
                 config.ignored.push(command_path.clone());
                 Some(config.clone())
