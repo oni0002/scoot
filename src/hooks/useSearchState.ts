@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Command, SearchResult } from '../types';
-import { createFuse, fuseSearch, detectDirectOpen } from '../services/search';
+import { createFuse, fuseSearch, detectDirectOpen } from '../search';
 
 export type SearchMode =
   | { mode: 'idle' }

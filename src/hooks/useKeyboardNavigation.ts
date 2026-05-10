@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { KEYBOARD_SHORTCUTS } from '../constants';
-import { TauriAPI } from '../api/tauri';
+import { TauriAPI } from '../tauri';
 import { SearchMode } from './useSearchState';
 
 interface UseKeyboardNavigationProps {

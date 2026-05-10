@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { message } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
-import { Command, Config } from '../types';
+import { Command, Config } from './types';
 
 export const TauriAPI = {
   async getAllCommands(): Promise<Command[]> {

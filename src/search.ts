@@ -1,6 +1,6 @@
 import Fuse, { IFuseOptions } from 'fuse.js';
-import { Command, SearchResult } from '../types';
-import { DIRECT_OPEN_ID } from '../constants';
+import { Command, SearchResult } from './types';
+import { DIRECT_OPEN_ID } from './constants';
 
 export const FUSE_KEYS: IFuseOptions<Command>['keys'] = [
   { name: 'name', weight: 0.7 },

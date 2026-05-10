@@ -37,3 +37,12 @@ export interface Config {
     hotkey: string;
     reloadIntervalMinutes: number;
 }
+
+export interface SearchResult {
+    command: Command;
+    score: number;
+    matches: Array<{
+        indices: readonly [number, number][];
+        key: string;
+    }>;
+}

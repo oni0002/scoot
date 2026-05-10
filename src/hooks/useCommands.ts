@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { TauriAPI } from '../api/tauri';
+import { TauriAPI } from '../tauri';
 import { Command } from '../types';
-import { getErrorMessage } from '../utils/error';
+import { getErrorMessage } from '../error';
 
 export function useCommands() {
     const [commands, setCommands] = useState<Command[]>([]);

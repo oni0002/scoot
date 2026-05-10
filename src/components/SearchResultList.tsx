@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LuCopy, LuCheck } from 'react-icons/lu';
 import { Command, SearchResult } from '../types';
 import { SearchResultItem } from './SearchResultItem';
-import { substituteArgs } from '../utils/command';
+import { substituteArgs } from '../command';
 
 interface SearchResultListProps {
     results: SearchResult[];

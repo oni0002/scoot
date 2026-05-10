@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { TauriAPI } from '../api/tauri';
+import { TauriAPI } from '../tauri';
 
 interface ConfigContextType {
     theme: string;

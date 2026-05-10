@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Command, SearchResult } from '../types';
 import { SearchMode } from './useSearchState';
-import { TauriAPI } from '../api/tauri';
+import { TauriAPI } from '../tauri';
 
 interface UseCommandExecutionProps {
     query: string;

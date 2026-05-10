@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Command } from '../types';
-import { TauriAPI } from '../api/tauri';
+import { TauriAPI } from '../tauri';
 import { NOTIFICATION_DURATION } from '../constants';
 import { SearchBar } from './SearchBar';
 import { SearchResultList } from './SearchResultList';

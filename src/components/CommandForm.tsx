@@ -3,8 +3,8 @@ import { Command } from '../types';
 import { open } from '@tauri-apps/plugin-dialog';
 import { LuFile, LuFolder, LuArrowLeft } from 'react-icons/lu';
 import { usePreventHide } from '../hooks/usePreventHide';
-import { TauriAPI } from '../api/tauri';
-import { hasPlaceholders } from '../utils/command';
+import { TauriAPI } from '../tauri';
+import { hasPlaceholders } from '../command';
 
 interface CommandFormProps {
     command?: Command; // If provided, we're editing; otherwise, we're adding

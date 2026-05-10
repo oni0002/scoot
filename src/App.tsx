@@ -4,7 +4,7 @@ import { CommandForm } from "./components/CommandForm";
 import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Command } from "./types";
-import { TauriAPI } from "./api/tauri";
+import { TauriAPI } from "./tauri";
 import { NOTIFICATION_DURATION } from "./constants";
 import { useAppEvents } from "./hooks/useAppEvents";
 import { CommandProvider, useCommandContext } from "./context/CommandContext";

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { TauriAPI } from '../api/tauri';
+import { TauriAPI } from '../tauri';
 
 export const useWindowEvents = (
   isDialogOpen: boolean,
