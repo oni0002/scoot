@@ -88,23 +88,6 @@ export class TauriAPI {
     return await invoke('get_commands_file_path');
   }
 
-  // スキーマ関連メソッド
-  static async getAppConfigSchema(): Promise<any> {
-    return await invoke('get_config_schema');
-  }
-
-  static async getCommandsConfigSchema(): Promise<any> {
-    return await invoke('get_commands_schema');
-  }
-
-  static async validateAppConfig(config: any): Promise<{ valid: boolean; errors: string[] }> {
-    return await invoke('validate_config', { config });
-  }
-
-  static async validateCommandsConfig(config: any): Promise<{ valid: boolean; errors: string[] }> {
-    return await invoke('validate_commands', { config });
-  }
-
   static async getVersion(): Promise<string> {
     return await getVersion();
   }

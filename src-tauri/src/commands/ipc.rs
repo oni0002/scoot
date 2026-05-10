@@ -128,23 +128,6 @@ pub fn get_commands_file_path(
     Ok(state.command_store.get_path().to_string())
 }
 
-/// Get commands.json schema
-#[tauri::command]
-pub fn get_commands_schema() -> Result<serde_json::Value, crate::error::AppError> {
-    Ok(crate::commands::domain::generate_commands_schema())
-}
-
-/// Validate commands.json
-#[tauri::command]
-pub fn validate_commands(
-    config: serde_json::Value,
-) -> Result<serde_json::Value, crate::error::AppError> {
-    match crate::commands::domain::deserialize_json(&config.to_string()) {
-        Ok(_) => Ok(serde_json::json!({ "valid": true, "errors": [] })),
-        Err(error) => Ok(serde_json::json!({ "valid": false, "errors": [error] })),
-    }
-}
-
 /// Open commands.json
 #[tauri::command]
 pub async fn open_commands_json(
@@ -263,39 +246,6 @@ pub async fn reload(
     manager.set_application_commands(app_commands);
     manager.set_scoot_commands(scoot_commands);
     manager.set_markdown_commands(markdown_commands);
-
-    Ok(())
-}
-
-/// Reload bookmarks only
-pub async fn reload_bookmarks(
-    command_registry: &std::sync::Mutex<CommandRegistry>,
-    config: &crate::config::domain::Config,
-) -> Result<(), crate::error::AppError> {
-    // Load bookmarks
-    log::debug!("Loading bookmarks.");
-    let bookmarks = if config.bookmarks.enabled {
-        crate::commands::bookmark::load(&config.bookmarks)
-            .await
-            .unwrap_or_else(|e| {
-                log::warn!("Failed to load bookmarks: {}", e);
-                Vec::new()
-            })
-    } else {
-        Vec::new()
-    };
-
-    // Filter ignored commands
-    let bookmarks: Vec<_> = bookmarks
-        .into_iter()
-        .filter(|c| !config.ignored.contains(&c.command))
-        .collect();
-
-    // Reflect in CommandRegistry
-    let mut manager = command_registry
-        .lock()
-        .map_err(|e| crate::error::AppError::System(e.to_string()))?;
-    manager.set_bookmark_commands(bookmarks);
 
     Ok(())
 }

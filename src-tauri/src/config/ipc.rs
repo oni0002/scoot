@@ -1,6 +1,5 @@
 use crate::config::domain::Config;
 use crate::state::AppState;
-use serde_json;
 use tauri::{Manager, State};
 
 // --- Tauri Commands ---
@@ -40,23 +39,6 @@ pub async fn get_config_file_path(
     state: State<'_, AppState>,
 ) -> Result<String, crate::error::AppError> {
     Ok(state.config_store.get_config_path().to_string())
-}
-
-/// Get config.json schema
-#[tauri::command]
-pub async fn get_config_schema() -> Result<serde_json::Value, crate::error::AppError> {
-    Ok(Config::generate_schema())
-}
-
-/// Validate config.json
-#[tauri::command]
-pub async fn validate_config(
-    config: serde_json::Value,
-) -> Result<serde_json::Value, crate::error::AppError> {
-    match Config::from_json_with_validation(&config.to_string()) {
-        Ok(_) => Ok(serde_json::json!({ "valid": true, "errors": [] })),
-        Err(error) => Ok(serde_json::json!({ "valid": false, "errors": [error] })),
-    }
 }
 
 /// Open config.json

@@ -107,10 +107,10 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let file_path = temp_dir.path().join("test.json");
 
-        // 繝輔ぃ繧､繝ｫ繧剃ｽ懈・
+        // Create a file
         fs::write(&file_path, "{}").unwrap();
 
-        // 繝｢繝・け縺ｮAppHandle縺悟ｿ・ｦ√↑縺溘ａ縲∝ｮ滄圀縺ｮ繝輔ぃ繧､繝ｫ繧ｦ繧ｩ繝・メ繝｣繝ｼ縺ｮ繝・せ繝医・邨ｱ蜷医ユ繧ｹ繝医〒陦後≧
+        // AppHandle mock is not available here; full FileWatcher tests are covered by integration tests
         assert!(file_path.exists());
     }
 
@@ -119,13 +119,13 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let file_path = temp_dir.path().join("test.json");
 
-        // 繝輔ぃ繧､繝ｫ繧剃ｽ懈・
+        // Create a file
         fs::write(&file_path, "{}").unwrap();
 
-        // 繝輔ぃ繧､繝ｫ縺悟ｭ伜惠縺吶ｋ縺薙→繧堤｢ｺ隱・
+        // Verify the file exists
         assert!(file_path.exists());
 
-        // 繝輔ぃ繧､繝ｫ繧貞炎髯､
+        // Delete the file
         fs::remove_file(&file_path).unwrap();
         assert!(!file_path.exists());
     }

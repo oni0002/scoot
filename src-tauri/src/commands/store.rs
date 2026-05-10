@@ -189,11 +189,6 @@ impl CommandRegistry {
         Ok(())
     }
 
-    /// Clear user commands
-    pub fn clear_user_commands(&mut self) {
-        self.user_commands.clear();
-    }
-
     /// Get user commands only (for commands.json)
     pub fn get_user_commands(&self) -> Vec<Command> {
         self.user_commands.values().cloned().collect()

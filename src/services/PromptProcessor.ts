@@ -56,16 +56,8 @@ export class PromptProcessor {
     return this.searchEngine.search(parsedInput.query, maxResults);
   }
 
-  getCommandsWithPrompt(prompt: string): Command[] {
+  private getCommandsWithPrompt(prompt: string): Command[] {
     return this.commandList.filter(cmd => cmd.prompt === prompt);
-  }
-
-  getAllPrompts(): string[] {
-    const prompts = this.commandList
-      .map(cmd => cmd.prompt)
-      .filter((prompt): prompt is string => Boolean(prompt));
-
-    return [...new Set(prompts)].sort();
   }
 
   private isPromptRegistered(prompt: string): boolean {

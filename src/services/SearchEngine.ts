@@ -55,32 +55,6 @@ export class SearchEngine {
     return this.transformFuseResults(fuseResults);
   }
 
-  searchByCategory(query: string, category: string, maxResults: number = 10): SearchResult[] {
-    const categoryCommands = this.commandList.filter(cmd => cmd.category === category);
-
-    if (categoryCommands.length === 0) return [];
-
-    if (!query.trim()) {
-      return categoryCommands.slice(0, maxResults).map(command => ({
-        command,
-        score: 0,
-        matches: [],
-      }));
-    }
-
-    const categoryFuse = new Fuse(categoryCommands, {
-      ...SearchEngine.DEFAULT_FUSE_OPTIONS,
-      threshold: this.fuseOptions.threshold,
-    });
-
-    const fuseResults = categoryFuse.search(query, { limit: maxResults });
-    return this.transformFuseResults(fuseResults);
-  }
-
-  getAllCommands(): Command[] {
-    return this.commandList;
-  }
-
   private clampThreshold(threshold: number): number {
     return Math.max(0.0, Math.min(1.0, threshold));
   }

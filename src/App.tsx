@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { SearchWindow } from "./components/SearchWindow";
 import { CommandForm } from "./components/CommandForm";
 import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
@@ -144,20 +144,6 @@ const AppContent = () => {
     setError
   });
 
-  // テーマ切り替え（開発用）
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'T') {
-        const themes = ["dark", "light", "dracula", "coffee"];
-        const currentIndex = themes.indexOf(theme);
-        const nextTheme = themes[(currentIndex + 1) % themes.length];
-        setTheme(nextTheme);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [theme]);
 
   if (loading) {
     return (

@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// Parse JSON string with json5
-pub fn parse<T: DeserializeOwned>(json_str: &str) -> Result<T, crate::error::AppError> {
+fn parse<T: DeserializeOwned>(json_str: &str) -> Result<T, crate::error::AppError> {
     json5::from_str(json_str)
         .map_err(|e| crate::error::AppError::Validation(format!("Failed to parse JSON: {}", e)))
 }
