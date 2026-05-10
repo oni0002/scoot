@@ -54,10 +54,8 @@ pub fn run() {
             log::info!("Initializing Scoot");
             // Initialize application state
             let config_store = ConfigStore::new();
-            let mut command_registry = CommandRegistry::new();
+            let command_registry = CommandRegistry::new();
             let command_store = CommandStore::new();
-            // Inject Scoot commands (Dependency Injection)
-            command_registry.set_scoot_commands(crate::commands::domain::get_scoot_commands());
 
             // Load Config
             let config = tauri::async_runtime::block_on(async { config_store.load().await })

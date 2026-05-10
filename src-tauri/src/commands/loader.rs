@@ -80,14 +80,16 @@ pub async fn reload(
     let scoot_commands =
         filter_ignored(crate::commands::domain::get_scoot_commands(), &config.ignored);
 
+    let mut external = bookmarks;
+    external.extend(app_commands);
+    external.extend(markdown_commands);
+    external.extend(scoot_commands);
+
     let mut manager = command_registry
         .lock()
         .map_err(|e| AppError::lock(e))?;
     manager.set_user_commands(commands);
-    manager.set_bookmark_commands(bookmarks);
-    manager.set_application_commands(app_commands);
-    manager.set_scoot_commands(scoot_commands);
-    manager.set_markdown_commands(markdown_commands);
+    manager.set_external_commands(external);
 
     Ok(())
 }

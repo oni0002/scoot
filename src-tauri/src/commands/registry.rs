@@ -4,10 +4,7 @@ use std::collections::HashMap;
 pub struct CommandRegistry {
     next_id: usize,
     pub user_commands: HashMap<String, Command>,
-    pub bookmark_commands: HashMap<String, Command>,
-    pub scoot_commands: HashMap<String, Command>,
-    pub application_commands: HashMap<String, Command>,
-    pub markdown_commands: HashMap<String, Command>,
+    pub external_commands: Vec<Command>, // bookmark + app + markdown + scoot (reload-only)
     command_index: HashMap<String, String>, // command string → id
     prompt_index: HashMap<String, String>,  // prompt string → id
 }
@@ -17,10 +14,7 @@ impl CommandRegistry {
         Self {
             next_id: 0,
             user_commands: HashMap::new(),
-            bookmark_commands: HashMap::new(),
-            scoot_commands: HashMap::new(),
-            application_commands: HashMap::new(),
-            markdown_commands: HashMap::new(),
+            external_commands: Vec::new(),
             command_index: HashMap::new(),
             prompt_index: HashMap::new(),
         }
@@ -33,11 +27,11 @@ impl CommandRegistry {
         }
     }
 
-    pub fn set_scoot_commands(&mut self, commands: Vec<Command>) {
-        self.scoot_commands.clear();
+    pub fn set_external_commands(&mut self, commands: Vec<Command>) {
+        self.external_commands.clear();
         for mut command in commands {
             self.assign_id(&mut command);
-            self.scoot_commands.insert(command.id.clone(), command);
+            self.external_commands.push(command);
         }
     }
 
@@ -110,39 +104,6 @@ impl CommandRegistry {
             .collect()
     }
 
-    pub fn set_application_commands(&mut self, commands: Vec<Command>) {
-        self.application_commands.clear();
-        for mut command in commands {
-            self.assign_id(&mut command);
-            self.application_commands
-                .insert(command.id.clone(), command);
-        }
-    }
-
-    pub fn add_bookmark_command(&mut self, mut command: Command) {
-        self.assign_id(&mut command);
-        self.bookmark_commands.insert(command.id.clone(), command);
-    }
-
-    pub fn set_bookmark_commands(&mut self, commands: Vec<Command>) {
-        self.bookmark_commands.clear();
-        for command in commands {
-            self.add_bookmark_command(command);
-        }
-    }
-
-    pub fn clear_bookmark_commands(&mut self) {
-        self.bookmark_commands.clear();
-    }
-
-    pub fn set_markdown_commands(&mut self, commands: Vec<Command>) {
-        self.markdown_commands.clear();
-        for mut command in commands {
-            self.assign_id(&mut command);
-            self.markdown_commands.insert(command.id.clone(), command);
-        }
-    }
-
     pub fn validate_command(&self, command: &Command) -> Result<(), crate::error::AppError> {
         command.validate()?;
 
@@ -178,10 +139,7 @@ impl CommandRegistry {
     pub fn get_all_commands(&self) -> Vec<Command> {
         self.user_commands
             .values()
-            .chain(self.bookmark_commands.values())
-            .chain(self.scoot_commands.values())
-            .chain(self.application_commands.values())
-            .chain(self.markdown_commands.values())
+            .chain(self.external_commands.iter())
             .cloned()
             .collect()
     }
@@ -234,11 +192,11 @@ mod tests {
     }
 
     #[test]
-    fn test_set_scoot_commands() {
+    fn test_set_external_commands() {
         let mut manager = CommandRegistry::new();
-        let scoot_cmd = create_dummy_command(None);
+        let cmd = create_dummy_command(None);
 
-        manager.set_scoot_commands(vec![scoot_cmd]);
+        manager.set_external_commands(vec![cmd]);
 
         let all = manager.get_all_commands();
         assert_eq!(all.len(), 1);
