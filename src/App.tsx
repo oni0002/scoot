@@ -3,10 +3,11 @@ import { SearchWindow } from "./components/SearchWindow";
 import { CommandForm } from "./components/CommandForm";
 import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { TauriAPI } from "./api/tauri";
 import { Command } from "./types";
+import { TauriAPI } from "./api/tauri";
 import { useAppEvents } from "./hooks/useAppEvents";
 import { CommandProvider, useCommandContext } from "./context/CommandContext";
+import { ConfigProvider, useConfigContext } from "./context/ConfigContext";
 import "./App.css";
 
 import { NotificationProvider, useNotificationContext } from "./context/NotificationContext";
@@ -32,27 +33,12 @@ const AppContent = () => {
     ignoreCommand,
   } = useCommandContext();
 
+  const { theme, fuzzyThreshold, maxResults, loadConfig } = useConfigContext();
+
   const [currentView, setCurrentView] = useState<'search' | 'form'>('search');
   const [editingCommand, setEditingCommand] = useState<Command | undefined>(undefined);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingCommand, setDeletingCommand] = useState<Command | undefined>(undefined);
-  const [theme, setTheme] = useState<string>("dark");
-  const [fuzzyThreshold, setFuzzyThreshold] = useState<number>(0.5);
-  const [maxResults, setMaxResults] = useState<number>(10);
-
-  const loadConfig = useCallback(async () => {
-    try {
-      const config = await TauriAPI.getConfig();
-      setTheme(config.theme || "dark");
-      setFuzzyThreshold(config.fuzzyThreshold || 0.5);
-      setMaxResults(config.maxResults || 10);
-    } catch (err) {
-      console.warn("Failed to load config, using default values:", err);
-      setTheme("dark");
-      setFuzzyThreshold(0.5);
-      setMaxResults(10);
-    }
-  }, []);
 
   const handleAddCommand = useCallback(async () => {
     console.log('App: handleAddCommand called');
@@ -203,9 +189,11 @@ function App() {
       }}
     >
       <NotificationProvider>
-        <CommandProvider>
-          <AppContent />
-        </CommandProvider>
+        <ConfigProvider>
+          <CommandProvider>
+            <AppContent />
+          </CommandProvider>
+        </ConfigProvider>
       </NotificationProvider>
     </ErrorBoundary>
   );
