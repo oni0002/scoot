@@ -13,7 +13,7 @@ interface UseCommandExecutionProps {
     setQuery: (query: string) => void;
     setSearchMode: React.Dispatch<React.SetStateAction<SearchMode>>;
     resetState: () => void;
-    executeCommand: (command: Command, args: string[]) => Promise<boolean>;
+    executeCommand: (command: Command, args: string[]) => Promise<boolean | null>;
 }
 
 export const useCommandExecution = ({
@@ -53,7 +53,7 @@ export const useCommandExecution = ({
         const keepWindowOpen = await executeCommand(commandToExecute, argsToPass);
         resetState();
 
-        if (!keepWindowOpen) {
+        if (keepWindowOpen === false) {
             TauriAPI.hideWindow();
         }
     }, [results, selectedIndex, query, executeCommand, promptMode, resetState, setSearchMode, setQuery, promptProcessor]);

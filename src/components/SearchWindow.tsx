@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { Command } from '../types';
 import { TauriAPI } from '../api/tauri';
+import { NOTIFICATION_DURATION } from '../constants';
 import { SearchBar } from './SearchBar';
 import { SearchResultList } from './SearchResultList';
 import { useCommandContext } from '../context/CommandContext';
+import { useNotificationContext } from '../context/NotificationContext';
 import { useSearchState } from '../hooks/useSearchState';
 import { useCommandExecution } from '../hooks/useCommandExecution';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
@@ -57,7 +59,16 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
   onReloadCommands,
   isDialogOpen = false,
 }) => {
-  const { commands, executeCommand: executeContextCommand } = useCommandContext();
+  const { commands, executeCommand: rawExecuteCommand } = useCommandContext();
+  const { showError } = useNotificationContext();
+
+  const executeContextCommand = useCallback(async (command: Command, args: string[]) => {
+    const result = await rawExecuteCommand(command, args);
+    if (result === null) {
+      showError(`Failed to execute "${command.name}".`, NOTIFICATION_DURATION.LONG);
+    }
+    return result;
+  }, [rawExecuteCommand, showError]);
 
   const searchState = useSearchState(commands, fuzzyThreshold, maxResults);
   const {

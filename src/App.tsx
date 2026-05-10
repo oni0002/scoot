@@ -5,6 +5,7 @@ import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Command } from "./types";
 import { TauriAPI } from "./api/tauri";
+import { NOTIFICATION_DURATION } from "./constants";
 import { useAppEvents } from "./hooks/useAppEvents";
 import { CommandProvider, useCommandContext } from "./context/CommandContext";
 import { ConfigProvider, useConfigContext } from "./context/ConfigContext";
@@ -52,15 +53,19 @@ const AppContent = () => {
     let success = false;
     if (editingCommand) {
       success = await updateCommand(command);
+      if (success) showSuccess(`"${command.name}" updated successfully.`);
+      else showError(`Failed to update "${command.name}".`, NOTIFICATION_DURATION.LONG);
     } else {
       success = await addCommand(command);
+      if (success) showSuccess(`"${command.name}" added successfully.`);
+      else showError(`Failed to add "${command.name}".`, NOTIFICATION_DURATION.LONG);
     }
 
     if (success) {
       setCurrentView('search');
       setEditingCommand(undefined);
     }
-  }, [editingCommand, updateCommand, addCommand]);
+  }, [editingCommand, updateCommand, addCommand, showSuccess, showError]);
 
   const handleConfirmDelete = useCallback(async (command?: Command) => {
     const targetCommand = command || deletingCommand;
@@ -68,10 +73,13 @@ const AppContent = () => {
 
     const success = await deleteCommand(targetCommand.id, targetCommand.name);
     if (success) {
+      showSuccess(`"${targetCommand.name}" deleted successfully.`);
       setShowDeleteDialog(false);
       setDeletingCommand(undefined);
+    } else {
+      showError(`Could not delete "${targetCommand.name}".`, NOTIFICATION_DURATION.LONG);
     }
-  }, [deletingCommand, deleteCommand]);
+  }, [deletingCommand, deleteCommand, showSuccess, showError]);
 
   const handleCancelDialog = useCallback(() => {
     if (showDeleteDialog) {
@@ -93,6 +101,12 @@ const AppContent = () => {
     setDeletingCommand(command);
     setShowDeleteDialog(true);
   }, []);
+
+  const handleIgnoreCommand = useCallback(async (command: Command) => {
+    const success = await ignoreCommand(command);
+    if (success) showSuccess(`"${command.name}" ignored successfully.`);
+    else showError(`Could not ignore "${command.name}".`, NOTIFICATION_DURATION.LONG);
+  }, [ignoreCommand, showSuccess, showError]);
 
   const handleCopyCommand = useCallback(async (command: Command) => {
     if (!command.command) return;
@@ -156,7 +170,7 @@ const AppContent = () => {
           onDeleteCommand={handleDeleteCommandFromSearch}
           onAddCommand={handleAddCommand}
           onCopyCommand={handleCopyCommand}
-          onIgnoreCommand={ignoreCommand}
+          onIgnoreCommand={handleIgnoreCommand}
           onReloadCommands={handleReloadCommands}
           isDialogOpen={showDeleteDialog}
         />
