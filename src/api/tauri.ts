@@ -64,7 +64,7 @@ export class TauriAPI {
     return await invoke<Config>('get_config');
   }
 
-  static async saveAppConfig(config: Config): Promise<void> {
+  static async saveConfig(config: Config): Promise<void> {
     return await invoke('save_config', { config });
   }
 

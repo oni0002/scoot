@@ -60,7 +60,7 @@ export function useCommands() {
             const config = await TauriAPI.getConfig();
             if (!config.ignored.includes(command.command)) {
                 const updated = { ...config, ignored: [...config.ignored, command.command] };
-                await TauriAPI.saveAppConfig(updated);
+                await TauriAPI.saveConfig(updated);
                 await TauriAPI.reloadAll();
             }
             await loadCommands();
