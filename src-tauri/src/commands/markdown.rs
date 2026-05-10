@@ -15,7 +15,7 @@ pub async fn load(config: &MarkdownConfig) -> Result<Vec<Command>, crate::error:
         let link_re = Regex::new(r"(!?)\[([^\]]+)\]\(([^)]+)\)").unwrap();
 
         for path in &paths {
-            let expanded = crate::system::expand_env_vars(path);
+            let expanded = crate::os::expand_env_vars(path);
             let content = match std::fs::read_to_string(&expanded) {
                 Ok(c) => c,
                 Err(e) => {

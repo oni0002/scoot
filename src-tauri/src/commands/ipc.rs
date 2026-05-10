@@ -136,7 +136,7 @@ pub async fn open_commands_json(
     if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
         let commands_path = state.command_store.get_path().to_string();
         let _ = state.command_store.load().await; // creates file with defaults if absent
-        crate::system::open_path(&app_handle, &commands_path)?;
+        crate::os::open_path(&app_handle, &commands_path)?;
     }
     Ok(())
 }

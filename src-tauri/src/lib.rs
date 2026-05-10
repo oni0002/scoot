@@ -1,6 +1,8 @@
 pub mod commands;
 pub mod config;
 pub mod error;
+pub mod lifecycle;
+pub mod os;
 pub mod shortcut;
 pub mod state;
 pub mod system;
@@ -88,7 +90,7 @@ pub fn run() {
 
             // Run common data loading process
             tauri::async_runtime::block_on(async {
-                if let Err(e) = crate::system::reload(app.handle()).await {
+                if let Err(e) = crate::lifecycle::reload(app.handle()).await {
                     log::error!("Initial configuration load failed: {}", e);
                 }
             });
@@ -100,8 +102,8 @@ pub fn run() {
                 last_window_hidden,
             );
             // Set event listeners and background tasks
-            crate::system::setup_reload_listeners(app)?;
-            crate::system::start_periodic_reload(app.handle().clone());
+            crate::lifecycle::setup_reload_listeners(app)?;
+            crate::lifecycle::start_periodic_reload(app.handle().clone());
             // Set up system tray
             crate::tray::setup_system_tray(app)?;
             // Set up global shortcuts

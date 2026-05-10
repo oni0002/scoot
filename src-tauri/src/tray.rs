@@ -44,7 +44,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                 crate::window::show_main_window(app_handle);
             }
             "add_command" => {
-                let _ = crate::system::open_add_command_dialog(app_handle);
+                let _ = crate::lifecycle::open_add_command_dialog(app_handle);
             }
             "open_commands" => {
                 tauri::async_runtime::block_on(async {
@@ -62,7 +62,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                 });
             }
             "open_log" => {
-                let _ = crate::system::open_log(app_handle);
+                let _ = crate::lifecycle::open_log(app_handle);
             }
             "quit" => {
                 tauri::async_runtime::block_on(async {

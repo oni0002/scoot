@@ -18,7 +18,7 @@ pub async fn load(
         let mut commands = Vec::new();
 
         for dir_path in directories_clone {
-            let expanded_path = crate::system::expand_env_vars(&dir_path);
+            let expanded_path = crate::os::expand_env_vars(&dir_path);
             let path = Path::new(&expanded_path);
 
             if !path.exists() {

@@ -48,7 +48,7 @@ pub async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), crate:
     if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
         let config_path = state.config_store.get_config_path().to_string();
         let _ = state.config_store.load().await; // creates file with defaults if absent
-        crate::system::open_path(&app_handle, &config_path)?;
+        crate::os::open_path(&app_handle, &config_path)?;
     }
     Ok(())
 }
