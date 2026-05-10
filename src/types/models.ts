@@ -15,6 +15,7 @@ export type Commands = Command[];
 export interface ApplicationConfig {
     enabled: boolean;
     directories: string[];
+    extensions: string[];
 }
 
 export interface BookmarkConfig {
@@ -33,6 +34,8 @@ export interface Config {
     bookmarks: BookmarkConfig;
     applications: ApplicationConfig;
     markdown: MarkdownConfig;
+    ignored: string[];
     theme: string;
+    hotkey: string;
     reloadIntervalMinutes: number;
 }
