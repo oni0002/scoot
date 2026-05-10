@@ -5,12 +5,19 @@ use serde::Deserialize;
 use std::path::PathBuf;
 use tokio::fs;
 
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+enum BookmarkType {
+    Url,
+    Folder,
+}
+
 #[derive(Debug, Deserialize)]
 struct ChromiumBookmark {
     name: String,
-    url: Option<String>, // Make URL optional since folders don't have URLs
+    url: Option<String>,
     #[serde(rename = "type")]
-    bookmark_type: String,
+    bookmark_type: BookmarkType,
     children: Option<Vec<ChromiumBookmark>>,
 }
 
@@ -107,7 +114,7 @@ fn collect(
     commands: &mut Vec<Command>,
     seen_urls: &mut std::collections::HashSet<String>,
 ) {
-    if bookmark.bookmark_type == "url" {
+    if bookmark.bookmark_type == BookmarkType::Url {
         if let Some(url) = &bookmark.url {
             // Skip duplicate URLs
             if seen_urls.contains(url) {
@@ -117,7 +124,7 @@ fn collect(
             commands.push(Command::new(bookmark.name.clone(), "url", "bookmark", url.clone(), url.clone()));
             seen_urls.insert(url.clone());
         }
-    } else if bookmark.bookmark_type == "folder" {
+    } else if bookmark.bookmark_type == BookmarkType::Folder {
         if let Some(children) = &bookmark.children {
             for child in children {
                 collect(child, commands, seen_urls);

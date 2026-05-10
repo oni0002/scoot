@@ -72,7 +72,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
   useWindowEvents(isDialogOpen, resetState, inputRef);
 
   // Command Execution Logic
-  const executeCommand = useCallback((targetIndex?: number) => {
+  const runSelectedCommand = useCallback((targetIndex?: number) => {
     let commandToExecute: Command;
     let argsToPass: string[] = [];
 
@@ -113,7 +113,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
   // Keyboard Navigation
   const { handleKeyDown } = useKeyboardNavigation({
     moveSelection: searchState.moveSelection,
-    executeCommand,
+    executeCommand: runSelectedCommand,
     resetState,
     query,
     setQuery,
@@ -128,8 +128,8 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
       return;
     }
     setSelectedIndex(index);
-    executeCommand(index);
-  }, [executeCommand, setSelectedIndex]);
+    runSelectedCommand(index);
+  }, [runSelectedCommand, setSelectedIndex]);
 
   const handleAddCommand = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
