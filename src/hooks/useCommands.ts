@@ -74,7 +74,12 @@ export function useCommands() {
 
     const ignoreCommand = useCallback(async (command: Command) => {
         try {
-            await TauriAPI.ignoreCommand(command.command);
+            const config = await TauriAPI.getConfig();
+            if (!config.ignored.includes(command.command)) {
+                const updated = { ...config, ignored: [...config.ignored, command.command] };
+                await TauriAPI.saveAppConfig(updated);
+                await TauriAPI.reloadAll();
+            }
             showSuccess(`"${command.name}" ignored successfully.`);
             await loadCommands();
             return true;

@@ -92,7 +92,4 @@ export class TauriAPI {
     await message(msg, { title, kind: 'info' });
   }
 
-  static async ignoreCommand(commandPath: string): Promise<void> {
-    await invoke('ignore_command', { commandPath });
-  }
 }

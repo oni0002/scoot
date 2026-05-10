@@ -141,33 +141,3 @@ pub async fn open_commands_json(
     Ok(())
 }
 
-/// Ignore a command and hide it from future results
-#[tauri::command]
-pub async fn ignore_command(
-    command_path: String,
-    app_handle: tauri::AppHandle,
-) -> Result<(), crate::error::AppError> {
-    log::info!("Ignoring command: {}", command_path);
-    if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
-        let config_to_save = {
-            let mut config = state
-                .config
-                .lock()
-                .map_err(|e| AppError::lock(e))?;
-            if !config.ignored.contains(&command_path) {
-                config.ignored.push(command_path.clone());
-                Some(config.clone())
-            } else {
-                None
-            }
-        };
-
-        if let Some(config) = config_to_save {
-            // Save config
-            state.config_store.save(&config).await?;
-
-            let _ = crate::commands::loader::reload(&state.command_store, &state.commands, &config).await;
-        }
-    }
-    Ok(())
-}
