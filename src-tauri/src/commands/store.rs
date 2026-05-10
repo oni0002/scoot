@@ -48,9 +48,8 @@ impl CommandStore {
         }
 
         // Validate and parse commands.json
-        let content_for_parsing = content.clone();
         let commands = tokio::task::spawn_blocking(move || {
-            crate::commands::domain::deserialize_json(&content_for_parsing)
+            crate::commands::domain::deserialize_json(&content)
         })
         .await
         .map_err(|e| {
@@ -60,16 +59,6 @@ impl CommandStore {
             log::error!("Failed to parse commands.json: {}", e);
             Vec::new()
         });
-
-        // Auto-upgrade format to camelCase by saving the loaded commands back to the file
-        let mut commands_to_save = commands.clone();
-        for cmd in &mut commands_to_save {
-            cmd.id = String::new();
-        }
-        let new_content = serde_json::to_string_pretty(&commands_to_save).unwrap_or_default();
-        if content != new_content {
-            let _ = self.save(&commands).await;
-        }
 
         Ok(commands)
     }

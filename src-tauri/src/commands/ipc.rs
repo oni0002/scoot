@@ -135,19 +135,8 @@ pub async fn open_commands_json(
     app_handle: tauri::AppHandle,
 ) -> Result<(), crate::error::AppError> {
     if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
-        let commands_path = state.command_store.get_path();
-
-        let path = std::path::Path::new(&commands_path);
-        if !path.exists() {
-            if let Some(parent) = path.parent() {
-                if !parent.exists() {
-                    std::fs::create_dir_all(parent)?;
-                }
-            }
-            let default_commands = crate::commands::domain::Commands::default();
-            let _ = state.command_store.save(&default_commands).await;
-        }
-
+        let commands_path = state.command_store.get_path().to_string();
+        let _ = state.command_store.load().await; // creates file with defaults if absent
         crate::system::open_path(&app_handle, &commands_path)?;
     }
     Ok(())

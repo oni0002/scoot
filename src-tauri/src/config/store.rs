@@ -57,13 +57,6 @@ impl ConfigStore {
             ))
         })?;
 
-        // Auto-upgrade format to camelCase by saving the loaded config back to the file
-        // Ignore save errors during auto-upgrade
-        let new_content = serde_json::to_string_pretty(&config).unwrap_or_default();
-        if content != new_content {
-            let _ = self.save(&config).await;
-        }
-
         Ok(config)
     }
 

@@ -36,19 +36,9 @@ pub struct Command {
     pub description: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prompt: Option<String>,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        // TODO: Remove `alias = "working_dir"` in v1.0.0 (Legacy config support)
-        alias = "working_dir"
-    )]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub working_dir: Option<String>,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        // TODO: Remove `alias = "show_window"` in v1.0.0 (Legacy config support)
-        alias = "show_window"
-    )]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub show_window: Option<bool>,
 }
 

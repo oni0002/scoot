@@ -9,12 +9,8 @@ pub const DEFAULT_SHORTCUT: &str = "Alt+Space";
 #[serde(rename_all = "camelCase", default)]
 pub struct Config {
     #[schemars(range(min = 1, max = 100))]
-    // TODO: Remove `alias = "max_results"` in v1.0.0 (Legacy config support)
-    #[serde(alias = "max_results")]
     pub max_results: usize,
     #[schemars(range(min = 0.0, max = 1.0))]
-    // TODO: Remove `alias = "fuzzy_threshold"` in v1.0.0 (Legacy config support)
-    #[serde(alias = "fuzzy_threshold")]
     pub fuzzy_threshold: f64,
     pub bookmarks: BookmarkConfig,
     pub applications: ApplicationConfig,

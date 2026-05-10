@@ -46,19 +46,8 @@ pub async fn get_config_file_path(
 #[tauri::command]
 pub async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
-        let config_path = state.config_store.get_config_path();
-
-        let path = std::path::Path::new(&config_path);
-        if !path.exists() {
-            if let Some(parent) = path.parent() {
-                if !parent.exists() {
-                    std::fs::create_dir_all(parent)?;
-                }
-            }
-            let default_config = crate::config::domain::Config::default();
-            let _ = state.config_store.save(&default_config).await;
-        }
-
+        let config_path = state.config_store.get_config_path().to_string();
+        let _ = state.config_store.load().await; // creates file with defaults if absent
         crate::system::open_path(&app_handle, &config_path)?;
     }
     Ok(())
