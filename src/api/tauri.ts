@@ -1,11 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
 import { message } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
-import { Command, Config, Commands } from '../types';
+import { Command, Config } from '../types';
 
 export class TauriAPI {
-  static async getAllCommands(): Promise<Commands> {
-    return await invoke<Commands>('get_all_commands');
+  static async getAllCommands(): Promise<Command[]> {
+    return await invoke<Command[]>('get_all_commands');
   }
 
   static async addCommand(command: Command): Promise<string> {

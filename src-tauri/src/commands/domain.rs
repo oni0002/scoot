@@ -42,9 +42,6 @@ pub struct Command {
     pub show_window: Option<bool>,
 }
 
-/// Command list
-pub type Commands = Vec<Command>;
-
 /// Generate Commands JSON schema
 pub fn generate_commands_schema() -> serde_json::Value {
     let schema = schemars::schema_for!(Vec<Command>);
@@ -52,8 +49,8 @@ pub fn generate_commands_schema() -> serde_json::Value {
 }
 
 /// Deserialize JSON string with schema validation
-pub fn deserialize_json(json_str: &str) -> Result<Commands, crate::error::AppError> {
-    crate::validation::parse_and_validate::<Commands>(json_str)
+pub fn deserialize_json(json_str: &str) -> Result<Vec<Command>, crate::error::AppError> {
+    crate::validation::parse_and_validate::<Vec<Command>>(json_str)
 }
 
 /// Get the built-in commands for Scoot
@@ -275,7 +272,7 @@ mod tests {
 
         let json =
             r#"[{"name": "test", "category": "url", "command": "http", "description": "desc"}]"#;
-        let cmds: Commands = json5::from_str(json).unwrap();
+        let cmds: Vec<Command> = json5::from_str(json).unwrap();
 
         let normalized = serde_json::to_value(&cmds).unwrap();
 

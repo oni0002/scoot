@@ -1,4 +1,4 @@
-use crate::commands::domain::Commands;
+use crate::commands::domain::Command;
 
 // --- File Storage ---
 
@@ -20,7 +20,7 @@ impl CommandStore {
     }
 
     /// Load commands
-    pub async fn load(&self) -> Result<Commands, crate::error::AppError> {
+    pub async fn load(&self) -> Result<Vec<Command>, crate::error::AppError> {
         // If commands.json does not exist, save the default value and return it
         if !tokio::fs::try_exists(&self.commands_path)
             .await
@@ -61,7 +61,7 @@ impl CommandStore {
     }
 
     /// Save commands (strips internal fields like id and source before writing)
-    pub async fn save(&self, commands: &Commands) -> Result<(), crate::error::AppError> {
+    pub async fn save(&self, commands: &Vec<Command>) -> Result<(), crate::error::AppError> {
         let mut commands_to_save = commands.clone();
         for cmd in &mut commands_to_save {
             cmd.id = String::new();
@@ -78,8 +78,8 @@ impl CommandStore {
     }
 
     /// Initialize default commands
-    async fn save_default_commands(&self) -> Result<Commands, crate::error::AppError> {
-        let default_commands: Commands = Vec::new();
+    async fn save_default_commands(&self) -> Result<Vec<Command>, crate::error::AppError> {
+        let default_commands: Vec<Command> = Vec::new();
         self.save(&default_commands).await?;
         Ok(default_commands)
     }

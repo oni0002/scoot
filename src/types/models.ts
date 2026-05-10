@@ -10,8 +10,6 @@ export interface Command {
     showWindow?: boolean;
 }
 
-export type Commands = Command[];
-
 export interface ApplicationConfig {
     enabled: boolean;
     directories: string[];
