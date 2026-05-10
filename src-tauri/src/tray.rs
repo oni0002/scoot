@@ -1,4 +1,4 @@
-use crate::state::AppState;
+use crate::state::WindowState;
 use tauri::{
     menu::{MenuBuilder, MenuItem},
     tray::{TrayIconBuilder, TrayIconEvent},
@@ -80,7 +80,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
             {
                 let app_handle = tray.app_handle();
 
-                if let Some(state) = app_handle.try_state::<AppState>() {
+                if let Some(state) = app_handle.try_state::<WindowState>() {
                     // Ignore click if window was hidden due to focus loss
                     if let Ok(hidden) = state.last_window_hidden.lock() {
                         if let Some(instant) = *hidden {

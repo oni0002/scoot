@@ -14,7 +14,7 @@ pub mod window;
 use crate::commands::registry::CommandRegistry;
 use crate::commands::store::CommandStore;
 use crate::config::store::ConfigStore;
-use crate::state::AppState;
+use crate::state::{CommandsState, ConfigState, ShortcutState, WindowState};
 use crate::watcher::FileWatcher;
 use tauri::Manager;
 
@@ -71,22 +71,22 @@ pub fn run() {
             let config_path = config_store.get_config_path();
             let config_file_watcher = FileWatcher::new(config_path, app.handle().clone()).ok();
 
-            // State generation
-            let app_state = AppState::new(
-                command_registry,
-                command_store,
-                config,
-                config_store,
-                config_file_watcher,
-            );
+            // State construction
+            let commands_state = CommandsState::new(command_registry, command_store);
+            let config_state = ConfigState::new(config, config_store, config_file_watcher);
+            let shortcut_state = ShortcutState::new();
+            let window_state = WindowState::new();
 
-            // Clone Arcs for window event listeners
-            let last_window_shown = app_state.last_window_shown.clone();
-            let prevent_hide = app_state.prevent_hide.clone();
-            let last_window_hidden = app_state.last_window_hidden.clone();
+            // Clone Arcs for window event listeners before moving into managed state
+            let last_window_shown = window_state.last_window_shown.clone();
+            let prevent_hide = window_state.prevent_hide.clone();
+            let last_window_hidden = window_state.last_window_hidden.clone();
 
             // State registration
-            app.manage(app_state);
+            app.manage(commands_state);
+            app.manage(config_state);
+            app.manage(shortcut_state);
+            app.manage(window_state);
 
             // Run common data loading process
             tauri::async_runtime::block_on(async {

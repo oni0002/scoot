@@ -1,5 +1,4 @@
 use crate::config::domain::DEFAULT_SHORTCUT;
-use crate::state::AppState;
 use tauri::{App, AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
@@ -25,7 +24,7 @@ where
     let app_handle_clone = app_handle.clone();
 
     // Check if the shortcut is already registered
-    if let Some(state) = app_handle.try_state::<AppState>() {
+    if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
         let lock = match state.shortcut.lock() {
             Ok(l) => l,
             Err(e) => {
@@ -65,7 +64,7 @@ where
     match app_handle.global_shortcut().register(hotkey) {
         Ok(_) => {
             // Update the state
-            if let Some(state) = app_handle.try_state::<AppState>() {
+            if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
                 if let Ok(mut registered) = state.shortcut.lock() {
                     *registered = Some(hotkey.to_string());
                 }
@@ -77,7 +76,7 @@ where
         Err(e) => {
             // If the hotkey is already registered, consider it a success
             if app_handle.global_shortcut().is_registered(hotkey) {
-                if let Some(state) = app_handle.try_state::<AppState>() {
+                if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
                     if let Ok(mut registered) = state.shortcut.lock() {
                         *registered = Some(hotkey.to_string());
                     }
@@ -97,7 +96,7 @@ where
 
 /// Unregister the shortcut
 pub fn unregister(app_handle: &AppHandle) {
-    if let Some(state) = app_handle.try_state::<AppState>() {
+    if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
         if let Ok(mut reg) = state.shortcut.lock() {
             if let Some(hotkey) = reg.as_ref() {
                 log::debug!("Unregistering shortcut: {}", hotkey);
@@ -113,7 +112,7 @@ pub fn unregister(app_handle: &AppHandle) {
 pub fn setup_shortcuts(app: &App) -> Result<(), Box<dyn std::error::Error>> {
     let handle = app.handle();
     // Get hotkey from state
-    let hotkey = if let Some(state) = handle.try_state::<AppState>() {
+    let hotkey = if let Some(state) = handle.try_state::<crate::state::ConfigState>() {
         if let Ok(config) = state.config.lock() {
             config.hotkey.clone()
         } else {

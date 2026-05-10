@@ -3,41 +3,65 @@ use crate::commands::store::CommandStore;
 use crate::config::domain::Config;
 use crate::config::store::ConfigStore;
 use crate::watcher::FileWatcher;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
-pub struct AppState {
+pub struct CommandsState {
     pub commands: Mutex<CommandRegistry>,
-    pub config: Mutex<Config>,
-    pub config_store: ConfigStore,
     pub command_store: CommandStore,
-    pub _config_file_watcher_keep_alive: Option<FileWatcher>,
-    pub shortcut: Mutex<Option<String>>,
-    pub last_window_shown: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
-    pub last_window_hidden: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
-    pub last_tray_click: Mutex<Option<std::time::Instant>>,
-    pub prevent_hide: std::sync::Arc<std::sync::atomic::AtomicUsize>,
 }
 
-impl AppState {
-    pub fn new(
-        command_registry: CommandRegistry,
-        command_store: CommandStore,
-        config: Config,
-        config_store: ConfigStore,
-        config_file_watcher: Option<FileWatcher>,
-    ) -> Self {
+pub struct ConfigState {
+    pub config: Mutex<Config>,
+    pub config_store: ConfigStore,
+    pub _file_watcher_keep_alive: Option<FileWatcher>,
+}
+
+pub struct ShortcutState {
+    pub shortcut: Mutex<Option<String>>,
+}
+
+pub struct WindowState {
+    pub last_window_shown: Arc<Mutex<Option<Instant>>>,
+    pub last_window_hidden: Arc<Mutex<Option<Instant>>>,
+    pub last_tray_click: Mutex<Option<Instant>>,
+    pub prevent_hide: Arc<std::sync::atomic::AtomicUsize>,
+}
+
+impl CommandsState {
+    pub fn new(registry: CommandRegistry, store: CommandStore) -> Self {
         Self {
-            commands: Mutex::new(command_registry),
-            command_store,
-            config: Mutex::new(config),
-            config_store,
-            _config_file_watcher_keep_alive: config_file_watcher,
-            shortcut: Mutex::new(None),
-            last_window_shown: std::sync::Arc::new(std::sync::Mutex::new(None)),
-            last_window_hidden: std::sync::Arc::new(std::sync::Mutex::new(None)),
-            last_tray_click: Mutex::new(None),
-            prevent_hide: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
+            commands: Mutex::new(registry),
+            command_store: store,
         }
     }
+}
 
+impl ConfigState {
+    pub fn new(config: Config, store: ConfigStore, watcher: Option<FileWatcher>) -> Self {
+        Self {
+            config: Mutex::new(config),
+            config_store: store,
+            _file_watcher_keep_alive: watcher,
+        }
+    }
+}
+
+impl ShortcutState {
+    pub fn new() -> Self {
+        Self {
+            shortcut: Mutex::new(None),
+        }
+    }
+}
+
+impl WindowState {
+    pub fn new() -> Self {
+        Self {
+            last_window_shown: Arc::new(Mutex::new(None)),
+            last_window_hidden: Arc::new(Mutex::new(None)),
+            last_tray_click: Mutex::new(None),
+            prevent_hide: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
+        }
+    }
 }

@@ -26,7 +26,7 @@ pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::
     use tauri_plugin_global_shortcut::GlobalShortcutExt;
     let _ = app_handle.global_shortcut().unregister_all();
 
-    if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
+    if let Some(state) = app_handle.try_state::<crate::state::CommandsState>() {
         let commands_config_opt = {
             if let Ok(manager) = state.commands.try_lock() {
                 Some(manager.get_user_commands())

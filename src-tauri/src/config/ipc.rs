@@ -1,13 +1,13 @@
 use crate::config::domain::Config;
 use crate::error::AppError;
-use crate::state::AppState;
+use crate::state::ConfigState;
 use tauri::{Manager, State};
 
 // --- Tauri Commands ---
 
 /// Get config
 #[tauri::command]
-pub async fn get_config(state: State<'_, AppState>) -> Result<Config, crate::error::AppError> {
+pub async fn get_config(state: State<'_, ConfigState>) -> Result<Config, crate::error::AppError> {
     state
         .config
         .lock()
@@ -19,7 +19,7 @@ pub async fn get_config(state: State<'_, AppState>) -> Result<Config, crate::err
 #[tauri::command]
 pub async fn save_config(
     config: Config,
-    state: State<'_, AppState>,
+    state: State<'_, ConfigState>,
 ) -> Result<(), crate::error::AppError> {
     // state
     {
@@ -37,7 +37,7 @@ pub async fn save_config(
 /// Get config.json path
 #[tauri::command]
 pub async fn get_config_file_path(
-    state: State<'_, AppState>,
+    state: State<'_, ConfigState>,
 ) -> Result<String, crate::error::AppError> {
     Ok(state.config_store.get_config_path().to_string())
 }
@@ -45,7 +45,7 @@ pub async fn get_config_file_path(
 /// Open config.json
 #[tauri::command]
 pub async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
-    if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
+    if let Some(state) = app_handle.try_state::<crate::state::ConfigState>() {
         let config_path = state.config_store.get_config_path().to_string();
         let _ = state.config_store.load().await; // creates file with defaults if absent
         crate::os::open_path(&app_handle, &config_path)?;

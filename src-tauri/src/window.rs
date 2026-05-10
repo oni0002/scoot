@@ -1,4 +1,4 @@
-use crate::state::AppState;
+use crate::state::WindowState;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 pub fn show_main_window(app: &AppHandle) {
@@ -7,7 +7,7 @@ pub fn show_main_window(app: &AppHandle) {
         let _ = window.set_focus();
         let _ = window.emit("window-shown", ());
 
-        if let Some(state) = app.try_state::<AppState>() {
+        if let Some(state) = app.try_state::<WindowState>() {
             if let Ok(mut last_shown) = state.last_window_shown.lock() {
                 *last_shown = Some(std::time::Instant::now());
             }
@@ -46,14 +46,14 @@ pub async fn show_window(app_handle: tauri::AppHandle) -> Result<(), crate::erro
 
 /// Increment the modal refcount to prevent auto-hide
 #[tauri::command]
-pub async fn enter_modal(state: State<'_, AppState>) -> Result<(), crate::error::AppError> {
+pub async fn enter_modal(state: State<'_, WindowState>) -> Result<(), crate::error::AppError> {
     state.prevent_hide.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     Ok(())
 }
 
 /// Decrement the modal refcount; auto-hide resumes when count reaches zero
 #[tauri::command]
-pub async fn leave_modal(state: State<'_, AppState>) -> Result<(), crate::error::AppError> {
+pub async fn leave_modal(state: State<'_, WindowState>) -> Result<(), crate::error::AppError> {
     let prev = state.prevent_hide.load(std::sync::atomic::Ordering::SeqCst);
     if prev > 0 {
         state.prevent_hide.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);

@@ -1,11 +1,11 @@
-use crate::state::AppState;
+use crate::state::{CommandsState, ConfigState};
 use tauri::{AppHandle, Manager};
 
 /// Reload config and commands
 pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::AppError> {
     use tauri::Emitter;
 
-    let config = if let Some(state) = app_handle.try_state::<AppState>() {
+    let config = if let Some(state) = app_handle.try_state::<ConfigState>() {
         let new_config = crate::config::store::reload(&state.config_store, &state.config).await?;
         if let Err(e) = crate::shortcut::setup_global_shortcuts(app_handle, &new_config.hotkey) {
             log::warn!("Failed to re-register hotkey: {}", e);
@@ -13,15 +13,15 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
         new_config
     } else {
         return Err(crate::error::AppError::System(
-            "Failed to get AppState".to_string(),
+            "Failed to get ConfigState".to_string(),
         ));
     };
 
-    if let Some(state) = app_handle.try_state::<AppState>() {
+    if let Some(state) = app_handle.try_state::<CommandsState>() {
         crate::commands::loader::reload(&state.command_store, &state.commands, &config).await?;
     } else {
         return Err(crate::error::AppError::System(
-            "Failed to get AppState".to_string(),
+            "Failed to get CommandsState".to_string(),
         ));
     }
 
@@ -98,7 +98,7 @@ pub fn setup_reload_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error
 pub fn start_periodic_reload(app_handle: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
         loop {
-            let interval_minutes = if let Some(state) = app_handle.try_state::<AppState>() {
+            let interval_minutes = if let Some(state) = app_handle.try_state::<ConfigState>() {
                 if let Ok(config) = state.config.lock() {
                     std::cmp::max(config.reload_interval_minutes, 1)
                 } else {

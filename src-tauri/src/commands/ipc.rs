@@ -1,12 +1,12 @@
 use crate::commands::domain::{Command, Commands};
 use crate::error::AppError;
-use crate::state::AppState;
+use crate::state::CommandsState;
 use tauri::{Manager, State};
 
 /// Get all commands
 #[tauri::command]
 pub fn get_all_commands(
-    state: State<'_, AppState>,
+    state: State<'_, CommandsState>,
 ) -> Result<Vec<Command>, crate::error::AppError> {
     let manager = state.commands.lock().unwrap();
     Ok(manager.get_all_commands())
@@ -16,7 +16,7 @@ pub fn get_all_commands(
 #[tauri::command]
 pub async fn add_command(
     mut command: Command,
-    state: State<'_, AppState>,
+    state: State<'_, CommandsState>,
 ) -> Result<String, crate::error::AppError> {
     command.source = crate::commands::domain::SOURCE_USER.to_string();
     let (id, commands) = {
@@ -43,7 +43,7 @@ pub async fn add_command(
 #[tauri::command]
 pub async fn update_command(
     mut command: Command,
-    state: State<'_, AppState>,
+    state: State<'_, CommandsState>,
 ) -> Result<(), crate::error::AppError> {
     command.source = crate::commands::domain::SOURCE_USER.to_string();
     let commands = {
@@ -69,7 +69,7 @@ pub async fn update_command(
 #[tauri::command]
 pub async fn delete_command(
     id: String,
-    state: State<'_, AppState>,
+    state: State<'_, CommandsState>,
 ) -> Result<(), crate::error::AppError> {
     let commands = {
         let mut manager = state
@@ -91,7 +91,7 @@ pub async fn delete_command(
 #[tauri::command]
 pub fn get_commands_by_prompt(
     prompt: String,
-    state: State<'_, AppState>,
+    state: State<'_, CommandsState>,
 ) -> Result<Vec<Command>, crate::error::AppError> {
     let manager = state.commands.lock().unwrap();
     Ok(manager.get_commands_by_prompt(&prompt))
@@ -99,7 +99,7 @@ pub fn get_commands_by_prompt(
 
 /// Get user commands
 #[tauri::command]
-pub async fn get_user_commands(state: State<'_, AppState>) -> Result<Commands, crate::error::AppError> {
+pub async fn get_user_commands(state: State<'_, CommandsState>) -> Result<Commands, crate::error::AppError> {
     state.command_store.load().await
 }
 
@@ -107,7 +107,7 @@ pub async fn get_user_commands(state: State<'_, AppState>) -> Result<Commands, c
 #[tauri::command]
 pub async fn save_commands(
     commands: Commands,
-    state: State<'_, AppState>,
+    state: State<'_, CommandsState>,
 ) -> Result<(), crate::error::AppError> {
     // Save the commands
     state.command_store.save(&commands).await?;
@@ -123,7 +123,7 @@ pub async fn save_commands(
 /// Get commands.json path
 #[tauri::command]
 pub fn get_commands_file_path(
-    state: State<'_, AppState>,
+    state: State<'_, CommandsState>,
 ) -> Result<String, crate::error::AppError> {
     Ok(state.command_store.get_path().to_string())
 }
@@ -133,7 +133,7 @@ pub fn get_commands_file_path(
 pub async fn open_commands_json(
     app_handle: tauri::AppHandle,
 ) -> Result<(), crate::error::AppError> {
-    if let Some(state) = app_handle.try_state::<crate::state::AppState>() {
+    if let Some(state) = app_handle.try_state::<crate::state::CommandsState>() {
         let commands_path = state.command_store.get_path().to_string();
         let _ = state.command_store.load().await; // creates file with defaults if absent
         crate::os::open_path(&app_handle, &commands_path)?;
