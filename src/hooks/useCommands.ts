@@ -55,22 +55,6 @@ export function useCommands() {
         }
     }, [loadCommands]);
 
-    const ignoreCommand = useCallback(async (command: Command) => {
-        try {
-            const config = await TauriAPI.getConfig();
-            if (!config.ignored.includes(command.command)) {
-                const updated = { ...config, ignored: [...config.ignored, command.command] };
-                await TauriAPI.saveConfig(updated);
-                await TauriAPI.reloadAll();
-            }
-            await loadCommands();
-            return true;
-        } catch (err) {
-            console.error(`Failed to ignore command "${command.name}":`, getErrorMessage(err));
-            return false;
-        }
-    }, [loadCommands]);
-
     const executeCommand = useCallback(async (command: Command, args: string[] = []): Promise<boolean | null> => {
         try {
             const result = await TauriAPI.executeCommand(command, args);
@@ -90,7 +74,6 @@ export function useCommands() {
         addCommand,
         updateCommand,
         deleteCommand,
-        ignoreCommand,
         executeCommand
     };
 }

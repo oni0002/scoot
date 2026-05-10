@@ -31,7 +31,6 @@ const AppContent = () => {
     addCommand,
     updateCommand,
     deleteCommand,
-    ignoreCommand,
   } = useCommandContext();
 
   const { theme, fuzzyThreshold, maxResults, loadConfig } = useConfigContext();
@@ -103,10 +102,19 @@ const AppContent = () => {
   }, []);
 
   const handleIgnoreCommand = useCallback(async (command: Command) => {
-    const success = await ignoreCommand(command);
-    if (success) showSuccess(`"${command.name}" ignored successfully.`);
-    else showError(`Could not ignore "${command.name}".`, NOTIFICATION_DURATION.LONG);
-  }, [ignoreCommand, showSuccess, showError]);
+    try {
+      const config = await TauriAPI.getConfig();
+      if (!config.ignored.includes(command.command)) {
+        const updated = { ...config, ignored: [...config.ignored, command.command] };
+        await TauriAPI.saveConfig(updated);
+        await TauriAPI.reloadAll();
+      }
+      await loadCommands();
+      showSuccess(`"${command.name}" ignored successfully.`);
+    } catch {
+      showError(`Could not ignore "${command.name}".`, NOTIFICATION_DURATION.LONG);
+    }
+  }, [loadCommands, showSuccess, showError]);
 
   const handleCopyCommand = useCallback(async (command: Command) => {
     if (!command.command) return;
