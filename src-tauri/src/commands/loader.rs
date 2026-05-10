@@ -38,7 +38,10 @@ pub async fn reload(
                     &config.applications.extensions,
                 )
                 .await
-                .unwrap_or_default()
+                .unwrap_or_else(|e| {
+                    log::warn!("Failed to load applications: {}", e);
+                    Vec::new()
+                })
             } else {
                 Vec::new()
             }
