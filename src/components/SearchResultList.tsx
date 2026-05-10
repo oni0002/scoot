@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LuCopy, LuCheck } from 'react-icons/lu';
 import { Command, SearchResult } from '../types';
 import { SearchResultItem } from './SearchResultItem';
+import { substituteArgs } from '../utils/command';
 
 interface SearchResultListProps {
     results: SearchResult[];
@@ -42,24 +43,8 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
         setTimeout(() => setCopied(false), 3000);
     };
     const getPreviewCommand = (command: Command, args: string[]) => {
-        let cmd = command.command;
-        if (!cmd) return '';
-
-        if (args.length === 0) return cmd;
-
-        // {$*} replacement
-        if (cmd.includes('{$*}')) {
-            return cmd.replace('{$*}', args.join(' '));
-        }
-
-        // {$1}, {$2}... replacement
-        args.forEach((arg, index) => {
-            const placeholder = `{$${index + 1}}`;
-            if (cmd.includes(placeholder)) {
-                cmd = cmd.replace(placeholder, arg);
-            }
-        });
-        return cmd;
+        if (!command.command) return '';
+        return substituteArgs(command.command, args);
     };
 
     const renderEmptyState = () => {

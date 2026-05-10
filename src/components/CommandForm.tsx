@@ -4,6 +4,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { LuFile, LuFolder, LuArrowLeft } from 'react-icons/lu';
 import { usePreventHide } from '../hooks/usePreventHide';
 import { TauriAPI } from '../api/tauri';
+import { hasPlaceholders } from '../utils/command';
 
 interface CommandFormProps {
     command?: Command; // If provided, we're editing; otherwise, we're adding
@@ -72,8 +73,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             newErrors.command = 'Command is required';
         }
 
-        const hasPlaceholders = /\{\$(\d+|\*)\}/.test(formData.command);
-        if (hasPlaceholders && !formData.prompt.trim()) {
+        if (hasPlaceholders(formData.command) && !formData.prompt.trim()) {
             newErrors.prompt = 'Required for args';
         }
 
@@ -110,8 +110,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
 
             // Auto-clear prompt if command no longer has placeholders
             if (field === 'command' && typeof value === 'string') {
-                const hasPlaceholders = /\{\$(\d+|\*)\}/.test(value);
-                if (!hasPlaceholders) {
+                if (!hasPlaceholders(value)) {
                     newData.prompt = '';
                 }
             }
@@ -277,7 +276,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
 
                         <div className="form-control w-32">
                             <label className="label">
-                                <span className="label-text">Prompt {/\{\$(\d+|\*)\}/.test(formData.command) ? '*' : ''}</span>
+                                <span className="label-text">Prompt {hasPlaceholders(formData.command) ? '*' : ''}</span>
                             </label>
                             <input
                                 type="text"
@@ -286,7 +285,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 placeholder="e.g., g"
                                 maxLength={10}
                                 className={`input input-bordered input-sm w-full ${errors.prompt ? 'input-error' : ''}`}
-                                disabled={!/\{\$(\d+|\*)\}/.test(formData.command)}
+                                disabled={!hasPlaceholders(formData.command)}
                             />
                             {errors.prompt && (
                                 <label className="label">
