@@ -153,7 +153,7 @@ pub fn setup_event_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error:
 }
 
 /// Start background task for periodic global reload
-pub fn start_update_task(app_handle: tauri::AppHandle) {
+pub fn start_periodic_reload(app_handle: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
         loop {
             // Get reload interval from config
