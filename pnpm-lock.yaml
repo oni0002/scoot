@@ -23,6 +23,9 @@ importers:
       fuse.js:
         specifier: ^7.1.0
         version: 7.3.0
+      pnpm:
+        specifier: ^11.0.9
+        version: 11.0.9
       react:
         specifier: ^19.1.0
         version: 19.2.6
@@ -1960,6 +1963,11 @@ packages:
   pkg-dir@4.2.0:
     resolution: {integrity: sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==}
     engines: {node: '>=8'}
+
+  pnpm@11.0.9:
+    resolution: {integrity: sha512-NM6C5ngCM8+crYaFApqPgdLgYZbFqbrZiHn3QklAxoF8TkUk+304uFU87tSLl1i4668avTYAwjLEyM9zZghvOA==}
+    engines: {node: '>=22.13'}
+    hasBin: true
 
   postcss-import@15.1.0:
     resolution: {integrity: sha512-hpr+J05B2FVYUAXHeK1YyI267J/dDDhMU6B6civm8hSY1jYJnBXxzKDKDswzJmtLHryrjhnDjqqp/49t8FALew==}
@@ -4418,6 +4426,8 @@ snapshots:
   pkg-dir@4.2.0:
     dependencies:
       find-up: 4.1.0
+
+  pnpm@11.0.9: {}
 
   postcss-import@15.1.0(postcss@8.5.14):
     dependencies:
