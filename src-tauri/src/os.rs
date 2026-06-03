@@ -1,5 +1,9 @@
 use regex::Regex;
 use std::path::PathBuf;
+use std::sync::LazyLock;
+
+static ENV_VAR_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"%([^%]+)%").expect("invalid regex"));
 use tauri::{AppHandle, Manager};
 use tauri_plugin_opener::OpenerExt;
 
@@ -58,9 +62,7 @@ pub fn get_log_dir(_app_handle: &AppHandle) -> Result<PathBuf, crate::error::App
 
 /// Expand Windows environment variables like %APPDATA%
 pub fn expand_env_vars(path: &str) -> String {
-    let re = Regex::new(r"%([^%]+)%").unwrap();
-
-    re.replace_all(path, |caps: &regex::Captures| {
+    ENV_VAR_RE.replace_all(path, |caps: &regex::Captures| {
         let key = &caps[1];
         std::env::var(key).unwrap_or_else(|_| format!("%{}%", key))
     })

@@ -1,6 +1,7 @@
 use crate::commands::domain::Command;
 use crate::commands::registry::CommandRegistry;
 use crate::error::AppError;
+use tauri::Emitter;
 
 fn filter_ignored(commands: Vec<Command>, ignored: &[String]) -> Vec<Command> {
     commands
@@ -11,6 +12,7 @@ fn filter_ignored(commands: Vec<Command>, ignored: &[String]) -> Vec<Command> {
 
 /// Reload commands, bookmarks, and apps into the registry
 pub async fn reload(
+    app_handle: &tauri::AppHandle,
     command_store: &crate::commands::store::CommandStore,
     command_registry: &std::sync::Mutex<CommandRegistry>,
     config: &crate::config::domain::Config,
@@ -63,10 +65,11 @@ pub async fn reload(
     let mut commands = match commands_result {
         Ok(cmds) => cmds,
         Err(e) => {
-            log::error!(
-                "Failed to load commands.json: {}. Proceeding with empty commands.",
-                e
-            );
+            let msg = format!("Failed to load commands.json: {}", e);
+            log::error!("{}", msg);
+            if let Err(emit_err) = app_handle.emit("config-load-error", &msg) {
+                log::error!("Failed to emit config-load-error: {}", emit_err);
+            }
             Vec::new()
         }
     };

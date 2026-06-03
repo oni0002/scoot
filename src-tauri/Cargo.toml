@@ -2,7 +2,7 @@
 name = "scoot"
 version = "0.2.9"
 description = "A Tauri App"
-authors = ["you"]
+authors = ["oni0002"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -28,10 +28,9 @@ serde_json = "1"
 notify = "6.1"
 tokio = { version = "1", features = ["full"] }
 dirs = "6.0"
-jsonschema = "0.18"
+jsonschema = "0.29"
 schemars = { version = "0.8", features = ["derive"] }
 walkdir = "2.4"
-md5 = "0.7"
 chrono = { version = "0.4", features = ["serde"] }
 tauri-plugin-log = "2.8.0"
 log = "0.4.29"

@@ -9,26 +9,24 @@ fn parse<T: DeserializeOwned>(json_str: &str) -> Result<T, crate::error::AppErro
 
 /// Validate data against its JSON Schema definition
 pub fn validate<T: Serialize + JsonSchema>(data: &T) -> Result<(), crate::error::AppError> {
-    // Convert to JSON Value for validation
     let normalized = serde_json::to_value(data).map_err(|e| {
         crate::error::AppError::Validation(format!("Failed to serialize data: {}", e))
     })?;
 
-    // Generate schema from type T and validate
     let schema_val = serde_json::to_value(schemars::schema_for!(T)).unwrap_or_default();
-    // Compile schema
-    let compiled = jsonschema::JSONSchema::compile(&schema_val).map_err(|e| {
+    let validator = jsonschema::validator_for(&schema_val).map_err(|e| {
         crate::error::AppError::Validation(format!("Failed to compile schema: {}", e))
     })?;
 
-    // Validate data against schema
-    if let Err(errors) = compiled.validate(&normalized) {
-        let msgs: Vec<String> = errors
-            .map(|err| format!("Error at {}: {}", err.instance_path, err))
-            .collect();
+    let errors: Vec<String> = validator
+        .iter_errors(&normalized)
+        .map(|err| format!("Error at {}: {}", err.instance_path, err))
+        .collect();
+
+    if !errors.is_empty() {
         return Err(crate::error::AppError::Validation(format!(
             "Schema validation failed: {}",
-            msgs.join(", ")
+            errors.join(", ")
         )));
     }
 

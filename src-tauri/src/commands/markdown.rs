@@ -2,6 +2,10 @@ use crate::commands::domain::Command;
 use crate::config::domain::MarkdownConfig;
 use regex::Regex;
 use std::collections::HashSet;
+use std::sync::LazyLock;
+
+static LINK_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(!?)\[([^\]]+)\]\(([^)]+)\)").expect("invalid regex"));
 
 /// Load commands from markdown files
 pub async fn load(config: &MarkdownConfig) -> Result<Vec<Command>, crate::error::AppError> {
@@ -10,9 +14,6 @@ pub async fn load(config: &MarkdownConfig) -> Result<Vec<Command>, crate::error:
     let commands = tokio::task::spawn_blocking(move || {
         let mut commands = Vec::new();
         let mut seen_urls = HashSet::new();
-
-        // Regex: captures optional '!' prefix + [text](url)
-        let link_re = Regex::new(r"(!?)\[([^\]]+)\]\(([^)]+)\)").unwrap();
 
         for path in &paths {
             let expanded = crate::os::expand_env_vars(path);
@@ -30,7 +31,7 @@ pub async fn load(config: &MarkdownConfig) -> Result<Vec<Command>, crate::error:
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_else(|| expanded.clone());
 
-            for cap in link_re.captures_iter(&content) {
+            for cap in LINK_RE.captures_iter(&content) {
                 // Skip image links (![text](url))
                 if &cap[1] == "!" {
                     continue;
@@ -92,11 +93,10 @@ mod tests {
 - [Duplicate](https://google.com)
 "#;
 
-        let link_re = Regex::new(r"(!?)\[([^\]]+)\]\(([^)]+)\)").unwrap();
         let mut results = Vec::new();
         let mut seen = HashSet::new();
 
-        for cap in link_re.captures_iter(content) {
+        for cap in LINK_RE.captures_iter(content) {
             if &cap[1] == "!" {
                 continue;
             }

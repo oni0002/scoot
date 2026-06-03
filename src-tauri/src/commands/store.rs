@@ -52,10 +52,12 @@ impl CommandStore {
         .map_err(|e| {
             crate::error::AppError::System(format!("Failed to spawn blocking task: {}", e))
         })?
-        .unwrap_or_else(|e| {
-            log::error!("Failed to parse commands.json: {}", e);
-            Vec::new()
-        });
+        .map_err(|e| {
+            crate::error::AppError::System(format!(
+                "Failed to parse commands.json: {}. The file may be corrupted.",
+                e
+            ))
+        })?;
 
         let mut needs_save = false;
         for cmd in &mut commands {

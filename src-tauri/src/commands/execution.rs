@@ -51,7 +51,10 @@ pub async fn execute_command(
             )
             .await
         }
-        _ => unreachable!("unexpected category after validation: {}", command.category),
+        _ => Err(crate::error::AppError::Validation(format!(
+            "Unexpected command category: {}",
+            command.category
+        ))),
     };
     result.map(|_| ExecuteResult::hide())
 }
@@ -99,12 +102,22 @@ async fn execute_scoot_command(
     }
 }
 
+const ALLOWED_URL_SCHEMES: &[&str] = &["http://", "https://", "mailto:", "ftp://"];
+
 /// Execute URL command
 async fn execute_url(
     app_handle: &tauri::AppHandle,
     url: &str,
 ) -> Result<(), crate::error::AppError> {
     log::debug!("Opening URL: {}", url);
+
+    let url_lower = url.to_lowercase();
+    if !ALLOWED_URL_SCHEMES.iter().any(|s| url_lower.starts_with(s)) {
+        return Err(crate::error::AppError::Validation(format!(
+            "URL scheme not allowed: '{}'. Allowed schemes: http, https, mailto, ftp.",
+            url
+        )));
+    }
 
     crate::os::open_url(app_handle, url).map_err(|e| {
         let error_msg = format!(
