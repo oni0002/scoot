@@ -19,4 +19,5 @@ export const KEYBOARD_SHORTCUTS = {
     EXECUTE: ['Enter'],
     CANCEL: ['Escape'],
     NAVIGATE_TAB: ['Tab'],
+    COPY: ['c'],
 };

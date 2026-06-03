@@ -98,14 +98,22 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         executeCommand: executeContextCommand,
     });
 
+    const handleCopySelectedCommand = useCallback(() => {
+        if (selectedIndex < 0 || selectedIndex >= results.length) return;
+        const command = results[selectedIndex].command;
+        if (command) onCopyCommand?.(command);
+    }, [selectedIndex, results, onCopyCommand]);
+
     const { handleKeyDown } = useKeyboardNavigation({
         moveSelection: searchState.moveSelection,
         executeCommand: runSelectedCommand,
+        copySelectedCommand: handleCopySelectedCommand,
         resetState,
         query,
         setQuery,
         searchMode,
         setSearchMode,
+        inputRef,
     });
 
     const handleResultClick = useCallback(

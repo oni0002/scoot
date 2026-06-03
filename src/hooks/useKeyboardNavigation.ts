@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import React from 'react';
 import { KEYBOARD_SHORTCUTS } from '../constants';
 import { TauriAPI } from '../tauri';
 import { SearchMode } from './useSearchState';
@@ -6,21 +7,25 @@ import { SearchMode } from './useSearchState';
 interface UseKeyboardNavigationProps {
     moveSelection: (direction: 'up' | 'down') => void;
     executeCommand: () => void;
+    copySelectedCommand?: () => void;
     resetState: () => void;
     query: string;
     setQuery: (query: string) => void;
     searchMode: SearchMode;
     setSearchMode: (mode: SearchMode) => void;
+    inputRef: React.RefObject<HTMLInputElement | null>;
 }
 
 export const useKeyboardNavigation = ({
     moveSelection,
     executeCommand,
+    copySelectedCommand,
     resetState,
     query,
     setQuery,
     searchMode,
     setSearchMode,
+    inputRef,
 }: UseKeyboardNavigationProps) => {
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
@@ -33,6 +38,15 @@ export const useKeyboardNavigation = ({
                 if (KEYBOARD_SHORTCUTS.MOVE_UP_ALT.includes(e.key)) {
                     e.preventDefault();
                     moveSelection('up');
+                    return;
+                }
+                if (KEYBOARD_SHORTCUTS.COPY.includes(e.key)) {
+                    const input = inputRef.current;
+                    const hasSelection = input && input.selectionStart !== input.selectionEnd;
+                    if (!hasSelection) {
+                        e.preventDefault();
+                        copySelectedCommand?.();
+                    }
                     return;
                 }
             }
@@ -61,7 +75,7 @@ export const useKeyboardNavigation = ({
                 }
             }
         },
-        [moveSelection, executeCommand, searchMode, query, resetState, setQuery, setSearchMode],
+        [moveSelection, executeCommand, copySelectedCommand, searchMode, query, resetState, setQuery, setSearchMode, inputRef],
     );
 
     return { handleKeyDown };
