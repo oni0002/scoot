@@ -19,12 +19,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies (Ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf libwebkit2gtk-4.1-dev
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -38,8 +32,6 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Install frontend dependencies
         run: pnpm install
@@ -84,6 +76,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         env:
+          # softprops/action-gh-release@v2 uses Node20 runtime by default;
+          # force Node24 to suppress deprecation warnings from GitHub Actions.
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         with:
           files: upload_assets/*

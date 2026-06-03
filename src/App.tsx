@@ -41,14 +41,11 @@ const AppContent = () => {
   const [deletingCommand, setDeletingCommand] = useState<Command | undefined>(undefined);
 
   const handleAddCommand = useCallback(() => {
-    console.log('App: handleAddCommand called');
     setEditingCommand(undefined);
     setCurrentView('form');
   }, []);
 
   const handleSaveCommand = useCallback(async (command: Command) => {
-    console.log('App: handleSaveCommand called', command);
-
     let success = false;
     if (editingCommand) {
       success = await updateCommand(command);
@@ -91,7 +88,6 @@ const AppContent = () => {
   }, [showDeleteDialog]);
 
   const handleEditCommandFromSearch = useCallback((command: Command) => {
-    console.log('App: handleEditCommandFromSearch called', command);
     setEditingCommand(command);
     setCurrentView('form');
   }, []);

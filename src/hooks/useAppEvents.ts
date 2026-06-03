@@ -36,17 +36,15 @@ export const useAppEvents = ({
                 const eventHandlers = {
                     "open-add-command-dialog": handleAddCommand,
                     "config-reloaded": () => {
-                        console.log("Event: config-reloaded received");
                         showInfo("Config and commands reloaded");
                         loadCommands();
                         loadConfig();
                     },
                     "config-file-changed": () => {
-                        console.log("Event: config-file-changed received");
                         loadCommands();
                         loadConfig();
                     },
-                    "shortcut-registered": (event: any) => {
+                    "shortcut-registered": (event: { payload: string }) => {
                         showSuccess(`Global shortcut: ${event.payload}`);
                     },
                     "shortcut-warning": () => {
