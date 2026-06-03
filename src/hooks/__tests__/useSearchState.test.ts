@@ -2,14 +2,14 @@ import { renderHook, act } from '@testing-library/react';
 import { useSearchState } from '../useSearchState';
 import { Command } from '../../types';
 
-const makeCmd = (name: string, id = name, prompt?: string): Command => ({
+const makeCmd = (name: string, id = name, alias?: string): Command => ({
     id,
     name,
     category: 'url',
     source: 'user',
     command: 'https://example.com',
     description: '',
-    prompt,
+    alias,
 });
 
 const THRESHOLD = 0.4;
@@ -56,21 +56,21 @@ describe('useSearchState', () => {
         });
     });
 
-    describe('prompt mode transition', () => {
-        const promptCmd = makeCmd('Open URL', 'open-url', 'open');
-        const commands = [promptCmd, makeCmd('GitHub')];
+    describe('argument mode transition', () => {
+        const aliasCmd = makeCmd('Open URL', 'open-url', 'open');
+        const commands = [aliasCmd, makeCmd('GitHub')];
 
-        it('transitions to prompt mode when keyword + space is typed', () => {
+        it('transitions to argument mode when alias + space is typed', () => {
             const { result } = renderHook(() => useSearchState(commands, THRESHOLD, MAX));
             act(() => {
                 result.current.handleQueryChange('open ');
             });
-            expect(result.current.searchMode.mode).toBe('prompt');
-            expect(result.current.promptMode?.prompt).toBe('open');
-            expect(result.current.promptMode?.command.id).toBe('open-url');
+            expect(result.current.searchMode.mode).toBe('argument');
+            expect(result.current.argumentMode?.alias).toBe('open');
+            expect(result.current.argumentMode?.command.id).toBe('open-url');
         });
 
-        it('stays in search mode while typing the keyword (no trailing space)', () => {
+        it('stays in search mode while typing the alias (no trailing space)', () => {
             const { result } = renderHook(() => useSearchState(commands, THRESHOLD, MAX));
             act(() => {
                 result.current.handleQueryChange('open');
@@ -78,7 +78,7 @@ describe('useSearchState', () => {
             expect(result.current.searchMode.mode).toBe('search');
         });
 
-        it('stays in prompt mode when typing args after the prompt prefix', () => {
+        it('stays in argument mode when typing args after the alias prefix', () => {
             const { result } = renderHook(() => useSearchState(commands, THRESHOLD, MAX));
             act(() => {
                 result.current.handleQueryChange('open ');
@@ -86,16 +86,16 @@ describe('useSearchState', () => {
             act(() => {
                 result.current.handleQueryChange('open https://example.com');
             });
-            expect(result.current.searchMode.mode).toBe('prompt');
+            expect(result.current.searchMode.mode).toBe('argument');
         });
 
-        it('promptMode is null outside prompt mode', () => {
+        it('argumentMode is null outside argument mode', () => {
             const { result } = renderHook(() => useSearchState(commands, THRESHOLD, MAX));
-            expect(result.current.promptMode).toBeNull();
+            expect(result.current.argumentMode).toBeNull();
             act(() => {
                 result.current.handleQueryChange('git');
             });
-            expect(result.current.promptMode).toBeNull();
+            expect(result.current.argumentMode).toBeNull();
         });
     });
 
@@ -114,13 +114,13 @@ describe('useSearchState', () => {
             expect(result.current.searchMode.mode).toBe('idle');
         });
 
-        it('resets from prompt mode to idle', () => {
-            const promptCmd = makeCmd('Open URL', 'open-url', 'open');
-            const { result } = renderHook(() => useSearchState([promptCmd], THRESHOLD, MAX));
+        it('resets from argument mode to idle', () => {
+            const aliasCmd = makeCmd('Open URL', 'open-url', 'open');
+            const { result } = renderHook(() => useSearchState([aliasCmd], THRESHOLD, MAX));
             act(() => {
                 result.current.handleQueryChange('open ');
             });
-            expect(result.current.searchMode.mode).toBe('prompt');
+            expect(result.current.searchMode.mode).toBe('argument');
             act(() => {
                 result.current.resetState();
             });

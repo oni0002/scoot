@@ -8,8 +8,8 @@ interface SearchResultListProps {
     results: SearchResult[];
     selectedIndex: number;
     hoveredIndex: number | null;
-    promptMode: { prompt: string; command: Command } | null;
-    promptArgs?: string[];
+    argumentMode: { alias: string; command: Command } | null;
+    args?: string[];
     query: string;
     onResultClick: (index: number, event?: React.MouseEvent) => void;
     onMouseEnter: (index: number) => void;
@@ -24,8 +24,8 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     results,
     selectedIndex,
     hoveredIndex,
-    promptMode,
-    promptArgs = [],
+    argumentMode,
+    args = [],
     query,
     onResultClick,
     onMouseEnter,
@@ -48,13 +48,13 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     };
 
     const renderEmptyState = () => {
-        if (promptMode) {
-            const preview = getPreviewCommand(promptMode.command, promptArgs);
+        if (argumentMode) {
+            const preview = getPreviewCommand(argumentMode.command, args);
             return (
                 <div className="text-center py-8">
-                    <div className="text-lg mb-1">{promptMode.command.name}</div>
+                    <div className="text-lg mb-1">{argumentMode.command.name}</div>
                     <div className="text-xs opacity-70 mb-4">
-                        {promptMode.command.description || 'Enter arguments'}
+                        {argumentMode.command.description || 'Enter arguments'}
                     </div>
                     {preview && (
                         <div className="flex items-center p-2 mx-8 gap-2 text-center bg-base-200 rounded-lg">

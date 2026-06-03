@@ -4,7 +4,7 @@ import { createFuse, fuseSearch, detectDirectOpen } from '../search';
 
 export type SearchMode =
     | { mode: 'idle' }
-    | { mode: 'prompt'; prompt: string; command: Command }
+    | { mode: 'argument'; alias: string; command: Command }
     | { mode: 'search'; results: SearchResult[]; selectedIndex: number };
 
 export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxResults: number) => {
@@ -30,20 +30,20 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
             }
 
             const parts = trimmed.split(/\s+/);
-            const potentialPrompt = parts[0];
-            const matchingCommand = commands.find((cmd) => cmd.prompt === potentialPrompt);
+            const potentialAlias = parts[0];
+            const matchingCommand = commands.find((cmd) => cmd.alias === potentialAlias);
 
             if (matchingCommand) {
                 const shouldEnter = parts.length > 1 || newQuery.endsWith(' ');
                 if (shouldEnter) {
-                    return { mode: 'prompt', prompt: potentialPrompt, command: matchingCommand };
+                    return { mode: 'argument', alias: potentialAlias, command: matchingCommand };
                 }
-                // Still typing the prompt keyword — fall through to search
+                // Still typing the alias keyword — fall through to search
             } else if (
-                currentMode.mode === 'prompt' &&
-                newQuery.startsWith(currentMode.prompt + ' ')
+                currentMode.mode === 'argument' &&
+                newQuery.startsWith(currentMode.alias + ' ')
             ) {
-                // Typed something after prompt prefix that isn't recognized — stay in prompt
+                // Typed something after alias prefix that isn't recognized — stay in argument mode
                 return currentMode;
             }
 
@@ -68,7 +68,7 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- query-driven mode transition is intentional
         setSearchMode((prev) => {
-            if (!query || prev.mode === 'prompt') return prev;
+            if (!query || prev.mode === 'argument') return prev;
             return computeMode(query, prev);
         });
     }, [commands, fuzzyThreshold]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -90,9 +90,9 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
 
     const results = searchMode.mode === 'search' ? searchMode.results : [];
     const selectedIndex = searchMode.mode === 'search' ? searchMode.selectedIndex : 0;
-    const promptMode =
-        searchMode.mode === 'prompt'
-            ? { prompt: searchMode.prompt, command: searchMode.command }
+    const argumentMode =
+        searchMode.mode === 'argument'
+            ? { alias: searchMode.alias, command: searchMode.command }
             : null;
 
     return {
@@ -102,7 +102,7 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
         setSearchMode,
         results,
         selectedIndex,
-        promptMode,
+        argumentMode,
         inputRef,
         resetState,
         handleQueryChange,

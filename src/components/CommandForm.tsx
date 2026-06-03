@@ -19,7 +19,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
         category: '',
         command: '',
         description: '',
-        prompt: '',
+        alias: '',
         workingDir: '',
         showWindow: false,
     });
@@ -36,7 +36,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                 category: command.category,
                 command: command.command,
                 description: command.description,
-                prompt: command.prompt || '',
+                alias: command.alias || '',
                 workingDir: command.workingDir || '',
                 showWindow: command.showWindow || false,
             });
@@ -47,7 +47,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                 category: 'url',
                 command: '',
                 description: '',
-                prompt: '',
+                alias: '',
                 workingDir: '',
                 showWindow: false,
             });
@@ -70,8 +70,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
             newErrors.command = 'Command is required';
         }
 
-        if (hasPlaceholders(formData.command) && !formData.prompt.trim()) {
-            newErrors.prompt = 'Required for args';
+        if (hasPlaceholders(formData.command) && !formData.alias.trim()) {
+            newErrors.alias = 'Required for args';
         }
 
         setErrors(newErrors);
@@ -93,7 +93,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
             category: formData.category.trim(),
             command: formData.command.trim(),
             description: formData.description.trim(),
-            prompt: formData.prompt.trim() || undefined,
+            alias: formData.alias.trim() || undefined,
             workingDir: isCmdCategory ? formData.workingDir.trim() || undefined : undefined,
             showWindow: isCmdCategory ? formData.showWindow : undefined,
         };
@@ -105,10 +105,10 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
         setFormData((prev) => {
             const newData = { ...prev, [field]: value };
 
-            // Auto-clear prompt if command no longer has placeholders
+            // Auto-clear alias if command no longer has placeholders
             if (field === 'command' && typeof value === 'string') {
                 if (!hasPlaceholders(value)) {
-                    newData.prompt = '';
+                    newData.alias = '';
                 }
             }
             return newData;
@@ -282,22 +282,22 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                         <div className="form-control w-32">
                             <label className="label">
                                 <span className="label-text">
-                                    Prompt {hasPlaceholders(formData.command) ? '*' : ''}
+                                    Alias {hasPlaceholders(formData.command) ? '*' : ''}
                                 </span>
                             </label>
                             <input
                                 type="text"
-                                value={formData.prompt}
-                                onChange={(e) => handleInputChange('prompt', e.target.value)}
+                                value={formData.alias}
+                                onChange={(e) => handleInputChange('alias', e.target.value)}
                                 placeholder="e.g., g"
                                 maxLength={10}
-                                className={`input input-bordered input-sm w-full ${errors.prompt ? 'input-error' : ''}`}
+                                className={`input input-bordered input-sm w-full ${errors.alias ? 'input-error' : ''}`}
                                 disabled={!hasPlaceholders(formData.command)}
                             />
-                            {errors.prompt && (
+                            {errors.alias && (
                                 <label className="label">
                                     <span className="label-text-alt text-error">
-                                        {errors.prompt}
+                                        {errors.alias}
                                     </span>
                                 </label>
                             )}

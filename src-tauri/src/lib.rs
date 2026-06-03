@@ -113,7 +113,7 @@ pub fn run() {
             crate::commands::ipc::update_command,
             crate::commands::ipc::delete_command,
             crate::commands::execution::execute_command,
-            crate::commands::ipc::get_commands_by_prompt,
+            crate::commands::ipc::get_commands_by_alias,
             crate::commands::ipc::open_commands_json,
             // Config
             crate::config::ipc::get_config,

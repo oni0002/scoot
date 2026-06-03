@@ -6,7 +6,7 @@ pub struct CommandRegistry {
     pub user_commands: HashMap<String, Command>,
     pub external_commands: Vec<Command>, // bookmark + app + markdown + scoot (reload-only)
     command_index: HashMap<String, String>, // command string → id
-    prompt_index: HashMap<String, String>,  // prompt string → id
+    alias_index: HashMap<String, String>,   // alias string → id
 }
 
 impl CommandRegistry {
@@ -16,7 +16,7 @@ impl CommandRegistry {
             user_commands: HashMap::new(),
             external_commands: Vec::new(),
             command_index: HashMap::new(),
-            prompt_index: HashMap::new(),
+            alias_index: HashMap::new(),
         }
     }
 
@@ -39,8 +39,8 @@ impl CommandRegistry {
         self.assign_id(&mut command);
         let id = command.id.clone();
         self.command_index.insert(command.command.clone(), id.clone());
-        if let Some(ref p) = command.prompt {
-            self.prompt_index.insert(p.clone(), id.clone());
+        if let Some(ref a) = command.alias {
+            self.alias_index.insert(a.clone(), id.clone());
         }
         self.user_commands.insert(id.clone(), command);
         id
@@ -52,13 +52,13 @@ impl CommandRegistry {
         })?;
         // Remove old index entries
         self.command_index.remove(&old.command);
-        if let Some(ref p) = old.prompt {
-            self.prompt_index.remove(p);
+        if let Some(ref a) = old.alias {
+            self.alias_index.remove(a);
         }
         // Insert new index entries
         self.command_index.insert(command.command.clone(), command.id.clone());
-        if let Some(ref p) = command.prompt {
-            self.prompt_index.insert(p.clone(), command.id.clone());
+        if let Some(ref a) = command.alias {
+            self.alias_index.insert(a.clone(), command.id.clone());
         }
         self.user_commands.insert(command.id.clone(), command);
         Ok(())
@@ -67,7 +67,7 @@ impl CommandRegistry {
     pub fn set_user_commands(&mut self, commands: Vec<Command>) {
         self.user_commands.clear();
         self.command_index.clear();
-        self.prompt_index.clear();
+        self.alias_index.clear();
         for command in commands {
             if self.validate_command(&command).is_ok() {
                 self.add_user_command(command);
@@ -86,8 +86,8 @@ impl CommandRegistry {
             crate::error::AppError::NotFound("Command not found".to_string())
         })?;
         self.command_index.remove(&command.command);
-        if let Some(ref p) = command.prompt {
-            self.prompt_index.remove(p);
+        if let Some(ref a) = command.alias {
+            self.alias_index.remove(a);
         }
         Ok(())
     }
@@ -96,10 +96,10 @@ impl CommandRegistry {
         self.user_commands.values().cloned().collect()
     }
 
-    pub fn get_commands_by_prompt(&self, prompt: &str) -> Vec<Command> {
+    pub fn get_commands_by_alias(&self, alias: &str) -> Vec<Command> {
         self.user_commands
             .values()
-            .filter(|cmd| cmd.prompt.as_ref().map_or(false, |p| p == prompt))
+            .filter(|cmd| cmd.alias.as_ref().map_or(false, |a| a == alias))
             .cloned()
             .collect()
     }
@@ -117,11 +117,11 @@ impl CommandRegistry {
             }
         }
 
-        if let Some(ref prompt) = command.prompt {
-            if self.is_prompt_used(prompt, Some(&command.id)) {
+        if let Some(ref alias) = command.alias {
+            if self.is_alias_used(alias, Some(&command.id)) {
                 return Err(crate::error::AppError::Validation(format!(
-                    "Prompt '{}' is already used by another command.",
-                    prompt
+                    "Alias '{}' is already used by another command.",
+                    alias
                 )));
             }
         }
@@ -129,8 +129,8 @@ impl CommandRegistry {
         Ok(())
     }
 
-    pub fn is_prompt_used(&self, prompt: &str, exclude_id: Option<&str>) -> bool {
-        match self.prompt_index.get(prompt) {
+    pub fn is_alias_used(&self, alias: &str, exclude_id: Option<&str>) -> bool {
+        match self.alias_index.get(alias) {
             Some(id) => exclude_id.map_or(true, |ex| ex != id),
             None => false,
         }
@@ -149,22 +149,22 @@ impl CommandRegistry {
 mod tests {
     use super::*;
 
-    fn create_dummy_command(prompt: Option<&str>) -> Command {
+    fn create_dummy_command(alias: Option<&str>) -> Command {
         Command {
             id: String::new(),
             name: "Test Command".to_string(),
             category: "command".to_string(),
             source: "user".to_string(),
-            command: format!("echo test {}", prompt.unwrap_or("")),
+            command: format!("echo test {}", alias.unwrap_or("")),
             description: "Test".to_string(),
-            prompt: prompt.map(|s| s.to_string()),
+            alias: alias.map(|s| s.to_string()),
             working_dir: None,
             show_window: None,
         }
     }
 
     #[test]
-    fn test_duplicate_prompt_check() {
+    fn test_duplicate_alias_check() {
         let mut manager = CommandRegistry::new();
 
         let cmd_a = create_dummy_command(Some("p1"));
@@ -181,7 +181,7 @@ mod tests {
         assert!(manager.validate_command(&cmd_b).is_ok());
         let _id_b = manager.add_user_command(cmd_b);
         let mut cmd_a_update = manager.user_commands.get(&id_a).unwrap().clone();
-        cmd_a_update.prompt = Some("p2".to_string());
+        cmd_a_update.alias = Some("p2".to_string());
         let res = manager.validate_command(&cmd_a_update);
         assert!(res.is_err());
         assert!(res.unwrap_err().to_string().contains("already used"));

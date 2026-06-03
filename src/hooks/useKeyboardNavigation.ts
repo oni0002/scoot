@@ -51,7 +51,7 @@ export const useKeyboardNavigation = ({
                 executeCommand();
             } else if (KEYBOARD_SHORTCUTS.CANCEL.includes(e.key)) {
                 e.preventDefault();
-                if (searchMode.mode === 'prompt') {
+                if (searchMode.mode === 'argument') {
                     resetState();
                 } else if (query) {
                     setQuery('');

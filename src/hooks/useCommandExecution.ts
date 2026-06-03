@@ -7,7 +7,7 @@ interface UseCommandExecutionProps {
     query: string;
     results: SearchResult[];
     selectedIndex: number;
-    promptMode: { prompt: string; command: Command } | null;
+    argumentMode: { alias: string; command: Command } | null;
     setQuery: (query: string) => void;
     setSearchMode: React.Dispatch<React.SetStateAction<SearchMode>>;
     resetState: () => void;
@@ -18,7 +18,7 @@ export const useCommandExecution = ({
     query,
     results,
     selectedIndex,
-    promptMode,
+    argumentMode,
     setQuery,
     setSearchMode,
     resetState,
@@ -29,9 +29,9 @@ export const useCommandExecution = ({
             let commandToExecute: Command;
             let argsToPass: string[];
 
-            if (promptMode) {
-                commandToExecute = promptMode.command;
-                const rest = query.slice(promptMode.prompt.length + 1).trim();
+            if (argumentMode) {
+                commandToExecute = argumentMode.command;
+                const rest = query.slice(argumentMode.alias.length + 1).trim();
                 argsToPass = rest ? rest.split(/\s+/) : [];
             } else {
                 const effectiveIndex = targetIndex !== undefined ? targetIndex : selectedIndex;
@@ -40,13 +40,13 @@ export const useCommandExecution = ({
                 const selectedResult = results[effectiveIndex];
 
                 if (
-                    selectedResult.command.prompt &&
-                    !query.startsWith(selectedResult.command.prompt + ' ')
+                    selectedResult.command.alias &&
+                    !query.startsWith(selectedResult.command.alias + ' ')
                 ) {
-                    setQuery(selectedResult.command.prompt + ' ');
+                    setQuery(selectedResult.command.alias + ' ');
                     setSearchMode({
-                        mode: 'prompt',
-                        prompt: selectedResult.command.prompt,
+                        mode: 'argument',
+                        alias: selectedResult.command.alias,
                         command: selectedResult.command,
                     });
                     return;
@@ -72,7 +72,7 @@ export const useCommandExecution = ({
             selectedIndex,
             query,
             executeCommand,
-            promptMode,
+            argumentMode,
             resetState,
             setSearchMode,
             setQuery,

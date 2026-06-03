@@ -27,8 +27,8 @@ export const TauriAPI = {
         return await invoke('execute_command', { command, args });
     },
 
-    async getCommandsByPrompt(prompt: string): Promise<Command[]> {
-        return await invoke('get_commands_by_prompt', { prompt });
+    async getCommandsByAlias(alias: string): Promise<Command[]> {
+        return await invoke('get_commands_by_alias', { alias });
     },
 
     async reloadAll(): Promise<void> {

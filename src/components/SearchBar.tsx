@@ -7,7 +7,7 @@ interface SearchBarProps {
     onQueryChange: (query: string) => void;
     onKeyDown: (e: React.KeyboardEvent) => void;
     inputRef: React.RefObject<HTMLInputElement | null>;
-    promptMode: { prompt: string; command: Command } | null;
+    argumentMode: { alias: string; command: Command } | null;
 
     // Menu Actions
     onAddCommand: (e: React.MouseEvent) => void;
@@ -23,7 +23,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     onQueryChange,
     onKeyDown,
     inputRef,
-    promptMode,
+    argumentMode,
     onAddCommand,
     onReloadCommands,
     onOpenCommandsJson,
@@ -35,7 +35,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <div className="flex-shrink-0 mb-4 relative">
             <div className="flex items-center gap-4">
                 <label className="input input-sm input-bordered flex items-center gap-2 flex-1">
-                    {promptMode ? <LuChevronRight /> : <LuSearch />}
+                    {argumentMode ? <LuChevronRight /> : <LuSearch />}
                     <input
                         ref={inputRef}
                         type="text"
@@ -43,8 +43,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         onChange={(e) => onQueryChange(e.target.value)}
                         onKeyDown={onKeyDown}
                         placeholder={
-                            promptMode
-                                ? `${promptMode.command.name} - ${promptMode.command.description}`
+                            argumentMode
+                                ? `${argumentMode.command.name} - ${argumentMode.command.description}`
                                 : 'Where do you wanna scoot?'
                         }
                         className="grow"

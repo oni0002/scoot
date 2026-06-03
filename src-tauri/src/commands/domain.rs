@@ -34,8 +34,8 @@ pub struct Command {
     pub source: String,
     pub command: String,
     pub description: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "prompt")]
+    pub alias: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub working_dir: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -76,7 +76,7 @@ impl Command {
             source: source.into(),
             command: command.into(),
             description: description.into(),
-            prompt: None,
+            alias: None,
             working_dir: None,
             show_window: None,
         }
@@ -168,29 +168,28 @@ impl Command {
             return Err(crate::error::AppError::Validation(format!("Command description is too long ({} characters). Maximum allowed is 500 characters.", self.description.len())));
         }
 
-        // Prompt validation
-        if let Some(ref prompt) = self.prompt {
-            if prompt.trim().is_empty() {
-                return Err(crate::error::AppError::Validation("Prompt cannot be empty if specified. Either provide a valid prompt or leave it blank.".to_string()));
+        // Alias validation
+        if let Some(ref alias) = self.alias {
+            if alias.trim().is_empty() {
+                return Err(crate::error::AppError::Validation("Alias cannot be empty if specified. Either provide a valid alias or leave it blank.".to_string()));
             }
-            if prompt.len() > 10 {
+            if alias.len() > 10 {
                 return Err(crate::error::AppError::Validation(format!(
-                    "Prompt is too long ({} characters). Maximum allowed is 10 characters.",
-                    prompt.len()
+                    "Alias is too long ({} characters). Maximum allowed is 10 characters.",
+                    alias.len()
                 )));
             }
-            // Prompt contains whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.
-            if prompt.contains(' ') || prompt.contains('\t') || prompt.contains('\n') {
-                return Err(crate::error::AppError::Validation("Prompt cannot contain whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.".to_string()));
+            if alias.contains(' ') || alias.contains('\t') || alias.contains('\n') {
+                return Err(crate::error::AppError::Validation("Alias cannot contain whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.".to_string()));
             }
 
             // Special characters check
-            if prompt
+            if alias
                 .chars()
                 .any(|c| !c.is_alphanumeric() && c != '-' && c != '_')
             {
                 return Err(crate::error::AppError::Validation(
-                    "Prompt can only contain letters, numbers, hyphens (-), and underscores (_)."
+                    "Alias can only contain letters, numbers, hyphens (-), and underscores (_)."
                         .to_string(),
                 ));
             }
@@ -232,7 +231,7 @@ mod tests {
             source: "user".to_string(),
             command: cmd.to_string(),
             description: "Test command".to_string(),
-            prompt: None,
+            alias: None,
             working_dir: None,
             show_window: None,
         }

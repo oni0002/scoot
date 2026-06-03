@@ -5,7 +5,7 @@ export interface Command {
     source?: string;
     command: string;
     description: string;
-    prompt?: string;
+    alias?: string;
     workingDir?: string;
     showWindow?: boolean;
 }

@@ -4,7 +4,7 @@ import { DIRECT_OPEN_ID } from './constants';
 
 export const FUSE_KEYS: IFuseOptions<Command>['keys'] = [
     { name: 'name', weight: 0.7 },
-    { name: 'prompt', weight: 0.5 },
+    { name: 'alias', weight: 0.5 },
 ];
 
 const DEFAULT_FUSE_OPTIONS: IFuseOptions<Command> = {

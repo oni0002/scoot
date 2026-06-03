@@ -78,8 +78,8 @@ export const SearchResultItem = React.memo(
                 <div
                     className={`flex items-center gap-2 ml-2 flex-shrink-0 ${isHovered ? 'mr-14' : ''}`}
                 >
-                    {result.command.prompt && (
-                        <div className="badge badge-sm badge-primary">{result.command.prompt}</div>
+                    {result.command.alias && (
+                        <div className="badge badge-sm badge-primary">{result.command.alias}</div>
                     )}
                     <div className="badge badge-sm badge-outline">
                         {result.command.source || result.command.category}

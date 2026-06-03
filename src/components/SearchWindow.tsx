@@ -78,7 +78,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         setSearchMode,
         results,
         selectedIndex,
-        promptMode,
+        argumentMode,
         resetState,
         inputRef,
     } = searchState;
@@ -91,7 +91,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         query,
         results,
         selectedIndex,
-        promptMode,
+        argumentMode,
         setQuery,
         setSearchMode,
         resetState,
@@ -168,7 +168,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
                 onQueryChange={searchState.handleQueryChange}
                 onKeyDown={handleKeyDown}
                 inputRef={inputRef}
-                promptMode={promptMode}
+                argumentMode={argumentMode}
                 onAddCommand={handleAddCommand}
                 onReloadCommands={handleReload}
                 onOpenCommandsJson={handleOpenCommandsJson}
@@ -181,12 +181,12 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
                 results={results}
                 selectedIndex={selectedIndex}
                 hoveredIndex={hoveredIndex}
-                promptMode={promptMode}
-                promptArgs={
-                    promptMode
-                        ? query.startsWith(promptMode.prompt + ' ')
+                argumentMode={argumentMode}
+                args={
+                    argumentMode
+                        ? query.startsWith(argumentMode.alias + ' ')
                             ? query
-                                  .slice(promptMode.prompt.length + 1)
+                                  .slice(argumentMode.alias.length + 1)
                                   .trim()
                                   .split(/\s+/)
                                   .filter((a) => a)
