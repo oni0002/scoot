@@ -129,5 +129,9 @@ pub fn run() {
             crate::window::leave_modal,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .unwrap_or_else(|e| {
+            log::error!("Fatal: failed to run tauri application: {}", e);
+            eprintln!("Fatal: failed to run tauri application: {e}");
+            std::process::exit(1);
+        });
 }

@@ -40,7 +40,9 @@ pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::
             }
         };
         if let Some(commands_config) = commands_config_opt {
-            let _ = state.command_store.save(&commands_config).await;
+            if let Err(e) = state.command_store.save(&commands_config).await {
+                log::error!("Failed to save commands on quit: {}", e);
+            }
         }
     }
 

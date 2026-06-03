@@ -114,7 +114,8 @@ const AppContent = () => {
                 }
                 await loadCommands();
                 showSuccess(`"${command.name}" ignored successfully.`);
-            } catch {
+            } catch (err) {
+                console.error('Failed to ignore command:', err);
                 showError(`Could not ignore "${command.name}".`, NOTIFICATION_DURATION.LONG);
             }
         },
