@@ -42,10 +42,5 @@
     "resources": [
       "../README.md"
     ]
-  },
-  "plugins": {
-    "globalShortcut": {
-      "all": true
-    }
   }
 }

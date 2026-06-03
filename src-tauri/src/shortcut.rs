@@ -9,15 +9,11 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 /// * `app_handle` - Tauri AppHandle
 /// * `hotkey` - The hotkey to register
 /// * `handler` - The handler to execute when the hotkey is pressed
-///
-/// ## returns
-///
-/// * `Result<(), Box<dyn std::error::Error>>`
 pub fn register<F>(
     app_handle: &AppHandle,
     hotkey: &str,
     handler: F,
-) -> Result<(), Box<dyn std::error::Error>>
+) -> Result<(), crate::error::AppError>
 where
     F: Fn(&AppHandle) + Send + Sync + 'static,
 {
@@ -29,10 +25,7 @@ where
             Ok(l) => l,
             Err(e) => {
                 log::error!("Failed to lock shortcut state: {}", e);
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    e.to_string(),
-                )));
+                return Err(crate::error::AppError::lock(e));
             }
         };
         if let Some(current) = lock.as_ref() {
@@ -57,7 +50,7 @@ where
             })
     {
         log::error!("Failed to set shortcut handler for {}: {}", hotkey, e);
-        return Err(Box::new(e));
+        return Err(crate::error::AppError::System(e.to_string()));
     }
 
     // Register the shortcut with the OS
@@ -85,10 +78,7 @@ where
             } else {
                 log::error!("Failed to register hotkey {}: {}", hotkey, e);
                 let _ = app_handle.emit("shortcut-warning", format!("{} not available", hotkey));
-                Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    e.to_string(),
-                )))
+                Err(crate::error::AppError::System(e.to_string()))
             }
         }
     }
@@ -109,7 +99,7 @@ pub fn unregister(app_handle: &AppHandle) {
         let _ = app_handle.global_shortcut().unregister_all();
     }
 }
-pub fn setup_shortcuts(app: &App) -> Result<(), Box<dyn std::error::Error>> {
+pub fn setup_shortcuts(app: &App) -> Result<(), crate::error::AppError> {
     let handle = app.handle();
     // Get hotkey from state
     let hotkey = if let Some(state) = handle.try_state::<crate::state::ConfigState>() {
@@ -129,7 +119,7 @@ pub fn setup_shortcuts(app: &App) -> Result<(), Box<dyn std::error::Error>> {
 pub fn setup_global_shortcuts(
     app_handle: &tauri::AppHandle,
     hotkey: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), crate::error::AppError> {
     register(app_handle, hotkey, move |h| {
         if let Some(window) = h.get_webview_window("main") {
             if window.is_visible().unwrap_or(false) {
