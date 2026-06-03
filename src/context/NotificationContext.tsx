@@ -12,22 +12,13 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const {
-        notifications,
-        removeNotification,
-        showSuccess,
-        showError,
-        showWarning,
-        showInfo
-    } = useNotifications();
+    const { notifications, removeNotification, showSuccess, showError, showWarning, showInfo } =
+        useNotifications();
 
     return (
         <NotificationContext.Provider value={{ showSuccess, showError, showWarning, showInfo }}>
             {children}
-            <NotificationToast
-                notifications={notifications}
-                onRemove={removeNotification}
-            />
+            <NotificationToast notifications={notifications} onRemove={removeNotification} />
         </NotificationContext.Provider>
     );
 };

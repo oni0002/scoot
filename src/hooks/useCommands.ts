@@ -22,48 +22,60 @@ export function useCommands() {
         }
     }, []);
 
-    const addCommand = useCallback(async (command: Command) => {
-        try {
-            await TauriAPI.addCommand(command);
-            await loadCommands();
-            return true;
-        } catch (err) {
-            console.error('Failed to add command:', getErrorMessage(err));
-            return false;
-        }
-    }, [loadCommands]);
+    const addCommand = useCallback(
+        async (command: Command) => {
+            try {
+                await TauriAPI.addCommand(command);
+                await loadCommands();
+                return true;
+            } catch (err) {
+                console.error('Failed to add command:', getErrorMessage(err));
+                return false;
+            }
+        },
+        [loadCommands],
+    );
 
-    const updateCommand = useCallback(async (command: Command) => {
-        try {
-            await TauriAPI.updateCommand(command);
-            await loadCommands();
-            return true;
-        } catch (err) {
-            console.error('Failed to update command:', getErrorMessage(err));
-            return false;
-        }
-    }, [loadCommands]);
+    const updateCommand = useCallback(
+        async (command: Command) => {
+            try {
+                await TauriAPI.updateCommand(command);
+                await loadCommands();
+                return true;
+            } catch (err) {
+                console.error('Failed to update command:', getErrorMessage(err));
+                return false;
+            }
+        },
+        [loadCommands],
+    );
 
-    const deleteCommand = useCallback(async (id: string, name: string) => {
-        try {
-            await TauriAPI.deleteCommand(id);
-            await loadCommands();
-            return true;
-        } catch (err) {
-            console.error(`Failed to delete command "${name}":`, getErrorMessage(err));
-            return false;
-        }
-    }, [loadCommands]);
+    const deleteCommand = useCallback(
+        async (id: string, name: string) => {
+            try {
+                await TauriAPI.deleteCommand(id);
+                await loadCommands();
+                return true;
+            } catch (err) {
+                console.error(`Failed to delete command "${name}":`, getErrorMessage(err));
+                return false;
+            }
+        },
+        [loadCommands],
+    );
 
-    const executeCommand = useCallback(async (command: Command, args: string[] = []): Promise<boolean | null> => {
-        try {
-            const result = await TauriAPI.executeCommand(command, args);
-            return result.keepWindowOpen;
-        } catch (err) {
-            console.error(`Failed to execute command "${command.name}":`, getErrorMessage(err));
-            return null;
-        }
-    }, []);
+    const executeCommand = useCallback(
+        async (command: Command, args: string[] = []): Promise<boolean | null> => {
+            try {
+                const result = await TauriAPI.executeCommand(command, args);
+                return result.keepWindowOpen;
+            } catch (err) {
+                console.error(`Failed to execute command "${command.name}":`, getErrorMessage(err));
+                return null;
+            }
+        },
+        [],
+    );
 
     return {
         commands,
@@ -74,6 +86,6 @@ export function useCommands() {
         addCommand,
         updateCommand,
         deleteCommand,
-        executeCommand
+        executeCommand,
     };
 }

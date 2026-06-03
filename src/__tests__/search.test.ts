@@ -89,7 +89,7 @@ describe('fuseSearch', () => {
 
     it('returns matching results for a query', () => {
         const results = fuseSearch(fuse, 'git', commands, 10);
-        expect(results.some(r => r.command.name === 'GitHub')).toBe(true);
+        expect(results.some((r) => r.command.name === 'GitHub')).toBe(true);
     });
 
     it('returns empty array for query with no matches', () => {

@@ -12,11 +12,7 @@ interface CommandFormProps {
     onCancel: () => void;
 }
 
-export const CommandForm: React.FC<CommandFormProps> = ({
-    command,
-    onSave,
-    onCancel,
-}) => {
+export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
         id: '',
         name: '',
@@ -33,6 +29,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
 
     useEffect(() => {
         if (command) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- initializing form state from props is intentional
             setFormData({
                 id: command.id,
                 name: command.name,
@@ -97,7 +94,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             command: formData.command.trim(),
             description: formData.description.trim(),
             prompt: formData.prompt.trim() || undefined,
-            workingDir: isCmdCategory ? (formData.workingDir.trim() || undefined) : undefined,
+            workingDir: isCmdCategory ? formData.workingDir.trim() || undefined : undefined,
             showWindow: isCmdCategory ? formData.showWindow : undefined,
         };
 
@@ -105,7 +102,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
     };
 
     const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
-        setFormData(prev => {
+        setFormData((prev) => {
             const newData = { ...prev, [field]: value };
 
             // Auto-clear prompt if command no longer has placeholders
@@ -119,7 +116,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
 
         // Clear error when user starts typing
         if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: '' }));
+            setErrors((prev) => ({ ...prev, [field]: '' }));
         }
     };
 
@@ -214,7 +211,9 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                             </select>
                             {errors.category && (
                                 <label className="label">
-                                    <span className="label-text-alt text-error">{errors.category}</span>
+                                    <span className="label-text-alt text-error">
+                                        {errors.category}
+                                    </span>
                                 </label>
                             )}
                         </div>
@@ -224,9 +223,11 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                         <div className="form-control flex-1">
                             <label className="label">
                                 <span className="label-text">
-                                    {formData.category === 'url' ? 'URL *' :
-                                        formData.category === 'file' ? 'Path *' :
-                                            'Command *'}
+                                    {formData.category === 'url'
+                                        ? 'URL *'
+                                        : formData.category === 'file'
+                                          ? 'Path *'
+                                          : 'Command *'}
                                 </span>
                             </label>
                             <div className="flex gap-2 w-full">
@@ -235,9 +236,11 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                     value={formData.command}
                                     onChange={(e) => handleInputChange('command', e.target.value)}
                                     placeholder={
-                                        formData.category === 'url' ? 'https://example.com' :
-                                            formData.category === 'file' ? 'C:\\path\\to\\file.txt' :
-                                                'Command line'
+                                        formData.category === 'url'
+                                            ? 'https://example.com'
+                                            : formData.category === 'file'
+                                              ? 'C:\\path\\to\\file.txt'
+                                              : 'Command line'
                                     }
                                     className={`input input-bordered input-sm flex-1 ${errors.command ? 'input-error' : ''}`}
                                 />
@@ -264,7 +267,9 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                             </div>
                             {errors.command && (
                                 <label className="label">
-                                    <span className="label-text-alt text-error">{errors.command}</span>
+                                    <span className="label-text-alt text-error">
+                                        {errors.command}
+                                    </span>
                                 </label>
                             )}
                             <label className="label">
@@ -276,7 +281,9 @@ export const CommandForm: React.FC<CommandFormProps> = ({
 
                         <div className="form-control w-32">
                             <label className="label">
-                                <span className="label-text">Prompt {hasPlaceholders(formData.command) ? '*' : ''}</span>
+                                <span className="label-text">
+                                    Prompt {hasPlaceholders(formData.command) ? '*' : ''}
+                                </span>
                             </label>
                             <input
                                 type="text"
@@ -289,7 +296,9 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                             />
                             {errors.prompt && (
                                 <label className="label">
-                                    <span className="label-text-alt text-error">{errors.prompt}</span>
+                                    <span className="label-text-alt text-error">
+                                        {errors.prompt}
+                                    </span>
                                 </label>
                             )}
                         </div>
@@ -304,7 +313,9 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 <input
                                     type="text"
                                     value={formData.workingDir}
-                                    onChange={(e) => handleInputChange('workingDir', e.target.value)}
+                                    onChange={(e) =>
+                                        handleInputChange('workingDir', e.target.value)
+                                    }
                                     placeholder="C:\path\to\working_dir"
                                     className="input input-bordered input-sm w-full"
                                 />
@@ -316,7 +327,9 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                     <input
                                         type="checkbox"
                                         checked={formData.showWindow}
-                                        onChange={(e) => handleInputChange('showWindow', e.target.checked)}
+                                        onChange={(e) =>
+                                            handleInputChange('showWindow', e.target.checked)
+                                        }
                                         className="checkbox checkbox-sm"
                                     />
                                 </label>
@@ -346,7 +359,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                         {command ? 'Update' : 'Add'}
                     </button>
                 </div>
-            </form >
-        </div >
+            </form>
+        </div>
     );
 };

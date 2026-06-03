@@ -33,7 +33,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     onCopy,
     onEdit,
     onDelete,
-    onIgnore
+    onIgnore,
 }) => {
     const [copied, setCopied] = useState(false);
 
@@ -85,7 +85,6 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
         return (
             <div className="flex flex-col items-center justify-center py-12 text-base-content/50 h-full select-none">
                 <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-
                     <div className="text-right">
                         <span>Search</span>
                     </div>
@@ -126,7 +125,6 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                     <div className="flex items-center gap-1">
                         <kbd className="kbd kbd-xs">Esc</kbd>
                     </div>
-
                 </div>
             </div>
         );

@@ -23,11 +23,7 @@ interface CommandProviderProps {
 export const CommandProvider: React.FC<CommandProviderProps> = ({ children }) => {
     const commandLogic = useCommands();
 
-    return (
-        <CommandContext.Provider value={commandLogic}>
-            {children}
-        </CommandContext.Provider>
-    );
+    return <CommandContext.Provider value={commandLogic}>{children}</CommandContext.Provider>;
 };
 
 export const useCommandContext = () => {

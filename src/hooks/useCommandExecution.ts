@@ -24,38 +24,60 @@ export const useCommandExecution = ({
     resetState,
     executeCommand,
 }: UseCommandExecutionProps) => {
-    const runSelectedCommand = useCallback(async (targetIndex?: number) => {
-        let commandToExecute: Command;
-        let argsToPass: string[] = [];
+    const runSelectedCommand = useCallback(
+        async (targetIndex?: number) => {
+            let commandToExecute: Command;
+            let argsToPass: string[];
 
-        if (promptMode) {
-            commandToExecute = promptMode.command;
-            const rest = query.slice(promptMode.prompt.length + 1).trim();
-            argsToPass = rest ? rest.split(/\s+/) : [];
-        } else {
-            const effectiveIndex = targetIndex !== undefined ? targetIndex : selectedIndex;
-            if (results.length === 0 || effectiveIndex >= results.length) return;
+            if (promptMode) {
+                commandToExecute = promptMode.command;
+                const rest = query.slice(promptMode.prompt.length + 1).trim();
+                argsToPass = rest ? rest.split(/\s+/) : [];
+            } else {
+                const effectiveIndex = targetIndex !== undefined ? targetIndex : selectedIndex;
+                if (results.length === 0 || effectiveIndex >= results.length) return;
 
-            const selectedResult = results[effectiveIndex];
+                const selectedResult = results[effectiveIndex];
 
-            if (selectedResult.command.prompt && !query.startsWith(selectedResult.command.prompt + ' ')) {
-                setQuery(selectedResult.command.prompt + ' ');
-                setSearchMode({ mode: 'prompt', prompt: selectedResult.command.prompt, command: selectedResult.command });
-                return;
+                if (
+                    selectedResult.command.prompt &&
+                    !query.startsWith(selectedResult.command.prompt + ' ')
+                ) {
+                    setQuery(selectedResult.command.prompt + ' ');
+                    setSearchMode({
+                        mode: 'prompt',
+                        prompt: selectedResult.command.prompt,
+                        command: selectedResult.command,
+                    });
+                    return;
+                }
+
+                commandToExecute = selectedResult.command;
+                const parts = query
+                    .trim()
+                    .split(/\s+/)
+                    .filter((a) => a);
+                argsToPass = parts.length <= 1 ? [] : parts;
             }
 
-            commandToExecute = selectedResult.command;
-            const parts = query.trim().split(/\s+/).filter(a => a);
-            argsToPass = parts.length <= 1 ? [] : parts;
-        }
+            const keepWindowOpen = await executeCommand(commandToExecute, argsToPass);
+            resetState();
 
-        const keepWindowOpen = await executeCommand(commandToExecute, argsToPass);
-        resetState();
-
-        if (keepWindowOpen === false) {
-            TauriAPI.hideWindow();
-        }
-    }, [results, selectedIndex, query, executeCommand, promptMode, resetState, setSearchMode, setQuery]);
+            if (keepWindowOpen === false) {
+                TauriAPI.hideWindow();
+            }
+        },
+        [
+            results,
+            selectedIndex,
+            query,
+            executeCommand,
+            promptMode,
+            resetState,
+            setSearchMode,
+            setQuery,
+        ],
+    );
 
     return { runSelectedCommand };
 };

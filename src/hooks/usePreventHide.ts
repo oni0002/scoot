@@ -5,6 +5,8 @@ export const usePreventHide = (shouldPrevent: boolean) => {
     useEffect(() => {
         if (!shouldPrevent) return;
         TauriAPI.enterModal();
-        return () => { TauriAPI.leaveModal(); };
+        return () => {
+            TauriAPI.leaveModal();
+        };
     }, [shouldPrevent]);
 };

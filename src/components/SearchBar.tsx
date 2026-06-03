@@ -1,5 +1,5 @@
 import React from 'react';
-import { LuEllipsisVertical, LuSearch, LuChevronRight } from "react-icons/lu";
+import { LuEllipsisVertical, LuSearch, LuChevronRight } from 'react-icons/lu';
 import { Command } from '../types';
 
 interface SearchBarProps {
@@ -35,11 +35,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <div className="flex-shrink-0 mb-4 relative">
             <div className="flex items-center gap-4">
                 <label className="input input-sm input-bordered flex items-center gap-2 flex-1">
-                    {promptMode ? (
-                        <LuChevronRight />
-                    ) : (
-                        <LuSearch />
-                    )}
+                    {promptMode ? <LuChevronRight /> : <LuSearch />}
                     <input
                         ref={inputRef}
                         type="text"
@@ -49,7 +45,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         placeholder={
                             promptMode
                                 ? `${promptMode.command.name} - ${promptMode.command.description}`
-                                : "Where do you wanna scoot?"
+                                : 'Where do you wanna scoot?'
                         }
                         className="grow"
                         autoFocus
@@ -61,7 +57,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     <div tabIndex={0} role="button" className="btn btn-ghost btn-sm btn-square p-2">
                         <LuEllipsisVertical />
                     </div>
-                    <ul tabIndex={0} className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-48 p-2 shadow">
+                    <ul
+                        tabIndex={0}
+                        className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-48 p-2 shadow"
+                    >
                         <li>
                             <a onClick={onAddCommand}>Add Command</a>
                         </li>

@@ -22,45 +22,47 @@ export const useKeyboardNavigation = ({
     searchMode,
     setSearchMode,
 }: UseKeyboardNavigationProps) => {
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent) => {
+            if (e.ctrlKey) {
+                if (KEYBOARD_SHORTCUTS.MOVE_DOWN_ALT.includes(e.key)) {
+                    e.preventDefault();
+                    moveSelection('down');
+                    return;
+                }
+                if (KEYBOARD_SHORTCUTS.MOVE_UP_ALT.includes(e.key)) {
+                    e.preventDefault();
+                    moveSelection('up');
+                    return;
+                }
+            }
 
-    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (e.ctrlKey) {
-            if (KEYBOARD_SHORTCUTS.MOVE_DOWN_ALT.includes(e.key)) {
+            if (KEYBOARD_SHORTCUTS.MOVE_DOWN.includes(e.key)) {
                 e.preventDefault();
                 moveSelection('down');
-                return;
-            }
-            if (KEYBOARD_SHORTCUTS.MOVE_UP_ALT.includes(e.key)) {
+            } else if (KEYBOARD_SHORTCUTS.MOVE_UP.includes(e.key)) {
                 e.preventDefault();
                 moveSelection('up');
-                return;
+            } else if (KEYBOARD_SHORTCUTS.NAVIGATE_TAB.includes(e.key)) {
+                e.preventDefault();
+                moveSelection(e.shiftKey ? 'up' : 'down');
+            } else if (KEYBOARD_SHORTCUTS.EXECUTE.includes(e.key)) {
+                e.preventDefault();
+                executeCommand();
+            } else if (KEYBOARD_SHORTCUTS.CANCEL.includes(e.key)) {
+                e.preventDefault();
+                if (searchMode.mode === 'prompt') {
+                    resetState();
+                } else if (query) {
+                    setQuery('');
+                    setSearchMode({ mode: 'idle' });
+                } else {
+                    TauriAPI.hideWindow();
+                }
             }
-        }
-
-        if (KEYBOARD_SHORTCUTS.MOVE_DOWN.includes(e.key)) {
-            e.preventDefault();
-            moveSelection('down');
-        } else if (KEYBOARD_SHORTCUTS.MOVE_UP.includes(e.key)) {
-            e.preventDefault();
-            moveSelection('up');
-        } else if (KEYBOARD_SHORTCUTS.NAVIGATE_TAB.includes(e.key)) {
-            e.preventDefault();
-            moveSelection(e.shiftKey ? 'up' : 'down');
-        } else if (KEYBOARD_SHORTCUTS.EXECUTE.includes(e.key)) {
-            e.preventDefault();
-            executeCommand();
-        } else if (KEYBOARD_SHORTCUTS.CANCEL.includes(e.key)) {
-            e.preventDefault();
-            if (searchMode.mode === 'prompt') {
-                resetState();
-            } else if (query) {
-                setQuery('');
-                setSearchMode({ mode: 'idle' });
-            } else {
-                TauriAPI.hideWindow();
-            }
-        }
-    }, [moveSelection, executeCommand, searchMode, query, resetState, setQuery, setSearchMode]);
+        },
+        [moveSelection, executeCommand, searchMode, query, resetState, setQuery, setSearchMode],
+    );
 
     return { handleKeyDown };
 };

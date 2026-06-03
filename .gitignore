@@ -42,6 +42,8 @@ Thumbs.db
 .agent/
 .claude/
 work/
+docs/
+CONTEXT.md
 
 # Env
 .env

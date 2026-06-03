@@ -3,9 +3,9 @@ import { Command, SearchResult } from '../types';
 import { createFuse, fuseSearch, detectDirectOpen } from '../search';
 
 export type SearchMode =
-  | { mode: 'idle' }
-  | { mode: 'prompt'; prompt: string; command: Command }
-  | { mode: 'search'; results: SearchResult[]; selectedIndex: number };
+    | { mode: 'idle' }
+    | { mode: 'prompt'; prompt: string; command: Command }
+    | { mode: 'search'; results: SearchResult[]; selectedIndex: number };
 
 export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxResults: number) => {
     const [query, setQuery] = useState('');
@@ -21,56 +21,68 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
         inputRef.current?.focus();
     }, []);
 
-    const computeMode = useCallback((newQuery: string, currentMode: SearchMode): SearchMode => {
-        const trimmed = newQuery.trim();
+    const computeMode = useCallback(
+        (newQuery: string, currentMode: SearchMode): SearchMode => {
+            const trimmed = newQuery.trim();
 
-        if (!trimmed) {
-            return { mode: 'idle' };
-        }
-
-        const parts = trimmed.split(/\s+/);
-        const potentialPrompt = parts[0];
-        const matchingCommand = commands.find(cmd => cmd.prompt === potentialPrompt);
-
-        if (matchingCommand) {
-            const shouldEnter = parts.length > 1 || newQuery.endsWith(' ');
-            if (shouldEnter) {
-                return { mode: 'prompt', prompt: potentialPrompt, command: matchingCommand };
+            if (!trimmed) {
+                return { mode: 'idle' };
             }
-            // Still typing the prompt keyword — fall through to search
-        } else if (currentMode.mode === 'prompt' && newQuery.startsWith(currentMode.prompt + ' ')) {
-            // Typed something after prompt prefix that isn't recognized — stay in prompt
-            return currentMode;
-        }
 
-        const searchResults = fuseSearch(fuse, newQuery, commands, maxResults);
-        const dynamicItem = detectDirectOpen(newQuery);
-        if (dynamicItem) {
-            searchResults.push({ command: dynamicItem, score: -1, matches: [] });
-        }
-        return { mode: 'search', results: searchResults, selectedIndex: 0 };
-    }, [commands, maxResults, fuse]);
+            const parts = trimmed.split(/\s+/);
+            const potentialPrompt = parts[0];
+            const matchingCommand = commands.find((cmd) => cmd.prompt === potentialPrompt);
 
-    const handleQueryChange = useCallback((newQuery: string) => {
-        setQuery(newQuery);
-        setSearchMode(prev => computeMode(newQuery, prev));
-    }, [computeMode]);
+            if (matchingCommand) {
+                const shouldEnter = parts.length > 1 || newQuery.endsWith(' ');
+                if (shouldEnter) {
+                    return { mode: 'prompt', prompt: potentialPrompt, command: matchingCommand };
+                }
+                // Still typing the prompt keyword — fall through to search
+            } else if (
+                currentMode.mode === 'prompt' &&
+                newQuery.startsWith(currentMode.prompt + ' ')
+            ) {
+                // Typed something after prompt prefix that isn't recognized — stay in prompt
+                return currentMode;
+            }
+
+            const searchResults = fuseSearch(fuse, newQuery, commands, maxResults);
+            const dynamicItem = detectDirectOpen(newQuery);
+            if (dynamicItem) {
+                searchResults.push({ command: dynamicItem, score: -1, matches: [] });
+            }
+            return { mode: 'search', results: searchResults, selectedIndex: 0 };
+        },
+        [commands, maxResults, fuse],
+    );
+
+    const handleQueryChange = useCallback(
+        (newQuery: string) => {
+            setQuery(newQuery);
+            setSearchMode((prev) => computeMode(newQuery, prev));
+        },
+        [computeMode],
+    );
 
     useEffect(() => {
-        setSearchMode(prev => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- query-driven mode transition is intentional
+        setSearchMode((prev) => {
             if (!query || prev.mode === 'prompt') return prev;
             return computeMode(query, prev);
         });
     }, [commands, fuzzyThreshold]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const moveSelection = useCallback((direction: 'up' | 'down') => {
-        setSearchMode(prev => {
+        setSearchMode((prev) => {
             if (prev.mode !== 'search' || prev.results.length === 0) return prev;
             const count = prev.results.length;
-            const newIndex = direction === 'down'
-                ? (prev.selectedIndex + 1) % count
-                : (prev.selectedIndex - 1 + count) % count;
-            document.querySelector(`[data-result-index="${newIndex}"]`)
+            const newIndex =
+                direction === 'down'
+                    ? (prev.selectedIndex + 1) % count
+                    : (prev.selectedIndex - 1 + count) % count;
+            document
+                .querySelector(`[data-result-index="${newIndex}"]`)
                 ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             return { ...prev, selectedIndex: newIndex };
         });
@@ -78,9 +90,10 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
 
     const results = searchMode.mode === 'search' ? searchMode.results : [];
     const selectedIndex = searchMode.mode === 'search' ? searchMode.selectedIndex : 0;
-    const promptMode = searchMode.mode === 'prompt'
-        ? { prompt: searchMode.prompt, command: searchMode.command }
-        : null;
+    const promptMode =
+        searchMode.mode === 'prompt'
+            ? { prompt: searchMode.prompt, command: searchMode.command }
+            : null;
 
     return {
         query,

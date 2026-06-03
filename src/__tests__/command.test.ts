@@ -6,7 +6,8 @@ describe('hasPlaceholders', () => {
     it('detects {$99}', () => expect(hasPlaceholders('cmd {$99}')).toBe(true));
     it('returns false for plain string', () => expect(hasPlaceholders('open browser')).toBe(false));
     it('returns false for empty string', () => expect(hasPlaceholders('')).toBe(false));
-    it('returns false for {$} without digit or *', () => expect(hasPlaceholders('{$}')).toBe(false));
+    it('returns false for {$} without digit or *', () =>
+        expect(hasPlaceholders('{$}')).toBe(false));
 });
 
 describe('substituteArgs', () => {

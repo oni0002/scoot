@@ -28,28 +28,28 @@ export const useAppEvents = ({
         loadCommands();
         loadConfig();
 
-        let unlistenFunctions: (() => void)[] = [];
+        const unlistenFunctions: (() => void)[] = [];
         let isMounted = true;
 
         const setupEventListeners = async () => {
             try {
                 const eventHandlers = {
-                    "open-add-command-dialog": handleAddCommand,
-                    "config-reloaded": () => {
-                        showInfo("Config and commands reloaded");
+                    'open-add-command-dialog': handleAddCommand,
+                    'config-reloaded': () => {
+                        showInfo('Config and commands reloaded');
                         loadCommands();
                         loadConfig();
                     },
-                    "config-file-changed": () => {
+                    'config-file-changed': () => {
                         loadCommands();
                         loadConfig();
                     },
-                    "shortcut-registered": (event: { payload: string }) => {
+                    'shortcut-registered': (event: { payload: string }) => {
                         showSuccess(`Global shortcut: ${event.payload}`);
                     },
-                    "shortcut-warning": () => {
-                        showWarning("Use system tray to open.");
-                    }
+                    'shortcut-warning': () => {
+                        showWarning('Use system tray to open.');
+                    },
                 };
 
                 for (const [event, handler] of Object.entries(eventHandlers)) {
@@ -65,18 +65,19 @@ export const useAppEvents = ({
                 }
             } catch (err) {
                 if (isMounted) {
-                    console.error("Failed to setup event listeners", err);
-                    setError("Failed to setup event listeners");
-                    showError("Failed to setup event listeners", NOTIFICATION_DURATION.VERY_LONG);
+                    console.error('Failed to setup event listeners', err);
+                    setError('Failed to setup event listeners');
+                    showError('Failed to setup event listeners', NOTIFICATION_DURATION.VERY_LONG);
                 }
-            };
+            }
         };
 
         setupEventListeners();
 
         return () => {
             isMounted = false;
-            unlistenFunctions.forEach(fn => fn());
+            unlistenFunctions.forEach((fn) => fn());
         };
-    }, []); // Run only once on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // all passed handlers are useCallback-stabilized with empty dep arrays
 };
