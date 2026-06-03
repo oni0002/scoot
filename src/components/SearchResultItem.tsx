@@ -18,20 +18,21 @@ interface SearchResultItemProps {
     totalCount: number;
 }
 
-const highlightMatches = (text: string, matches: SearchResult['matches']): string => {
+const highlightMatches = (text: string, matches: SearchResult['matches']): React.ReactNode => {
     const nameMatch = matches?.find(match => match.key === 'name');
     if (!nameMatch) return text;
 
-    let result = '';
+    const nodes: React.ReactNode[] = [];
     let lastIndex = 0;
 
-    nameMatch.indices.forEach(([start, end]) => {
-        result += text.slice(lastIndex, start);
-        result += `<span class="font-semibold text-accent">${text.slice(start, end + 1)}</span>`;
+    nameMatch.indices.forEach(([start, end], i) => {
+        if (lastIndex < start) nodes.push(text.slice(lastIndex, start));
+        nodes.push(<span key={i} className="font-semibold text-accent">{text.slice(start, end + 1)}</span>);
         lastIndex = end + 1;
     });
 
-    return result + text.slice(lastIndex);
+    if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
+    return nodes;
 };
 
 export const SearchResultItem = React.memo(({
@@ -61,12 +62,9 @@ export const SearchResultItem = React.memo(({
         >
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 text-sm min-w-0">
-                    <div
-                        className="font-medium truncate"
-                        dangerouslySetInnerHTML={{
-                            __html: highlightMatches(result.command.name, result.matches)
-                        }}
-                    />
+                    <div className="font-medium truncate">
+                        {highlightMatches(result.command.name, result.matches)}
+                    </div>
                     <div className="text-xs opacity-70 truncate flex-1 min-w-0 flex-shrink">
                         {result.command.description || result.command.command}
                     </div>
