@@ -104,6 +104,11 @@ async fn execute_scoot_command(
 
 const ALLOWED_URL_SCHEMES: &[&str] = &["http://", "https://", "mailto:", "ftp://"];
 
+fn is_url_scheme_allowed(url: &str) -> bool {
+    let url_lower = url.to_lowercase();
+    ALLOWED_URL_SCHEMES.iter().any(|s| url_lower.starts_with(s))
+}
+
 /// Execute URL command
 async fn execute_url(
     app_handle: &tauri::AppHandle,
@@ -111,8 +116,7 @@ async fn execute_url(
 ) -> Result<(), crate::error::AppError> {
     log::debug!("Opening URL: {}", url);
 
-    let url_lower = url.to_lowercase();
-    if !ALLOWED_URL_SCHEMES.iter().any(|s| url_lower.starts_with(s)) {
+    if !is_url_scheme_allowed(url) {
         return Err(crate::error::AppError::Validation(format!(
             "URL scheme not allowed: '{}'. Allowed schemes: http, https, mailto, ftp.",
             url
@@ -244,5 +248,34 @@ async fn execute_shell_command(
             log::error!("Error: {}", error_msg);
             Err(crate::error::AppError::CommandExecution(error_msg))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn allowed_url_schemes_accepted() {
+        assert!(is_url_scheme_allowed("https://example.com"));
+        assert!(is_url_scheme_allowed("http://example.com"));
+        assert!(is_url_scheme_allowed("mailto:user@example.com"));
+        assert!(is_url_scheme_allowed("ftp://files.example.com"));
+    }
+
+    #[test]
+    fn disallowed_url_schemes_rejected() {
+        assert!(!is_url_scheme_allowed("javascript:alert(1)"));
+        assert!(!is_url_scheme_allowed("file:///C:/Windows/system32"));
+        assert!(!is_url_scheme_allowed("scoot://add-command"));
+        assert!(!is_url_scheme_allowed("C:\\Users\\foo\\bar.exe"));
+        assert!(!is_url_scheme_allowed("data:text/html,<script>"));
+    }
+
+    #[test]
+    fn url_scheme_check_is_case_insensitive() {
+        assert!(is_url_scheme_allowed("HTTPS://example.com"));
+        assert!(is_url_scheme_allowed("HTTP://example.com"));
+        assert!(!is_url_scheme_allowed("JAVASCRIPT:alert(1)"));
     }
 }

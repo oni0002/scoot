@@ -42,3 +42,61 @@ where
     validate(&data)?;
     Ok(data)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use schemars::JsonSchema;
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+    struct Item {
+        name: String,
+        value: u32,
+    }
+
+    #[test]
+    fn parse_and_validate_valid_json() {
+        let json = r#"{"name": "hello", "value": 42}"#;
+        let result: Result<Item, _> = parse_and_validate(json);
+        assert!(result.is_ok());
+        let item = result.unwrap();
+        assert_eq!(item.name, "hello");
+        assert_eq!(item.value, 42);
+    }
+
+    #[test]
+    fn parse_and_validate_syntax_error() {
+        let json = r#"{"name": "hello", "value":}"#;
+        let result: Result<Item, _> = parse_and_validate(json);
+        assert!(result.is_err());
+        let msg = result.unwrap_err().to_string();
+        assert!(msg.contains("Validation error"), "expected Validation error, got: {}", msg);
+    }
+
+    #[test]
+    fn parse_and_validate_missing_required_field() {
+        let json = r#"{"name": "hello"}"#;
+        let result: Result<Item, _> = parse_and_validate(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn parse_and_validate_wrong_type() {
+        let json = r#"{"name": "hello", "value": "not_a_number"}"#;
+        let result: Result<Item, _> = parse_and_validate(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn validate_valid_data() {
+        let item = Item { name: "test".to_string(), value: 0 };
+        assert!(validate(&item).is_ok());
+    }
+
+    #[test]
+    fn parse_and_validate_empty_string() {
+        let result: Result<Item, _> = parse_and_validate("");
+        assert!(result.is_err());
+    }
+}
