@@ -1,4 +1,5 @@
 use crate::config::domain::DEFAULT_SHORTCUT;
+use crate::state::WindowState;
 use tauri::{App, AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
@@ -123,6 +124,11 @@ pub fn setup_global_shortcuts(
     register(app_handle, hotkey, move |h| {
         if let Some(window) = h.get_webview_window("main") {
             if window.is_visible().unwrap_or(false) {
+                if let Some(state) = h.try_state::<WindowState>() {
+                    if state.prevent_hide.load(std::sync::atomic::Ordering::SeqCst) > 0 {
+                        return;
+                    }
+                }
                 let _ = window.hide();
             } else {
                 crate::window::show_main_window(h);
