@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { TauriAPI } from '../tauri';
 import { Command } from '../types';
 import { getErrorMessage } from '../error';
@@ -7,10 +7,11 @@ export function useCommands() {
     const [commands, setCommands] = useState<Command[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const isInitialLoad = useRef(true);
 
     const loadCommands = useCallback(async () => {
         try {
-            setLoading(true);
+            if (isInitialLoad.current) setLoading(true);
             const loadedCommands = await TauriAPI.getAllCommands();
             setCommands(loadedCommands);
             setError(null);
@@ -18,6 +19,7 @@ export function useCommands() {
             console.error('Failed to load commands:', getErrorMessage(err));
             setError('Failed to load commands');
         } finally {
+            isInitialLoad.current = false;
             setLoading(false);
         }
     }, []);
