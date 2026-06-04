@@ -2,168 +2,128 @@ use tauri::AppHandle;
 
 #[tauri::command]
 pub fn start_hotkey_capture(app: AppHandle) {
+    crate::shortcut::unregister(&app);
     imp::start(app);
 }
 
 #[tauri::command]
-pub fn stop_hotkey_capture() {
+pub async fn stop_hotkey_capture(app: AppHandle) {
     imp::stop();
+    use tauri::Manager;
+    let hotkey = if let Some(state) = app.try_state::<crate::state::ConfigState>() {
+        if let Ok(config) = state.config.lock() {
+            config.hotkey.clone()
+        } else {
+            crate::config::domain::DEFAULT_SHORTCUT.to_string()
+        }
+    } else {
+        crate::config::domain::DEFAULT_SHORTCUT.to_string()
+    };
+    if let Err(e) = crate::shortcut::setup_global_shortcuts(&app, &hotkey) {
+        log::error!("Failed to re-register shortcut after hotkey capture: {}", e);
+    }
+}
+
+#[cfg(target_os = "windows")]
+pub unsafe fn setup_window_subclass(hwnd: *mut core::ffi::c_void) {
+    imp::setup_subclass(hwnd);
 }
 
 #[cfg(target_os = "windows")]
 mod imp {
-    use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
     use std::sync::Mutex;
     use tauri::{AppHandle, Emitter};
-    use windows_sys::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
-    use windows_sys::Win32::System::Threading::GetCurrentThreadId;
-    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-        GetKeyState, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
-    };
+    use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        CallNextHookEx, GetMessageW, PeekMessageW, PostThreadMessageW,
-        SetWindowsHookExW, UnhookWindowsHookEx, KBDLLHOOKSTRUCT, MSG,
-        WH_KEYBOARD_LL, WM_KEYDOWN, WM_QUIT, WM_SYSKEYDOWN,
+        CallWindowProcW, DefWindowProcW, SetWindowLongPtrW, GWLP_WNDPROC, SC_KEYMENU,
+        WM_SYSCOMMAND, WNDPROC,
     };
 
-    const LLKHF_ALTDOWN: u32 = 0x20;
-
-    static CAPTURE_ACTIVE: AtomicBool = AtomicBool::new(false);
-    static HOOK_THREAD_ID: AtomicU32 = AtomicU32::new(0);
+    // True while the hotkey capture UI is active.
+    pub static CAPTURING: AtomicBool = AtomicBool::new(false);
+    // Prevents duplicate emit if both DOM and SC_KEYMENU fire for the same keypress.
+    static HOTKEY_EMITTED: AtomicBool = AtomicBool::new(false);
     static APP_HANDLE: Mutex<Option<AppHandle>> = Mutex::new(None);
+    static ORIGINAL_WNDPROC: AtomicIsize = AtomicIsize::new(0);
 
-    unsafe extern "system" fn keyboard_hook(
-        n_code: i32,
-        w_param: WPARAM,
-        l_param: LPARAM,
-    ) -> LRESULT {
-        if n_code >= 0 && CAPTURE_ACTIVE.load(Ordering::SeqCst) {
-            let msg = w_param as u32;
-            if msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN {
-                let kb = &*(l_param as *const KBDLLHOOKSTRUCT);
-                let vk = kb.vkCode as u16;
-
-                let is_modifier = vk == VK_CONTROL
-                    || vk == VK_SHIFT
-                    || vk == VK_MENU
-                    || vk == VK_LWIN
-                    || vk == VK_RWIN;
-
-                if !is_modifier {
-                    let alt = (kb.flags & LLKHF_ALTDOWN) != 0;
-                    let ctrl = (GetKeyState(VK_CONTROL as i32) as u16 & 0x8000) != 0;
-                    let shift = (GetKeyState(VK_SHIFT as i32) as u16 & 0x8000) != 0;
-                    let win = (GetKeyState(VK_LWIN as i32) as u16 & 0x8000) != 0
-                        || (GetKeyState(VK_RWIN as i32) as u16 & 0x8000) != 0;
-
-                    if ctrl || alt || shift || win {
-                        if let Some(key_name) = vk_to_key_name(vk) {
-                            let mut parts: Vec<&str> = Vec::new();
-                            if ctrl {
-                                parts.push("Ctrl");
-                            }
-                            if alt {
-                                parts.push("Alt");
-                            }
-                            if shift {
-                                parts.push("Shift");
-                            }
-                            if win {
-                                parts.push("Super");
-                            }
-
-                            let hotkey = format!("{}+{}", parts.join("+"), key_name);
-                            log::debug!("Hotkey captured: {}", hotkey);
-
-                            CAPTURE_ACTIVE.store(false, Ordering::SeqCst);
-
-                            if let Ok(guard) = APP_HANDLE.lock() {
-                                if let Some(handle) = guard.as_ref() {
-                                    let _ = handle.emit("hotkey-captured", hotkey);
-                                }
-                            }
-
-                            let tid = HOOK_THREAD_ID.load(Ordering::SeqCst);
-                            if tid != 0 {
-                                PostThreadMessageW(tid, WM_QUIT, 0, 0);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param)
+    fn clone_handle() -> Option<AppHandle> {
+        APP_HANDLE.lock().ok().and_then(|g| g.as_ref().cloned())
     }
 
-    fn vk_to_key_name(vk: u16) -> Option<String> {
-        match vk {
-            0x20 => Some("Space".to_string()),
-            0x0D => Some("Enter".to_string()),
-            0x09 => Some("Tab".to_string()),
-            0x30..=0x39 => Some((vk as u8 as char).to_string()),
-            0x41..=0x5A => Some((vk as u8 as char).to_string()),
-            0x70..=0x7B => Some(format!("F{}", vk - 0x70 + 1)),
-            _ => None,
+    // ── Window subclass ──────────────────────────────────────────────────────
+    // Capture path for Alt+<key> combos that generate WM_SYSCOMMAND SC_KEYMENU
+    // instead of reaching the WebView2 DOM (notably Alt+Space, and any Alt+key
+    // that triggers menu-mode handling before WebView2 can deliver the event).
+
+    unsafe extern "system" fn subclass_wndproc(
+        hwnd: HWND,
+        msg: u32,
+        wparam: WPARAM,
+        lparam: LPARAM,
+    ) -> LRESULT {
+        if msg == WM_SYSCOMMAND
+            && wparam & 0xFFF0 == SC_KEYMENU as usize
+            && CAPTURING.load(Ordering::SeqCst)
+        {
+            // Only emit once per capture session; DOM may have already emitted.
+            if !HOTKEY_EMITTED.swap(true, Ordering::SeqCst) {
+                let key_name = sc_keymenu_key_name(lparam);
+                let hotkey = format!("Alt+{}", key_name);
+                if let Some(handle) = clone_handle() {
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(e) = handle.emit("hotkey-captured", hotkey) {
+                            log::error!("subclass: emit failed: {}", e);
+                        }
+                    });
+                }
+            }
+            return 0; // suppress system menu regardless
         }
+
+        let orig = ORIGINAL_WNDPROC.load(Ordering::SeqCst);
+        if orig != 0 {
+            let orig_fn: WNDPROC = Some(std::mem::transmute(orig));
+            CallWindowProcW(orig_fn, hwnd, msg, wparam, lparam)
+        } else {
+            DefWindowProcW(hwnd, msg, wparam, lparam)
+        }
+    }
+
+    // Maps the SC_KEYMENU lparam (a character code) to a human-readable key name.
+    fn sc_keymenu_key_name(lparam: LPARAM) -> String {
+        match lparam as u32 {
+            0x20 => "Space".to_string(),
+            0x0D => "Enter".to_string(),
+            0x09 => "Tab".to_string(),
+            c @ 0x30..=0x39 => (c as u8 as char).to_string(), // 0–9
+            c @ 0x41..=0x5A => (c as u8 as char).to_string(), // A–Z
+            c @ 0x61..=0x7A => ((c as u8 - 0x20) as char).to_string(), // a–z → uppercase
+            _ => format!("{:#x}", lparam),
+        }
+    }
+
+    pub unsafe fn setup_subclass(hwnd: HWND) {
+        let orig = SetWindowLongPtrW(hwnd, GWLP_WNDPROC, subclass_wndproc as isize);
+        ORIGINAL_WNDPROC.store(orig, Ordering::SeqCst);
     }
 
     pub fn start(app: AppHandle) {
-        if CAPTURE_ACTIVE.load(Ordering::SeqCst) {
-            return;
-        }
-
+        CAPTURING.store(true, Ordering::SeqCst);
+        HOTKEY_EMITTED.store(false, Ordering::SeqCst);
         if let Ok(mut guard) = APP_HANDLE.lock() {
             *guard = Some(app);
         }
-
-        CAPTURE_ACTIVE.store(true, Ordering::SeqCst);
-
-        std::thread::spawn(|| unsafe {
-            // PeekMessageW initializes this thread's message queue, which is
-            // required before SetWindowsHookExW can receive WH_KEYBOARD_LL callbacks.
-            let mut init_msg: MSG = std::mem::zeroed();
-            PeekMessageW(&mut init_msg, std::ptr::null_mut(), 0, 0, 0);
-
-            let hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook), std::ptr::null_mut(), 0);
-            if hook.is_null() {
-                log::error!("Failed to install low-level keyboard hook");
-                CAPTURE_ACTIVE.store(false, Ordering::SeqCst);
-                return;
-            }
-
-            let tid = GetCurrentThreadId();
-            HOOK_THREAD_ID.store(tid, Ordering::SeqCst);
-
-            // Exit early if capture was cancelled before the thread started
-            if !CAPTURE_ACTIVE.load(Ordering::SeqCst) {
-                UnhookWindowsHookEx(hook);
-                HOOK_THREAD_ID.store(0, Ordering::SeqCst);
-                return;
-            }
-
-            let mut msg: MSG = std::mem::zeroed();
-            while GetMessageW(&mut msg, std::ptr::null_mut(), 0, 0) > 0 {}
-
-            UnhookWindowsHookEx(hook);
-            HOOK_THREAD_ID.store(0, Ordering::SeqCst);
-        });
     }
 
     pub fn stop() {
-        CAPTURE_ACTIVE.store(false, Ordering::SeqCst);
-        let tid = HOOK_THREAD_ID.load(Ordering::SeqCst);
-        if tid != 0 {
-            unsafe {
-                PostThreadMessageW(tid, WM_QUIT, 0, 0);
-            }
-        }
+        CAPTURING.store(false, Ordering::SeqCst);
     }
 }
 
 #[cfg(not(target_os = "windows"))]
 mod imp {
     use tauri::AppHandle;
-
     pub fn start(_app: AppHandle) {}
     pub fn stop() {}
 }

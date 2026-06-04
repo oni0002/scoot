@@ -105,6 +105,16 @@ pub fn run() {
             crate::tray::setup_system_tray(app)?;
             // Set up global shortcuts
             crate::shortcut::setup_shortcuts(app)?;
+            // Install window subclass to suppress WM_SYSCOMMAND SC_KEYMENU
+            // during hotkey capture (prevents Alt+Space from opening system menu).
+            #[cfg(target_os = "windows")]
+            if let Some(window) = app.get_webview_window("main") {
+                if let Ok(hwnd) = window.hwnd() {
+                    unsafe {
+                        crate::hotkey_capture::setup_window_subclass(hwnd.0 as *mut core::ffi::c_void);
+                    }
+                }
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

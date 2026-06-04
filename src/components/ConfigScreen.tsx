@@ -57,9 +57,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
     const localRef = useRef(local);
     useEffect(() => { localRef.current = local; }, [local]);
 
-    // Start/stop OS-level keyboard hook during hotkey capture.
-    // WH_KEYBOARD_LL is needed because WM_SYSKEYDOWN (Alt+<key>) never reaches
-    // the WebView2 DOM — Windows consumes it before forwarding to the renderer.
+    // Start/stop hotkey capture mode.
+    // Alt+<key> combos are intercepted at the Win32 level (WM_SYSCOMMAND SC_KEYMENU subclass).
+    // Other combos (Ctrl+A, Shift+F1, etc.) are handled by handleHotkeyKeyDown in the DOM.
     useEffect(() => {
         if (!capturingHotkey) return;
         let unlisten: (() => void) | null = null;
