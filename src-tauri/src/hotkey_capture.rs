@@ -92,7 +92,7 @@ mod imp {
                 }
             }
         }
-        CallNextHookEx(0, n_code, w_param, l_param)
+        CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param)
     }
 
     fn vk_to_key_name(vk: u16) -> Option<String> {
@@ -119,8 +119,8 @@ mod imp {
         CAPTURE_ACTIVE.store(true, Ordering::SeqCst);
 
         std::thread::spawn(|| unsafe {
-            let hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook), 0, 0);
-            if hook == 0 {
+            let hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook), std::ptr::null_mut(), 0);
+            if hook.is_null() {
                 log::error!("Failed to install low-level keyboard hook");
                 CAPTURE_ACTIVE.store(false, Ordering::SeqCst);
                 return;
@@ -137,7 +137,7 @@ mod imp {
             }
 
             let mut msg: MSG = std::mem::zeroed();
-            while GetMessageW(&mut msg, 0, 0, 0) > 0 {}
+            while GetMessageW(&mut msg, std::ptr::null_mut(), 0, 0) > 0 {}
 
             UnhookWindowsHookEx(hook);
             HOOK_THREAD_ID.store(0, Ordering::SeqCst);
