@@ -63,14 +63,14 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
     useEffect(() => {
         if (!capturingHotkey) return;
         let unlisten: (() => void) | null = null;
-        TauriAPI.startHotkeyCapture();
+        void TauriAPI.startHotkeyCapture();
         listen<string>('hotkey-captured', (event) => {
             if (localRef.current) save({ ...localRef.current, hotkey: event.payload });
             setCapturingHotkey(false);
             hotkeyInputRef.current?.blur();
         }).then(fn => { unlisten = fn; });
         return () => {
-            TauriAPI.stopHotkeyCapture();
+            void TauriAPI.stopHotkeyCapture();
             unlisten?.();
         };
     }, [capturingHotkey, save]);
@@ -169,7 +169,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mt-2">General</h2>
                 {/* Theme */}
                 <div className="form-control w-full">
-                    <label className="label"><span className="label-text">Theme</span></label>
+                    <label className="label px-0"><span className="label-text">Theme</span></label>
                     <select
                         className="select select-bordered select-sm w-48"
                         value={local.theme}
@@ -180,7 +180,8 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </div>
                 {/* Hotkey */}
                 <div className="form-control w-full">
-                    <label className="label"><span className="label-text">Hotkey</span></label>
+                    <label className="label px-0"><span className="label-text">Hotkey</span></label>
+                    <p className="text-xs text-base-content/50 mb-1">Click to capture. Press a key combo (e.g. Alt+Space) to set.</p>
                     <input
                         ref={hotkeyInputRef}
                         className="input input-bordered input-sm w-48 text-center cursor-pointer"
@@ -193,7 +194,8 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </div>
                 {/* Max Results */}
                 <div className="form-control w-full">
-                    <label className="label"><span className="label-text">Max Results</span></label>
+                    <label className="label px-0"><span className="label-text">Max Results</span></label>
+                    <p className="text-xs text-base-content/50 mb-1">Maximum number of search results to show.</p>
                     <input
                         type="number"
                         min={1}
@@ -205,10 +207,11 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </div>
                 {/* Fuzzy Threshold */}
                 <div className="form-control w-64">
-                    <label className="label">
+                    <label className="label px-0">
                         <span className="label-text">Fuzzy Threshold</span>
                         <span className="label-text-alt">{local.fuzzyThreshold.toFixed(2)}</span>
                     </label>
+                    <p className="text-xs text-base-content/50 mb-1">How strictly queries must match. Higher = stricter. Lower = more permissive.</p>
                     <input
                         type="range"
                         min={0}
@@ -221,7 +224,8 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </div>
                 {/* Reload Interval */}
                 <div className="form-control w-full">
-                    <label className="label"><span className="label-text">Reload Interval (min)</span></label>
+                    <label className="label px-0"><span className="label-text">Reload Interval (min)</span></label>
+                    <p className="text-xs text-base-content/50 mb-1">How often bookmarks and applications are reloaded (in minutes).</p>
                     <input
                         type="number"
                         min={1}
@@ -235,7 +239,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mt-4">Bookmarks</h2>
 
                 <div className="form-control w-full">
-                    <label className="label cursor-pointer justify-start gap-4">
+                    <label className="label cursor-pointer justify-start gap-4 px-0">
                         <span className="label-text">Enabled</span>
                         <input
                             type="checkbox"
@@ -247,7 +251,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </div>
 
                 <div className="form-control w-full">
-                    <label className="label"><span className="label-text">Browser</span></label>
+                    <label className="label px-0"><span className="label-text">Browser</span></label>
                     <select
                         className="select select-bordered select-sm w-32"
                         value={local.bookmarks.browser}
@@ -261,7 +265,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mt-4">Applications</h2>
 
                 <div className="form-control w-full">
-                    <label className="label cursor-pointer justify-start gap-4">
+                    <label className="label cursor-pointer justify-start gap-4 px-0">
                         <span className="label-text">Enabled</span>
                         <input
                             type="checkbox"
@@ -273,12 +277,13 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </div>
 
                 <div className="form-control w-full">
-                    <label className="label">
+                    <label className="label px-0">
                         <span className="label-text">Directories</span>
                         <button className="btn btn-ghost btn-xs gap-1" onClick={addDirectory}>
                             <LuPlus size={12} /> Add
                         </button>
                     </label>
+                    <p className="text-xs text-base-content/50 mb-1">Folders to scan for application shortcuts (.lnk files by default).</p>
                     <ul className="space-y-1">
                         {local.applications.directories.map((dir, i) => (
                             <li key={i} className="flex items-center gap-2 text-xs bg-base-200 rounded px-2 py-1">
@@ -290,7 +295,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </div>
 
                 <div className="form-control w-full">
-                    <label className="label">
+                    <label className="label px-0">
                         <span className="label-text">Extensions</span>
                         <div className="flex gap-1">
                             <input
@@ -303,6 +308,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                             <button className="btn btn-ghost btn-xs" onClick={addExtension}><LuPlus size={12} /></button>
                         </div>
                     </label>
+                    <p className="text-xs text-base-content/50 mb-1">File extensions treated as applications when scanning directories.</p>
                     <div className="flex flex-wrap gap-1">
                         {local.applications.extensions.map((ext, i) => (
                             <span key={i} className="badge badge-sm gap-1">
@@ -317,7 +323,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mt-4">Markdown</h2>
 
                 <div className="form-control w-full">
-                    <label className="label cursor-pointer justify-start gap-4">
+                    <label className="label cursor-pointer justify-start gap-4 px-0">
                         <span className="label-text">Enabled</span>
                         <input
                             type="checkbox"
@@ -329,12 +335,13 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </div>
 
                 <div className="form-control w-full">
-                    <label className="label">
+                    <label className="label px-0">
                         <span className="label-text">Files</span>
                         <button className="btn btn-ghost btn-xs gap-1" onClick={addMarkdownPath}>
                             <LuPlus size={12} /> Add
                         </button>
                     </label>
+                    <p className="text-xs text-base-content/50 mb-1">Markdown files to extract URL and file-path links from.</p>
                     <ul className="space-y-1">
                         {local.markdown.paths.map((p, i) => (
                             <li key={i} className="flex items-center gap-2 text-xs bg-base-200 rounded px-2 py-1">
@@ -349,6 +356,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mt-4">Ignored</h2>
 
                 <div className="form-control w-full pb-4">
+                    <p className="text-xs text-base-content/50 mb-1">Commands hidden from search results. Add via the ⋯ menu on a search result.</p>
                     {local.ignored.length === 0 ? (
                         <p className="text-xs text-base-content/40 px-1">No ignored commands.</p>
                     ) : (
