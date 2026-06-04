@@ -78,11 +78,32 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
     const handleHotkeyKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         e.preventDefault();
         e.stopPropagation();
+
         if (e.key === 'Escape') {
             setCapturingHotkey(false);
             hotkeyInputRef.current?.blur();
+            return;
         }
-    }, []);
+
+        const modifiers: string[] = [];
+        if (e.ctrlKey) modifiers.push('Ctrl');
+        if (e.altKey) modifiers.push('Alt');
+        if (e.shiftKey) modifiers.push('Shift');
+        if (e.metaKey) modifiers.push('Super');
+
+        const ignoredKeys = ['Control', 'Alt', 'Shift', 'Meta', 'Super'];
+        if (ignoredKeys.includes(e.key)) return;
+
+        const keyMap: Record<string, string> = { ' ': 'Space', 'Enter': 'Enter', 'Tab': 'Tab' };
+        const key = keyMap[e.key] ?? e.key.toUpperCase();
+
+        if (modifiers.length === 0) return;
+
+        const hotkey = [...modifiers, key].join('+');
+        setCapturingHotkey(false);
+        hotkeyInputRef.current?.blur();
+        if (localRef.current) save({ ...localRef.current, hotkey });
+    }, [save]);
 
     const addDirectory = useCallback(async () => {
         if (!local) return;

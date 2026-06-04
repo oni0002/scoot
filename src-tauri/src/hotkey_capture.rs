@@ -21,9 +21,9 @@ mod imp {
         GetKeyState, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
     };
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        CallNextHookEx, GetMessageW, PostThreadMessageW, SetWindowsHookExW,
-        UnhookWindowsHookEx, KBDLLHOOKSTRUCT, MSG, WH_KEYBOARD_LL, WM_KEYDOWN,
-        WM_QUIT, WM_SYSKEYDOWN,
+        CallNextHookEx, GetMessageW, PeekMessageW, PostThreadMessageW,
+        SetWindowsHookExW, UnhookWindowsHookEx, KBDLLHOOKSTRUCT, MSG,
+        WH_KEYBOARD_LL, WM_KEYDOWN, WM_QUIT, WM_SYSKEYDOWN,
     };
 
     const LLKHF_ALTDOWN: u32 = 0x20;
@@ -119,6 +119,11 @@ mod imp {
         CAPTURE_ACTIVE.store(true, Ordering::SeqCst);
 
         std::thread::spawn(|| unsafe {
+            // PeekMessageW initializes this thread's message queue, which is
+            // required before SetWindowsHookExW can receive WH_KEYBOARD_LL callbacks.
+            let mut init_msg: MSG = std::mem::zeroed();
+            PeekMessageW(&mut init_msg, std::ptr::null_mut(), 0, 0, 0);
+
             let hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook), std::ptr::null_mut(), 0);
             if hook.is_null() {
                 log::error!("Failed to install low-level keyboard hook");
