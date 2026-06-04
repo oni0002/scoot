@@ -109,6 +109,19 @@ pub fn open_add_command_dialog(app_handle: &AppHandle) -> Result<(), crate::erro
     })
 }
 
+/// Open settings screen
+pub fn open_settings_dialog(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
+    use tauri::Emitter;
+    if let Some(window) = app_handle.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+
+    app_handle.emit("open-settings-dialog", ()).map_err(|e| {
+        crate::error::AppError::System(format!("Failed to emit open settings event: {}", e))
+    })
+}
+
 /// Setup reload event listeners
 pub fn setup_reload_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     use std::sync::{Arc, Mutex};

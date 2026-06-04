@@ -17,6 +17,7 @@ pub const SOURCE_SCOOT: &str = "scoot";
 pub const CMD_SCOOT_ADD_COMMAND: &str = "scoot://add-command";
 pub const CMD_SCOOT_OPEN_COMMANDS: &str = "scoot://open-commands";
 pub const CMD_SCOOT_OPEN_CONFIG: &str = "scoot://open-config";
+pub const CMD_SCOOT_OPEN_SETTINGS: &str = "scoot://open-settings";
 pub const CMD_SCOOT_OPEN_README: &str = "scoot://open-readme";
 pub const CMD_SCOOT_OPEN_LOG: &str = "scoot://open-log";
 pub const CMD_SCOOT_RELOAD: &str = "scoot://reload";
@@ -51,6 +52,7 @@ pub fn deserialize_json(json_str: &str) -> Result<Vec<Command>, crate::error::Ap
 pub fn get_scoot_commands() -> Vec<Command> {
     vec![
         Command::new("Add Command", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_ADD_COMMAND, "Add a new command to the launcher"),
+        Command::new("Open Settings", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_SETTINGS, "Open the settings screen"),
         Command::new("Open Commands.json", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_COMMANDS, "Open commands.json configuration file"),
         Command::new("Open Config.json", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_CONFIG, "Open config.json configuration file"),
         Command::new("Open README", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_README, "Open application README"),
@@ -201,6 +203,7 @@ impl Command {
                 CMD_SCOOT_ADD_COMMAND,
                 CMD_SCOOT_OPEN_COMMANDS,
                 CMD_SCOOT_OPEN_CONFIG,
+                CMD_SCOOT_OPEN_SETTINGS,
                 CMD_SCOOT_OPEN_README,
                 CMD_SCOOT_OPEN_LOG,
                 CMD_SCOOT_RELOAD,

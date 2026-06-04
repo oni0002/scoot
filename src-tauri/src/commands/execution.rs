@@ -79,6 +79,10 @@ async fn execute_scoot_command(
             crate::config::ipc::open_config_json(app_handle.clone()).await?;
             Ok(ExecuteResult::hide())
         }
+        "scoot://open-settings" => {
+            crate::lifecycle::open_settings_dialog(&app_handle)?;
+            Ok(ExecuteResult::keep_open())
+        }
         "scoot://open-readme" => {
             crate::lifecycle::open_readme_file(&app_handle)?;
             Ok(ExecuteResult::hide())

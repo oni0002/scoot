@@ -16,6 +16,7 @@ interface SearchBarProps {
     onOpenConfigJson: (e: React.MouseEvent) => void;
     onShowReadme: (e: React.MouseEvent) => void;
     onShowAbout: (e: React.MouseEvent) => void;
+    onOpenConfig?: () => void;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -30,6 +31,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     onOpenConfigJson,
     onShowReadme,
     onShowAbout,
+    onOpenConfig,
 }) => {
     return (
         <div className="flex-shrink-0 mb-4 relative">
@@ -63,6 +65,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     >
                         <li>
                             <a onClick={onAddCommand}>Add Command</a>
+                        </li>
+                        <li>
+                            <a onClick={(e) => { e.stopPropagation(); onOpenConfig?.(); }}>Settings</a>
                         </li>
                         <li>
                             <a onClick={onReloadCommands}>Reload</a>

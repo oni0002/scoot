@@ -167,6 +167,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
 
     return (
         <div className="h-screen w-screen flex flex-col bg-base-100 text-base-content scrollbar-gutter-auto">
+            {/* Header */}
             <div className="flex-none p-4 flex items-center gap-2">
                 <button onClick={onCancel} className="btn btn-ghost btn-sm btn-square" title="Back">
                     <LuArrowLeft />
@@ -174,9 +175,11 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                 <h3>{command ? 'Edit command' : 'Add new command'}</h3>
             </div>
 
+            {/* Body */}
             <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
                 <div className="flex-1 overflow-y-auto px-4 scrollbar-gutter-auto space-y-2">
                     <div className="flex gap-2">
+                        {/* Name */}
                         <div className="form-control flex-1">
                             <label className="label">
                                 <span className="label-text">Name *</span>
@@ -196,6 +199,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                             )}
                         </div>
 
+                        {/* Category */}
                         <div className="form-control w-32">
                             <label className="label">
                                 <span className="label-text">Category *</span>
@@ -226,8 +230,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                     {formData.category === 'url'
                                         ? 'URL *'
                                         : formData.category === 'file'
-                                          ? 'Path *'
-                                          : 'Command *'}
+                                            ? 'Path *'
+                                            : 'Command *'}
                                 </span>
                             </label>
                             <div className="flex gap-2 w-full">
@@ -239,8 +243,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                         formData.category === 'url'
                                             ? 'https://example.com'
                                             : formData.category === 'file'
-                                              ? 'C:\\path\\to\\file.txt'
-                                              : 'Command line'
+                                                ? 'C:\\path\\to\\file.txt'
+                                                : 'Command line'
                                     }
                                     className={`input input-bordered input-sm flex-1 ${errors.command ? 'input-error' : ''}`}
                                 />

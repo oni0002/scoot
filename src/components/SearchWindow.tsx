@@ -42,6 +42,7 @@ interface SearchWindowProps {
     onCopyCommand?: (command: Command) => void;
     onIgnoreCommand?: (command: Command) => void;
     onReloadCommands?: () => void;
+    onOpenConfig?: () => void;
     isDialogOpen?: boolean;
 }
 
@@ -54,6 +55,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     onCopyCommand,
     onIgnoreCommand,
     onReloadCommands,
+    onOpenConfig,
     isDialogOpen = false,
 }) => {
     const { commands, executeCommand: rawExecuteCommand } = useCommandContext();
@@ -183,6 +185,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
                 onOpenConfigJson={handleOpenConfigJson}
                 onShowReadme={handleShowReadme}
                 onShowAbout={handleShowAbout}
+                onOpenConfig={onOpenConfig}
             />
 
             <SearchResultList
