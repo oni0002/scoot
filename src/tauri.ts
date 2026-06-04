@@ -63,6 +63,14 @@ export const TauriAPI = {
         return await invoke('leave_modal');
     },
 
+    async startHotkeyCapture(): Promise<void> {
+        return await invoke('start_hotkey_capture');
+    },
+
+    async stopHotkeyCapture(): Promise<void> {
+        return await invoke('stop_hotkey_capture');
+    },
+
     async getConfig(): Promise<Config> {
         return await invoke<Config>('get_config');
     },

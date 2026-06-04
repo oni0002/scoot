@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { LuArrowLeft, LuPlus, LuX } from 'react-icons/lu';
 import { Config } from '../types';
 import { useConfigContext } from '../context/ConfigContext';
+import { TauriAPI } from '../tauri';
 
 const THEMES = [
     'light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave',
@@ -52,35 +54,35 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleBack, capturingHotkey]);
 
+    const localRef = useRef(local);
+    useEffect(() => { localRef.current = local; }, [local]);
+
+    // Start/stop OS-level keyboard hook during hotkey capture.
+    // WH_KEYBOARD_LL is needed because WM_SYSKEYDOWN (Alt+<key>) never reaches
+    // the WebView2 DOM — Windows consumes it before forwarding to the renderer.
+    useEffect(() => {
+        if (!capturingHotkey) return;
+        let unlisten: (() => void) | null = null;
+        TauriAPI.startHotkeyCapture();
+        listen<string>('hotkey-captured', (event) => {
+            if (localRef.current) save({ ...localRef.current, hotkey: event.payload });
+            setCapturingHotkey(false);
+            hotkeyInputRef.current?.blur();
+        }).then(fn => { unlisten = fn; });
+        return () => {
+            TauriAPI.stopHotkeyCapture();
+            unlisten?.();
+        };
+    }, [capturingHotkey, save]);
+
     const handleHotkeyKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         e.preventDefault();
         e.stopPropagation();
-
         if (e.key === 'Escape') {
             setCapturingHotkey(false);
             hotkeyInputRef.current?.blur();
-            return;
         }
-
-        const modifiers: string[] = [];
-        if (e.ctrlKey) modifiers.push('Ctrl');
-        if (e.altKey) modifiers.push('Alt');
-        if (e.shiftKey) modifiers.push('Shift');
-        if (e.metaKey) modifiers.push('Super');
-
-        const ignoredKeys = ['Control', 'Alt', 'Shift', 'Meta', 'Super'];
-        if (ignoredKeys.includes(e.key)) return;
-
-        const keyMap: Record<string, string> = { ' ': 'Space', 'Enter': 'Enter', 'Tab': 'Tab' };
-        const key = keyMap[e.key] ?? e.key.toUpperCase();
-
-        if (modifiers.length === 0) return;
-
-        const hotkey = [...modifiers, key].join('+');
-        setCapturingHotkey(false);
-        hotkeyInputRef.current?.blur();
-        if (local) save({ ...local, hotkey });
-    }, [local, save]);
+    }, []);
 
     const addDirectory = useCallback(async () => {
         if (!local) return;

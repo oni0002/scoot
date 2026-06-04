@@ -1,6 +1,7 @@
 pub mod commands;
 pub mod config;
 pub mod error;
+pub mod hotkey_capture;
 pub mod lifecycle;
 pub mod os;
 pub mod shortcut;
@@ -128,6 +129,9 @@ pub fn run() {
             crate::window::hide_window,
             crate::window::enter_modal,
             crate::window::leave_modal,
+            // Hotkey capture
+            crate::hotkey_capture::start_hotkey_capture,
+            crate::hotkey_capture::stop_hotkey_capture,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
