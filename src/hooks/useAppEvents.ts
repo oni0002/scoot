@@ -4,22 +4,22 @@ import { NOTIFICATION_DURATION } from '../constants';
 
 interface UseAppEventsProps {
     handleAddCommand: () => void;
+    handleOpenConfig: () => void;
     loadCommands: () => void;
     loadConfig: () => void;
     showSuccess: (message: string) => void;
     showWarning: (message: string) => void;
-    showInfo: (message: string) => void;
     showError: (message: string, duration?: number) => void;
     setError: (error: string | null) => void;
 }
 
 export const useAppEvents = ({
     handleAddCommand,
+    handleOpenConfig,
     loadCommands,
     loadConfig,
     showSuccess,
     showWarning,
-    showInfo,
     showError,
     setError,
 }: UseAppEventsProps) => {
@@ -35,8 +35,8 @@ export const useAppEvents = ({
             try {
                 const eventHandlers = {
                     'open-add-command-dialog': handleAddCommand,
+                    'open-settings-dialog': handleOpenConfig,
                     'config-reloaded': () => {
-                        showInfo('Config and commands reloaded');
                         loadCommands();
                         loadConfig();
                     },

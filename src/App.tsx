@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { SearchWindow } from './components/SearchWindow';
 import { CommandForm } from './components/CommandForm';
+import { ConfigScreen } from './components/ConfigScreen';
 import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Command } from './types';
@@ -19,8 +20,6 @@ const AppContent = () => {
         showSuccess,
         showError,
         showWarning,
-        showInfo,
-        // removeNotification is handled by Provider internally now
     } = useNotificationContext();
 
     const {
@@ -35,7 +34,7 @@ const AppContent = () => {
 
     const { theme, fuzzyThreshold, maxResults, loadConfig } = useConfigContext();
 
-    const [currentView, setCurrentView] = useState<'search' | 'form'>('search');
+    const [currentView, setCurrentView] = useState<'search' | 'form' | 'config'>('search');
     const [editingCommand, setEditingCommand] = useState<Command | undefined>(undefined);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [deletingCommand, setDeletingCommand] = useState<Command | undefined>(undefined);
@@ -43,6 +42,10 @@ const AppContent = () => {
     const handleAddCommand = useCallback(() => {
         setEditingCommand(undefined);
         setCurrentView('form');
+    }, []);
+
+    const handleOpenConfig = useCallback(() => {
+        setCurrentView('config');
     }, []);
 
     const handleSaveCommand = useCallback(
@@ -106,12 +109,7 @@ const AppContent = () => {
     const handleIgnoreCommand = useCallback(
         async (command: Command) => {
             try {
-                const config = await TauriAPI.getConfig();
-                if (!config.ignored.includes(command.command)) {
-                    const updated = { ...config, ignored: [...config.ignored, command.command] };
-                    await TauriAPI.saveConfig(updated);
-                    await TauriAPI.reloadAll();
-                }
+                await TauriAPI.ignoreCommand(command.command);
                 await loadCommands();
                 showSuccess(`"${command.name}" ignored successfully.`);
             } catch (err) {
@@ -140,21 +138,21 @@ const AppContent = () => {
         try {
             await TauriAPI.reloadAll();
             await loadCommands();
-            // showSuccess("Commands and config reloaded", 2000); // Handled by event listener
+            showSuccess('Commands and config reloaded', 2000);
         } catch (err) {
             console.error('Failed to reload:', err);
             showError('Could not reload configuration');
         }
-    }, [loadCommands, showError]);
+    }, [loadCommands, showSuccess, showError]);
 
     // 初期化とイベントリスナー設定
     useAppEvents({
         handleAddCommand,
+        handleOpenConfig,
         loadCommands,
         loadConfig,
         showSuccess,
         showWarning,
-        showInfo,
         showError,
         setError,
     });
@@ -188,8 +186,11 @@ const AppContent = () => {
                     onCopyCommand={handleCopyCommand}
                     onIgnoreCommand={handleIgnoreCommand}
                     onReloadCommands={handleReloadCommands}
+                    onOpenConfig={handleOpenConfig}
                     isDialogOpen={showDeleteDialog}
                 />
+            ) : currentView === 'config' ? (
+                <ConfigScreen onBack={() => { setCurrentView('search'); loadConfig(); }} />
             ) : (
                 <CommandForm
                     command={editingCommand}

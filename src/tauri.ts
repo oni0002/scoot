@@ -71,6 +71,10 @@ export const TauriAPI = {
         return await invoke('save_config', { config });
     },
 
+    async ignoreCommand(commandStr: string): Promise<void> {
+        return await invoke('ignore_command', { commandStr });
+    },
+
     async getVersion(): Promise<string> {
         return await getVersion();
     },

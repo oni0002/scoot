@@ -1,6 +1,6 @@
 use crate::config::domain::Config;
 use crate::error::AppError;
-use crate::state::ConfigState;
+use crate::state::{CommandsState, ConfigState};
 use tauri::{Manager, State};
 
 // --- Tauri Commands ---
@@ -32,6 +32,39 @@ pub async fn save_config(
 
     // config.json
     state.config_store.save(&config).await
+}
+
+/// Ignore a command: persist to config and remove from registry immediately
+#[tauri::command]
+pub async fn ignore_command(
+    command_str: String,
+    config_state: State<'_, ConfigState>,
+    commands_state: State<'_, CommandsState>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), AppError> {
+    use tauri::Emitter;
+
+    let config_snapshot = {
+        let mut config = config_state.config.lock().map_err(|e| AppError::lock(e))?;
+        if config.ignored.contains(&command_str) {
+            return Ok(());
+        }
+        config.ignored.push(command_str.clone());
+        config.clone()
+    };
+
+    config_state.config_store.save(&config_snapshot).await?;
+
+    {
+        let mut registry = commands_state.commands.lock().map_err(|e| AppError::lock(e))?;
+        registry.external_commands.retain(|c| c.command != command_str);
+    }
+
+    if let Err(e) = app_handle.emit("request-reload", ()) {
+        log::error!("Failed to emit request-reload after ignore: {}", e);
+    }
+
+    Ok(())
 }
 
 /// Open config.json
