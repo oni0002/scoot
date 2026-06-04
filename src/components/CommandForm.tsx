@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Command } from '../types';
 import { open } from '@tauri-apps/plugin-dialog';
 import { LuFile, LuFolder, LuArrowLeft } from 'react-icons/lu';
-import { usePreventHide } from '../hooks/usePreventHide';
 import { TauriAPI } from '../tauri';
 import { hasPlaceholders } from '../command';
 
@@ -24,8 +23,6 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
         showWindow: false,
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
-
-    usePreventHide(true);
 
     useEffect(() => {
         if (command) {

@@ -3,7 +3,6 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { LuArrowLeft, LuPlus, LuX } from 'react-icons/lu';
 import { Config } from '../types';
 import { useConfigContext } from '../context/ConfigContext';
-import { usePreventHide } from '../hooks/usePreventHide';
 
 const THEMES = [
     'light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave',
@@ -24,7 +23,6 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
     const [local, setLocal] = useState<Config | null>(null);
     const [capturingHotkey, setCapturingHotkey] = useState(false);
     const hotkeyInputRef = useRef<HTMLInputElement>(null);
-    usePreventHide(true);
     useEffect(() => {
         if (config) setLocal(prev => prev ?? { ...config });
     }, [config]);
