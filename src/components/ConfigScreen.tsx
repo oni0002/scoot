@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { LuArrowLeft, LuPlus, LuX } from 'react-icons/lu';
+import { LuArrowLeft, LuX } from 'react-icons/lu';
 import { Config } from '../types';
 import { useConfigContext } from '../context/ConfigContext';
 import { TauriAPI } from '../tauri';
@@ -132,14 +132,22 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
     }, [local, save]);
 
     const [newExtension, setNewExtension] = useState('');
+    const [addingExtension, setAddingExtension] = useState(false);
 
-    const addExtension = useCallback(() => {
-        if (!local || !newExtension.trim()) return;
+    const confirmAddExtension = useCallback(() => {
+        if (!local || !newExtension.trim()) { setAddingExtension(false); return; }
         const ext = newExtension.trim().replace(/^\./, '');
-        if (local.applications.extensions.includes(ext)) return;
-        save({ ...local, applications: { ...local.applications, extensions: [...local.applications.extensions, ext] } });
+        if (!local.applications.extensions.includes(ext)) {
+            save({ ...local, applications: { ...local.applications, extensions: [...local.applications.extensions, ext] } });
+        }
+        setAddingExtension(false);
         setNewExtension('');
     }, [local, newExtension, save]);
+
+    const cancelAddExtension = useCallback(() => {
+        setAddingExtension(false);
+        setNewExtension('');
+    }, []);
 
     const removeExtension = useCallback((idx: number) => {
         if (!local) return;
@@ -164,12 +172,12 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-gutter-auto space-y-2">
+            <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-gutter-auto space-y-4">
                 {/* General */}
-                <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mt-2">General</h2>
+                <div className="divider divider-start text-sm pb-4">General</div>
                 {/* Theme */}
                 <div className="form-control w-full">
-                    <label className="label px-0"><span className="label-text">Theme</span></label>
+                    <label className="label"><span className="label-text">Theme</span></label>
                     <select
                         className="select select-bordered select-sm w-48"
                         value={local.theme}
@@ -180,7 +188,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </div>
                 {/* Hotkey */}
                 <div className="form-control w-full">
-                    <label className="label px-0"><span className="label-text">Hotkey</span></label>
+                    <label className="label"><span className="label-text">Hotkey</span></label>
                     <p className="text-xs text-base-content/50 mb-1">Click to capture. Press a key combo (e.g. Alt+Space) to set.</p>
                     <input
                         ref={hotkeyInputRef}
@@ -194,7 +202,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </div>
                 {/* Max Results */}
                 <div className="form-control w-full">
-                    <label className="label px-0"><span className="label-text">Max Results</span></label>
+                    <label className="label"><span className="label-text">Max Results</span></label>
                     <p className="text-xs text-base-content/50 mb-1">Maximum number of search results to show.</p>
                     <input
                         type="number"
@@ -206,25 +214,27 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     />
                 </div>
                 {/* Fuzzy Threshold */}
-                <div className="form-control w-64">
-                    <label className="label px-0">
+                <div className="form-control w-full">
+                    <label className="label">
                         <span className="label-text">Fuzzy Threshold</span>
-                        <span className="label-text-alt">{local.fuzzyThreshold.toFixed(2)}</span>
                     </label>
                     <p className="text-xs text-base-content/50 mb-1">How strictly queries must match. Higher = stricter. Lower = more permissive.</p>
-                    <input
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.1}
-                        className="range range-sm"
-                        value={local.fuzzyThreshold}
-                        onChange={e => save({ ...local, fuzzyThreshold: Number(e.target.value) })}
-                    />
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="range"
+                            min={0}
+                            max={1}
+                            step={0.1}
+                            className="range range-sm w-64"
+                            value={local.fuzzyThreshold}
+                            onChange={e => save({ ...local, fuzzyThreshold: Number(e.target.value) })}
+                        />
+                        <span className="text-xs w-6 text-right tabular-nums">{local.fuzzyThreshold.toFixed(1)}</span>
+                    </div>
                 </div>
                 {/* Reload Interval */}
                 <div className="form-control w-full">
-                    <label className="label px-0"><span className="label-text">Reload Interval (min)</span></label>
+                    <label className="label"><span className="label-text">Reload Interval (min)</span></label>
                     <p className="text-xs text-base-content/50 mb-1">How often bookmarks and applications are reloaded (in minutes).</p>
                     <input
                         type="number"
@@ -234,128 +244,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         onChange={e => save({ ...local, reloadIntervalMinutes: Math.max(1, Number(e.target.value)) })}
                     />
                 </div>
-
-                {/* Bookmarks */}
-                <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mt-4">Bookmarks</h2>
-
-                <div className="form-control w-full">
-                    <label className="label cursor-pointer justify-start gap-4 px-0">
-                        <span className="label-text">Enabled</span>
-                        <input
-                            type="checkbox"
-                            className="toggle toggle-sm"
-                            checked={local.bookmarks.enabled}
-                            onChange={e => save({ ...local, bookmarks: { ...local.bookmarks, enabled: e.target.checked } })}
-                        />
-                    </label>
-                </div>
-
-                <div className="form-control w-full">
-                    <label className="label px-0"><span className="label-text">Browser</span></label>
-                    <select
-                        className="select select-bordered select-sm w-32"
-                        value={local.bookmarks.browser}
-                        onChange={e => save({ ...local, bookmarks: { ...local.bookmarks, browser: e.target.value as typeof BROWSERS[number] } })}
-                    >
-                        {BROWSERS.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                </div>
-
-                {/* Applications */}
-                <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mt-4">Applications</h2>
-
-                <div className="form-control w-full">
-                    <label className="label cursor-pointer justify-start gap-4 px-0">
-                        <span className="label-text">Enabled</span>
-                        <input
-                            type="checkbox"
-                            className="toggle toggle-sm"
-                            checked={local.applications.enabled}
-                            onChange={e => save({ ...local, applications: { ...local.applications, enabled: e.target.checked } })}
-                        />
-                    </label>
-                </div>
-
-                <div className="form-control w-full">
-                    <label className="label px-0">
-                        <span className="label-text">Directories</span>
-                        <button className="btn btn-ghost btn-xs gap-1" onClick={addDirectory}>
-                            <LuPlus size={12} /> Add
-                        </button>
-                    </label>
-                    <p className="text-xs text-base-content/50 mb-1">Folders to scan for application shortcuts (.lnk files by default).</p>
-                    <ul className="space-y-1">
-                        {local.applications.directories.map((dir, i) => (
-                            <li key={i} className="flex items-center gap-2 text-xs bg-base-200 rounded px-2 py-1">
-                                <span className="flex-1 truncate">{dir}</span>
-                                <button className="btn btn-ghost btn-xs p-0" onClick={() => removeDirectory(i)}><LuX size={12} /></button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                <div className="form-control w-full">
-                    <label className="label px-0">
-                        <span className="label-text">Extensions</span>
-                        <div className="flex gap-1">
-                            <input
-                                className="input input-xs input-bordered w-20"
-                                placeholder="e.g. lnk"
-                                value={newExtension}
-                                onChange={e => setNewExtension(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter') addExtension(); }}
-                            />
-                            <button className="btn btn-ghost btn-xs" onClick={addExtension}><LuPlus size={12} /></button>
-                        </div>
-                    </label>
-                    <p className="text-xs text-base-content/50 mb-1">File extensions treated as applications when scanning directories.</p>
-                    <div className="flex flex-wrap gap-1">
-                        {local.applications.extensions.map((ext, i) => (
-                            <span key={i} className="badge badge-sm gap-1">
-                                .{ext}
-                                <button onClick={() => removeExtension(i)}><LuX size={10} /></button>
-                            </span>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Markdown */}
-                <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mt-4">Markdown</h2>
-
-                <div className="form-control w-full">
-                    <label className="label cursor-pointer justify-start gap-4 px-0">
-                        <span className="label-text">Enabled</span>
-                        <input
-                            type="checkbox"
-                            className="toggle toggle-sm"
-                            checked={local.markdown.enabled}
-                            onChange={e => save({ ...local, markdown: { ...local.markdown, enabled: e.target.checked } })}
-                        />
-                    </label>
-                </div>
-
-                <div className="form-control w-full">
-                    <label className="label px-0">
-                        <span className="label-text">Files</span>
-                        <button className="btn btn-ghost btn-xs gap-1" onClick={addMarkdownPath}>
-                            <LuPlus size={12} /> Add
-                        </button>
-                    </label>
-                    <p className="text-xs text-base-content/50 mb-1">Markdown files to extract URL and file-path links from.</p>
-                    <ul className="space-y-1">
-                        {local.markdown.paths.map((p, i) => (
-                            <li key={i} className="flex items-center gap-2 text-xs bg-base-200 rounded px-2 py-1">
-                                <span className="flex-1 truncate">{p}</span>
-                                <button className="btn btn-ghost btn-xs p-0" onClick={() => removeMarkdownPath(i)}><LuX size={12} /></button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
                 {/* Ignored */}
-                <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mt-4">Ignored</h2>
-
-                <div className="form-control w-full pb-4">
+                <div className="form-control w-full">
+                    <label className="label"><span className="label-text">Ignored</span></label>
                     <p className="text-xs text-base-content/50 mb-1">Commands hidden from search results. Add via the ⋯ menu on a search result.</p>
                     {local.ignored.length === 0 ? (
                         <p className="text-xs text-base-content/40 px-1">No ignored commands.</p>
@@ -371,6 +262,123 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     )}
                 </div>
 
+                {/* Bookmarks */}
+                <div className="divider divider-start text-sm pt-6 pb-4">Bookmarks</div>
+                {/* Enable button */}
+                <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-4">
+                        <span className="label-text">Enabled</span>
+                        <input
+                            type="checkbox"
+                            className="toggle toggle-sm"
+                            checked={local.bookmarks.enabled}
+                            onChange={e => save({ ...local, bookmarks: { ...local.bookmarks, enabled: e.target.checked } })}
+                        />
+                    </label>
+                </div>
+                {/* Browser */}
+                <div className="form-control w-full">
+                    <label className="label"><span className="label-text">Browser</span></label>
+                    <select
+                        className="select select-bordered select-sm w-48"
+                        value={local.bookmarks.browser}
+                        onChange={e => save({ ...local, bookmarks: { ...local.bookmarks, browser: e.target.value as typeof BROWSERS[number] } })}
+                    >
+                        {BROWSERS.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                </div>
+
+                {/* Applications */}
+                <div className="divider divider-start text-sm pt-6 pb-4">Applications</div>
+                {/* Enable button */}
+                <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-4">
+                        <span className="label-text">Enabled</span>
+                        <input
+                            type="checkbox"
+                            className="toggle toggle-sm"
+                            checked={local.applications.enabled}
+                            onChange={e => save({ ...local, applications: { ...local.applications, enabled: e.target.checked } })}
+                        />
+                    </label>
+                </div>
+                {/* Directories */}
+                <div className="form-control w-full">
+                    <label className="label">
+                        <span className="label-text">Directories</span>
+                    </label>
+                    <p className="text-xs text-base-content/50 mb-1">Folders to scan for application shortcuts (.lnk files by default).</p>
+                    <ul className="space-y-1">
+                        {local.applications.directories.map((dir, i) => (
+                            <li key={i} className="flex items-center gap-2 text-xs bg-base-200 rounded pl-2 pr-1 py-1">
+                                <span className="flex-1 truncate">{dir}</span>
+                                <button className="btn btn-ghost btn-xs btn-square" onClick={() => removeDirectory(i)}><LuX size={12} /></button>
+                            </li>
+                        ))}
+                    </ul>
+                    <button className="btn btn-neutral btn-xs mt-1 self-start" onClick={addDirectory}>Add</button>
+                </div>
+                {/* Extensions */}
+                <div className="form-control w-full">
+                    <label className="label">
+                        <span className="label-text">Extensions</span>
+                    </label>
+                    <p className="text-xs text-base-content/50 mb-1">File extensions treated as applications when scanning directories.</p>
+                    <ul className="space-y-1">
+                        {local.applications.extensions.map((ext, i) => (
+                            <li key={i} className="flex items-center gap-2 text-xs bg-base-200 rounded pl-2 pr-1 py-1">
+                                <span className="flex-1 truncate">.{ext}</span>
+                                <button className="btn btn-ghost btn-xs btn-square" onClick={() => removeExtension(i)}><LuX size={12} /></button>
+                            </li>
+                        ))}
+                        {addingExtension && (
+                            <li className="flex items-center gap-2 text-xs bg-base-200 rounded pl-2 pr-1 py-1">
+                                <input
+                                    autoFocus
+                                    className="input input-xs flex-1 min-w-0 bg-transparent"
+                                    placeholder="e.g. lnk"
+                                    value={newExtension}
+                                    onChange={e => setNewExtension(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') confirmAddExtension(); if (e.key === 'Escape') cancelAddExtension(); }}
+                                />
+                                <button className="btn btn-ghost btn-xs" onClick={confirmAddExtension}>OK</button>
+                                <button className="btn btn-ghost btn-xs" onClick={cancelAddExtension}>Cancel</button>
+                            </li>
+                        )}
+                    </ul>
+                    <button className="btn btn-neutral btn-xs mt-1 self-start" onClick={() => setAddingExtension(true)} disabled={addingExtension}>Add</button>
+                </div>
+
+                {/* Markdown */}
+                <div className="divider divider-start text-sm pt-6 pb-4">Markdown</div>
+                {/* Enable button */}
+                <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-4">
+                        <span className="label-text">Enabled</span>
+                        <input
+                            type="checkbox"
+                            className="toggle toggle-sm"
+                            checked={local.markdown.enabled}
+                            onChange={e => save({ ...local, markdown: { ...local.markdown, enabled: e.target.checked } })}
+                        />
+                    </label>
+                </div>
+                {/* Files */}
+                <div className="form-control w-full">
+                    <label className="label">
+                        <span className="label-text">Files</span>
+                    </label>
+                    <p className="text-xs text-base-content/50 mb-1">Markdown files to extract URL and file-path links from.</p>
+                    <ul className="space-y-1">
+                        {local.markdown.paths.map((p, i) => (
+                            <li key={i} className="flex items-center gap-2 text-xs bg-base-200 rounded px-2 py-1">
+                                <span className="flex-1 truncate">{p}</span>
+                                <button className="btn btn-ghost btn-xs p-0" onClick={() => removeMarkdownPath(i)}><LuX size={12} /></button>
+                            </li>
+                        ))}
+                    </ul>
+                    <button className="btn btn-neutral btn-xs mt-1 self-start" onClick={addMarkdownPath}>Add</button>
+                </div>
             </div>
         </div>
     );
