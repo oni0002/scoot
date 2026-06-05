@@ -73,10 +73,10 @@ jobs:
           }
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         env:
-          # softprops/action-gh-release@v2 uses Node20 runtime by default;
+          # softprops/action-gh-release@v3 uses Node20 runtime by default;
           # force Node24 to suppress deprecation warnings from GitHub Actions.
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         with:
