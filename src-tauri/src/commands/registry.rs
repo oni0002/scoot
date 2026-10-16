@@ -2,7 +2,6 @@ use crate::commands::domain::Command;
 use std::collections::HashMap;
 
 pub struct CommandRegistry {
-    next_id: usize,
     pub user_commands: HashMap<String, Command>,
     pub external_commands: Vec<Command>, // bookmark + app + markdown + scoot (reload-only)
     command_index: HashMap<String, String>, // command string → id
@@ -12,7 +11,6 @@ pub struct CommandRegistry {
 impl CommandRegistry {
     pub fn new() -> Self {
         Self {
-            next_id: 0,
             user_commands: HashMap::new(),
             external_commands: Vec::new(),
             command_index: HashMap::new(),
@@ -20,23 +18,23 @@ impl CommandRegistry {
         }
     }
 
-    fn assign_id(&mut self, command: &mut Command) {
+    // Counter-based IDs restart every launch and could collide with persisted user IDs
+    fn assign_id(command: &mut Command) {
         if command.id.is_empty() {
-            self.next_id += 1;
-            command.id = self.next_id.to_string();
+            command.id = nanoid::nanoid!();
         }
     }
 
     pub fn set_external_commands(&mut self, commands: Vec<Command>) {
         self.external_commands.clear();
         for mut command in commands {
-            self.assign_id(&mut command);
+            Self::assign_id(&mut command);
             self.external_commands.push(command);
         }
     }
 
     pub fn add_user_command(&mut self, mut command: Command) -> String {
-        self.assign_id(&mut command);
+        Self::assign_id(&mut command);
         let id = command.id.clone();
         self.command_index.insert(command.command.clone(), id.clone());
         if let Some(ref a) = command.alias {
