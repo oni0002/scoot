@@ -51,35 +51,37 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args }) =
                     <div className="text-xs truncate flex-1 min-w-0">{command.description}</div>
                 </div>
 
-                <div className="mx-2 mb-2 flex items-center gap-2 rounded-md bg-base-100 py-1 pl-2 pr-1 text-xs">
-                    {/* The verb only needs to be seen for shell commands; a URL or path reads as opening */}
-                    <span className={command.category === 'command' ? 'text-muted' : 'sr-only'}>
-                        {VERB[command.category] ?? 'Runs'}
-                    </span>
-                    <span className="min-w-0 flex-1 font-mono break-all">
-                        {expandTemplate(command.command, args, urlEncode).map((part, i) =>
-                            part.filled ? (
-                                <span key={i} className="font-bold text-accent">
-                                    {part.text}
-                                </span>
-                            ) : part.slot ? (
-                                <span key={i} className={SLOT_CLASS}>
-                                    {part.text}
-                                </span>
-                            ) : (
-                                <span key={i}>{part.text}</span>
-                            ),
-                        )}
-                    </span>
-                    <button
-                        type="button"
-                        onClick={copyResult}
-                        className="btn btn-square btn-xs btn-ghost"
-                        title="Copy"
-                        aria-label="Copy result"
-                    >
-                        {copied ? <LuCheck /> : <LuCopy />}
-                    </button>
+                <div className="px-2 pb-2">
+                    <div className="flex items-center gap-2 rounded-md bg-base-100 py-1 pl-2 pr-1 text-xs">
+                        {/* The verb only needs to be seen for shell commands; a URL or path reads as opening */}
+                        <span className={command.category === 'command' ? 'text-muted' : 'sr-only'}>
+                            {VERB[command.category] ?? 'Runs'}
+                        </span>
+                        <span className="min-w-0 flex-1 font-mono break-all">
+                            {expandTemplate(command.command, args, urlEncode).map((part, i) =>
+                                part.filled ? (
+                                    <span key={i} className="font-bold text-accent">
+                                        {part.text}
+                                    </span>
+                                ) : part.slot ? (
+                                    <span key={i} className={SLOT_CLASS}>
+                                        {part.text}
+                                    </span>
+                                ) : (
+                                    <span key={i}>{part.text}</span>
+                                ),
+                            )}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={copyResult}
+                            className="btn btn-square btn-xs btn-ghost"
+                            title="Copy"
+                            aria-label="Copy result"
+                        >
+                            {copied ? <LuCheck /> : <LuCopy />}
+                        </button>
+                    </div>
                 </div>
             </div>
 
