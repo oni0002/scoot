@@ -66,6 +66,8 @@ export const SearchResultItem = React.memo(
                 delete: onDelete,
                 ignore: onIgnore,
             };
+            // Closes the row menu (it stays open while it has focus); focus then returns to the search
+            (document.activeElement as HTMLElement | null)?.blur();
             handlers[action]?.(command, event);
         };
 

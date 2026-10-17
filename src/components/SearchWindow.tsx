@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Command } from '../types';
 import { TauriAPI } from '../tauri';
 import { NOTIFICATION_DURATION, resultOptionId } from '../constants';
@@ -76,6 +76,14 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
     useWindowEvents(isDialogOpen, resetState, inputRef);
+
+    // A row menu that closes because the pointer left takes its focus with it; give it back so the
+    // next keystroke still lands in the search field.
+    useEffect(() => {
+        if (hoveredIndex === null && !isDialogOpen && document.activeElement === document.body) {
+            inputRef.current?.focus();
+        }
+    }, [hoveredIndex, isDialogOpen, inputRef]);
 
     const { runSelectedCommand } = useCommandExecution({
         query,
@@ -196,8 +204,9 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         (command: Command, event: React.MouseEvent) => {
             event.stopPropagation();
             onCopyCommand?.(command);
+            inputRef.current?.focus();
         },
-        [onCopyCommand],
+        [onCopyCommand, inputRef],
     );
 
     // Menu actions run from the ⋮ menu; a failure must reach the user, not just the console.
