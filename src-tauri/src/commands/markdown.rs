@@ -1,4 +1,5 @@
-use crate::commands::domain::Command;
+use crate::commands::domain::{Command, CATEGORY_FILE, CATEGORY_URL};
+use crate::commands::execution::is_url_scheme_allowed;
 use crate::config::domain::MarkdownConfig;
 use regex::Regex;
 use std::collections::HashSet;
@@ -25,49 +26,27 @@ pub async fn load(config: &MarkdownConfig) -> Result<Vec<Command>, crate::error:
                 }
             };
 
-            // Extract filename for description
+            // The file name becomes the Source, shown as the row's badge
             let file_name = std::path::Path::new(&expanded)
                 .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_else(|| expanded.clone());
 
-            for cap in LINK_RE.captures_iter(&content) {
-                // Skip image links (![text](url))
-                if &cap[1] == "!" {
+            for (name, url) in parse_links(&content) {
+                if !seen_urls.insert(url.clone()) {
                     continue;
                 }
-
-                let name = cap[2].to_string();
-                let url = cap[3].trim().to_string();
-
-                // Skip anchor links
-                if url.starts_with('#') {
-                    continue;
-                }
-
-                // Skip duplicates
-                if seen_urls.contains(&url) {
-                    continue;
-                }
-                seen_urls.insert(url.clone());
-
-                // Determine category based on URL content
-                let category = if url.starts_with("http://")
-                    || url.starts_with("https://")
-                    || url.starts_with("ftp://")
-                    || url.starts_with("mailto:")
-                {
-                    "url"
+                let category = if is_url_scheme_allowed(&url) {
+                    CATEGORY_URL
                 } else {
-                    "file"
+                    CATEGORY_FILE
                 };
-
                 commands.push(Command::new(
                     name,
                     category,
                     file_name.clone(),
                     url.clone(),
-                    url.clone(),
+                    url,
                 ));
             }
         }
@@ -80,54 +59,39 @@ pub async fn load(config: &MarkdownConfig) -> Result<Vec<Command>, crate::error:
     Ok(commands)
 }
 
+/// The (text, target) of every link in a Markdown document, skipping images and in-page anchors
+fn parse_links(content: &str) -> Vec<(String, String)> {
+    LINK_RE
+        .captures_iter(content)
+        .filter(|cap| &cap[1] != "!")
+        .map(|cap| (cap[2].to_string(), cap[3].trim().to_string()))
+        .filter(|(_, url)| !url.starts_with('#'))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_markdown_links() {
+    fn parse_links_skips_images_and_anchors() {
         let content = r#"
 # My Links
 
 - [Google](https://google.com)
 - [GitHub](https://github.com)
-- [Local File](C:\path\to\file.txt)
+- [Local File](C:\path	oile.txt)
 - ![Image](image.png)
 - [Anchor](#section)
-- [Duplicate](https://google.com)
 "#;
 
-        let mut results = Vec::new();
-        let mut seen = HashSet::new();
-
-        for cap in LINK_RE.captures_iter(content) {
-            if &cap[1] == "!" {
-                continue;
-            }
-            let name = cap[2].to_string();
-            let url = cap[3].trim().to_string();
-            if url.starts_with('#') {
-                continue;
-            }
-            if seen.contains(&url) {
-                continue;
-            }
-            seen.insert(url.clone());
-            results.push((name, url));
-        }
-
-        assert_eq!(results.len(), 3);
         assert_eq!(
-            results[0],
-            ("Google".to_string(), "https://google.com".to_string())
-        );
-        assert_eq!(
-            results[1],
-            ("GitHub".to_string(), "https://github.com".to_string())
-        );
-        assert_eq!(
-            results[2],
-            ("Local File".to_string(), r"C:\path\to\file.txt".to_string())
+            parse_links(content),
+            vec![
+                ("Google".to_string(), "https://google.com".to_string()),
+                ("GitHub".to_string(), "https://github.com".to_string()),
+                ("Local File".to_string(), r"C:\path	oile.txt".to_string()),
+            ]
         );
     }
 }

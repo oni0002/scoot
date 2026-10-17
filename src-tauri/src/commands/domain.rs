@@ -21,6 +21,15 @@ pub const CMD_SCOOT_OPEN_SETTINGS: &str = "scoot://open-settings";
 pub const CMD_SCOOT_OPEN_LOG: &str = "scoot://open-log";
 pub const CMD_SCOOT_RELOAD: &str = "scoot://reload";
 pub const CMD_SCOOT_KILL: &str = "scoot://kill";
+pub const SCOOT_COMMANDS: [&str; 7] = [
+    CMD_SCOOT_ADD_COMMAND,
+    CMD_SCOOT_OPEN_COMMANDS,
+    CMD_SCOOT_OPEN_CONFIG,
+    CMD_SCOOT_OPEN_SETTINGS,
+    CMD_SCOOT_OPEN_LOG,
+    CMD_SCOOT_RELOAD,
+    CMD_SCOOT_KILL,
+];
 
 /// Command struct
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -260,23 +269,13 @@ impl Command {
         }
 
         // Scoot command validation
-        if self.command.starts_with("scoot://") {
-            let valid_scoot_commands = [
-                CMD_SCOOT_ADD_COMMAND,
-                CMD_SCOOT_OPEN_COMMANDS,
-                CMD_SCOOT_OPEN_CONFIG,
-                CMD_SCOOT_OPEN_SETTINGS,
-                CMD_SCOOT_OPEN_LOG,
-                CMD_SCOOT_RELOAD,
-                CMD_SCOOT_KILL,
-            ];
-            if !valid_scoot_commands.contains(&self.command.as_str()) {
-                return Err(crate::error::AppError::Validation(format!(
-                    "Invalid scoot command '{}'. Valid commands are: {}",
-                    self.command,
-                    valid_scoot_commands.join(", ")
-                )));
-            }
+        if self.command.starts_with("scoot://") && !SCOOT_COMMANDS.contains(&self.command.as_str())
+        {
+            return Err(crate::error::AppError::Validation(format!(
+                "Invalid scoot command '{}'. Valid commands are: {}",
+                self.command,
+                SCOOT_COMMANDS.join(", ")
+            )));
         }
 
         Ok(())

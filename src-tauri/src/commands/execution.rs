@@ -1,4 +1,7 @@
-use crate::commands::domain::Command;
+use crate::commands::domain::{
+    Command, CMD_SCOOT_ADD_COMMAND, CMD_SCOOT_KILL, CMD_SCOOT_OPEN_COMMANDS, CMD_SCOOT_OPEN_CONFIG,
+    CMD_SCOOT_OPEN_LOG, CMD_SCOOT_OPEN_SETTINGS, CMD_SCOOT_RELOAD,
+};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -102,31 +105,31 @@ async fn execute_scoot_command(
     log::debug!("Executing scoot command: {}", command);
 
     match command {
-        "scoot://add-command" => {
+        CMD_SCOOT_ADD_COMMAND => {
             crate::lifecycle::open_add_command_dialog(app_handle)?;
             Ok(ExecuteResult::keep_open())
         }
-        "scoot://open-commands" => {
+        CMD_SCOOT_OPEN_COMMANDS => {
             crate::commands::ipc::open_commands_json(app_handle.clone()).await?;
             Ok(ExecuteResult::hide())
         }
-        "scoot://open-config" => {
+        CMD_SCOOT_OPEN_CONFIG => {
             crate::config::ipc::open_config_json(app_handle.clone()).await?;
             Ok(ExecuteResult::hide())
         }
-        "scoot://open-settings" => {
+        CMD_SCOOT_OPEN_SETTINGS => {
             crate::lifecycle::open_settings_dialog(app_handle)?;
             Ok(ExecuteResult::keep_open())
         }
-        "scoot://open-log" => {
+        CMD_SCOOT_OPEN_LOG => {
             crate::lifecycle::open_log(app_handle)?;
             Ok(ExecuteResult::hide())
         }
-        "scoot://reload" => {
+        CMD_SCOOT_RELOAD => {
             crate::lifecycle::reload(app_handle).await?;
             Ok(ExecuteResult::keep_open())
         }
-        "scoot://kill" => {
+        CMD_SCOOT_KILL => {
             crate::lifecycle::quit_app((*app_handle).clone()).await?;
             Ok(ExecuteResult::hide())
         }
@@ -139,7 +142,7 @@ async fn execute_scoot_command(
 
 const ALLOWED_URL_SCHEMES: &[&str] = &["http://", "https://", "mailto:", "ftp://"];
 
-fn is_url_scheme_allowed(url: &str) -> bool {
+pub(crate) fn is_url_scheme_allowed(url: &str) -> bool {
     let url_lower = url.to_lowercase();
     ALLOWED_URL_SCHEMES.iter().any(|s| url_lower.starts_with(s))
 }
