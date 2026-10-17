@@ -70,7 +70,10 @@ const defaultConfig = (): Config => ({
     bookmarks: { enabled: true, browser: 'brave' },
     applications: {
         enabled: true,
-        directories: ['%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs'],
+        directories: [
+            '%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs',
+            '%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs',
+        ],
         extensions: ['lnk'],
     },
     markdown: { enabled: false, paths: [] },

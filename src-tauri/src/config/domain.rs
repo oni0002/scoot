@@ -50,7 +50,7 @@ impl Default for ApplicationConfig {
             enabled: true,
             directories: vec![
                 r"%APPDATA%\Microsoft\Windows\Start Menu\Programs".to_string(),
-                r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs".to_string(),
+                r"%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs".to_string(),
             ],
             extensions: vec!["lnk".to_string()],
         }
@@ -131,6 +131,14 @@ mod tests {
     fn default_config_is_valid() {
         let json = serde_json::to_string(&Config::default()).unwrap();
         assert!(parse(&json).is_ok());
+    }
+
+    #[test]
+    fn default_application_directories_use_environment_variables() {
+        // config.json travels with the exe, so a drive letter or user name must not be baked in
+        let dirs = ApplicationConfig::default().directories;
+        assert!(!dirs.is_empty());
+        assert!(dirs.iter().all(|d| d.starts_with('%')));
     }
 
     #[test]
