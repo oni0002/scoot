@@ -548,6 +548,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                             <li className="flex items-center gap-2 text-xs bg-base-200 rounded-sm pl-2 pr-1 py-1">
                                 <input
                                     autoFocus
+                                    autoComplete="off"
                                     className="input input-xs flex-1 min-w-0 bg-transparent"
                                     placeholder="e.g. lnk"
                                     aria-label="New extension"

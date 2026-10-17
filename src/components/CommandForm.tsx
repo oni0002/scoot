@@ -192,6 +192,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                             </label>
                             <input
                                 id="cf-name"
+                                autoComplete="off"
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => handleInputChange('name', e.target.value)}
@@ -255,6 +256,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                             <div className="flex gap-2 w-full">
                                 <input
                                     id="cf-command"
+                                    autoComplete="off"
                                     type="text"
                                     value={formData.command}
                                     onChange={(e) => handleInputChange('command', e.target.value)}
@@ -314,6 +316,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                             </label>
                             <input
                                 id="cf-alias"
+                                autoComplete="off"
                                 type="text"
                                 value={formData.alias}
                                 onChange={(e) => handleInputChange('alias', e.target.value)}
@@ -349,6 +352,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                 </label>
                                 <input
                                     id="cf-working-dir"
+                                    autoComplete="off"
                                     type="text"
                                     value={formData.workingDir}
                                     onChange={(e) =>
@@ -384,6 +388,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                         </label>
                         <input
                             id="cf-description"
+                            autoComplete="off"
                             type="text"
                             value={formData.description}
                             onChange={(e) => handleInputChange('description', e.target.value)}

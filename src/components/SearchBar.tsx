@@ -48,6 +48,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     <input
                         ref={inputRef}
                         type="text"
+                        autoComplete="off"
                         value={query}
                         onChange={(e) => onQueryChange(e.target.value)}
                         onKeyDown={onKeyDown}
