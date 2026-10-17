@@ -48,6 +48,9 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
     );
 };
 
+/** The configured theme, or undefined outside a ConfigProvider (for components that only decorate). */
+export const useConfigTheme = (): string | undefined => useContext(ConfigContext)?.theme;
+
 export const useConfigContext = (): ConfigContextType => {
     const context = useContext(ConfigContext);
     if (!context) {

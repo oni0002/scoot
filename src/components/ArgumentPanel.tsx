@@ -8,7 +8,7 @@ interface ArgumentPanelProps {
     args: string[];
 }
 
-const SLOT_CLASS = 'rounded-sm bg-base-content/10 px-1';
+const SLOT_CLASS = 'rounded-sm bg-base-content/15 px-1';
 
 const VERB: Record<string, string> = { url: 'Opens', file: 'Opens', command: 'Runs' };
 
@@ -40,43 +40,46 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args }) =
 
     return (
         <div className="space-y-4 pt-1">
-            <div className="flex items-center gap-2 rounded-lg bg-base-content/10 p-2 ring-1 ring-inset ring-base-content/50">
-                {command.alias && (
-                    <div className="badge badge-sm badge-primary">{command.alias}</div>
-                )}
-                <div className="font-medium text-sm truncate">{command.name}</div>
-                <div className="text-xs truncate flex-1 min-w-0">{command.description}</div>
-            </div>
-
-            <dl className="grid grid-cols-[3.5rem_1fr_auto] items-start gap-x-3 gap-y-3 px-2 text-xs">
-                <dt className="pt-0.5 text-muted">{VERB[command.category] ?? 'Runs'}</dt>
-                <dd className="font-mono break-all">
-                    {expandTemplate(command.command, args, urlEncode).map((part, i) =>
-                        part.filled ? (
-                            <span key={i} className="font-bold text-accent">
-                                {part.text}
-                            </span>
-                        ) : part.slot ? (
-                            <span key={i} className={SLOT_CLASS}>
-                                {part.text}
-                            </span>
-                        ) : (
-                            <span key={i}>{part.text}</span>
-                        ),
+            {/* One frame: the selected-row look, extended down to hold what the alias will do */}
+            <div className="rounded-lg bg-base-content/10 ring-1 ring-inset ring-base-content/50">
+                <div className="flex items-center gap-2 p-2">
+                    {command.alias && (
+                        <div className="badge badge-sm badge-primary">{command.alias}</div>
                     )}
-                </dd>
-                <dd>
-                    <button
-                        type="button"
-                        onClick={copyResult}
-                        className="btn btn-square btn-xs btn-ghost"
-                        title="Copy"
-                        aria-label="Copy result"
-                    >
-                        {copied ? <LuCheck /> : <LuCopy />}
-                    </button>
-                </dd>
-            </dl>
+                    <div className="font-medium text-sm truncate">{command.name}</div>
+                    <div className="text-xs truncate flex-1 min-w-0">{command.description}</div>
+                </div>
+
+                <dl className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-x-3 px-2 pb-2 text-xs">
+                    <dt className="text-muted">{VERB[command.category] ?? 'Runs'}</dt>
+                    <dd className="font-mono break-all">
+                        {expandTemplate(command.command, args, urlEncode).map((part, i) =>
+                            part.filled ? (
+                                <span key={i} className="font-bold text-accent">
+                                    {part.text}
+                                </span>
+                            ) : part.slot ? (
+                                <span key={i} className={SLOT_CLASS}>
+                                    {part.text}
+                                </span>
+                            ) : (
+                                <span key={i}>{part.text}</span>
+                            ),
+                        )}
+                    </dd>
+                    <dd>
+                        <button
+                            type="button"
+                            onClick={copyResult}
+                            className="btn btn-square btn-xs btn-ghost"
+                            title="Copy"
+                            aria-label="Copy result"
+                        >
+                            {copied ? <LuCheck /> : <LuCopy />}
+                        </button>
+                    </dd>
+                </dl>
+            </div>
 
             <p role="status" className="px-2 text-xs min-h-4">
                 {status}

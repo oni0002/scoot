@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { daisyTheme } from '../theme';
 import { LuCheck, LuTriangleAlert, LuCircleX, LuInfo } from 'react-icons/lu';
 
 export interface Notification {
@@ -13,14 +14,21 @@ export interface Notification {
 interface NotificationToastProps {
     notifications: Notification[];
     onRemove: (id: string) => void;
+    /** Config theme value; the toast lives outside the themed app root, so it needs its own. */
+    theme?: string;
 }
 
 export const NotificationToast: React.FC<NotificationToastProps> = ({
     notifications,
     onRemove,
+    theme,
 }) => {
     return (
-        <div className="toast toast-bottom toast-end z-50" aria-live="polite">
+        <div
+            className="toast toast-bottom toast-end z-50"
+            aria-live="polite"
+            data-theme={theme ? daisyTheme(theme) : undefined}
+        >
             {notifications.map((notification) => (
                 <NotificationItem
                     key={notification.id}
@@ -63,18 +71,18 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
         };
     }, [notification.duration, handleRemove]);
 
-    const getAlertClass = () => {
+    // A quiet surface with a coloured icon: the filled daisyUI alerts put white text on strong
+    // colours, which made the Undo action hard to read and shouted over the launcher's palette.
+    const getIconClass = () => {
         switch (notification.type) {
             case 'success':
-                return 'alert-success';
+                return 'text-success';
             case 'error':
-                return 'alert-error';
+                return 'text-error';
             case 'warning':
-                return 'alert-warning';
-            case 'info':
-                return 'alert-info';
+                return 'text-warning';
             default:
-                return 'alert-info';
+                return 'text-info';
         }
     };
 
@@ -96,11 +104,13 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
     return (
         <div
             role={notification.type === 'error' ? 'alert' : 'status'}
-            className={`alert ${getAlertClass()} rounded-lg transition-all duration-300 max-w-sm py-2 px-3 gap-2 shadow-lg flex items-center text-left ${
+            className={`alert bg-base-100 text-base-content border border-base-content/30 rounded-lg transition-all duration-300 max-w-sm py-2 px-3 gap-2 shadow-lg flex items-center text-left ${
                 isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
             }`}
         >
-            {getIcon()}
+            <span className={`text-base ${getIconClass()}`} aria-hidden="true">
+                {getIcon()}
+            </span>
             <div className="min-w-0 flex-1">
                 <div className="text-sm leading-snug whitespace-normal break-words">
                     {notification.message}

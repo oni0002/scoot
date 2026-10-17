@@ -22,7 +22,10 @@ export const QuickGuide: React.FC<{ aliasExample?: string }> = ({ aliasExample }
                 Type a keyword or a URL
                 {aliasExample && (
                     <>
-                        , or an alias like <span className="font-mono">{aliasExample} text</span>
+                        , or an alias like{' '}
+                        <span className="rounded-sm bg-base-content/10 px-1 font-mono">
+                            {aliasExample} text
+                        </span>
                     </>
                 )}
             </span>,

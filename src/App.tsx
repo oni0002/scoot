@@ -245,13 +245,13 @@ const AppContent = () => {
 function App() {
     return (
         <ErrorBoundary>
-            <NotificationProvider>
-                <ConfigProvider>
+            <ConfigProvider>
+                <NotificationProvider>
                     <CommandProvider>
                         <AppContent />
                     </CommandProvider>
-                </ConfigProvider>
-            </NotificationProvider>
+                </NotificationProvider>
+            </ConfigProvider>
         </ErrorBoundary>
     );
 }
