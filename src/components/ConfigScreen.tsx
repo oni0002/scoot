@@ -5,41 +5,7 @@ import { LuArrowLeft, LuX } from 'react-icons/lu';
 import { Config } from '../types';
 import { useConfigContext } from '../context/ConfigContext';
 import { TauriAPI } from '../tauri';
-
-const THEMES = [
-    'light',
-    'dark',
-    'cupcake',
-    'bumblebee',
-    'emerald',
-    'corporate',
-    'synthwave',
-    'retro',
-    'cyberpunk',
-    'valentine',
-    'halloween',
-    'garden',
-    'forest',
-    'aqua',
-    'lofi',
-    'pastel',
-    'fantasy',
-    'wireframe',
-    'black',
-    'luxury',
-    'dracula',
-    'cmyk',
-    'autumn',
-    'business',
-    'acid',
-    'lemonade',
-    'night',
-    'coffee',
-    'winter',
-    'dim',
-    'nord',
-    'sunset',
-];
+import { THEME_OPTIONS, daisyTheme } from '../theme';
 
 const BROWSERS = ['brave', 'chrome', 'firefox', 'edge'] as const;
 
@@ -243,7 +209,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
     return (
         <div
             className="h-screen w-screen flex flex-col bg-base-100 text-base-content scrollbar-gutter-auto"
-            data-theme={local.theme}
+            data-theme={daisyTheme(local.theme)}
         >
             {/* Header */}
             <div className="flex-none p-4 flex items-center gap-2">
@@ -276,9 +242,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         value={local.theme}
                         onChange={(e) => save({ ...local, theme: e.target.value })}
                     >
-                        {THEMES.map((t) => (
-                            <option key={t} value={t}>
-                                {t}
+                        {THEME_OPTIONS.map((t) => (
+                            <option key={t.value} value={t.value}>
+                                {t.label}
                             </option>
                         ))}
                     </select>

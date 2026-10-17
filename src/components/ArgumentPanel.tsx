@@ -66,10 +66,7 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args }) =
                 <dd className="font-mono break-all">
                     {expandTemplate(command.command, args, urlEncode).map((part, i) =>
                         part.filled ? (
-                            <span
-                                key={i}
-                                className="font-bold underline decoration-accent decoration-2 underline-offset-[3px]"
-                            >
+                            <span key={i} className="font-bold text-accent">
                                 {part.text}
                             </span>
                         ) : part.slot ? (

@@ -31,13 +31,13 @@ Compared with other Windows launchers (for example PowerToys Run, Flow Launcher)
 - Aliases take arguments through placeholders (`{$1}`, `{$2}`, `{$*}`); typing an alias followed by a space enters Argument Mode, where the input becomes arguments instead of search.
 - Typing a URL or an absolute path directly offers to open it.
 - Settings: theme, global hotkey (captured in-app), max results, fuzzy threshold, reload interval, ignored commands, and per-source options (bookmarks browser, application directories and extensions, Markdown files).
-- Themes are the 32 daisyUI themes selectable in settings. Whether that set must be preserved is not decided.
+- Themes: `System` (follows the OS), `Light` and `Dark`. Both are Scoot's own: cool neutral greys with a single indigo accent, which marks matched text and the selected alias. Every text and background pair is held to WCAG AA.
 - Platform constraints: Windows-first (Tauri v2 desktop app rendered in WebView2); the UI is web technology (React, Tailwind CSS 4, daisyUI 5).
 - Command execution is ID-based and URL schemes are allow-listed; these are security invariants, not design choices.
 - Domain vocabulary lives in `CONTEXT.md` (Command, Category, Source, Alias, Placeholder, Argument Mode); design decisions are recorded in `docs/adr/`.
 
 ## Brand Commitments
-The name is "Scoot", and the search placeholder reads "Where do you wanna scoot?". No logo system, voice guide, or color identity has been defined beyond that.
+The name is "Scoot", and the search placeholder reads "Where do you wanna scoot?". No logo system or voice guide has been defined beyond that; the color identity is the neutral-plus-indigo pair above.
 
 ## Evidence on Hand
 `README.md` (features, keybindings, configuration, custom commands), `CONTEXT.md`, and `docs/adr/` (alias rename, settings screen design). There are no user testimonials, usage numbers, benchmarks, or press; do not invent any. Memory and size claims ("lightweight") are an intent, not measured figures recorded in the repository.

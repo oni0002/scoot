@@ -27,7 +27,7 @@ The Hotkey field uses a key-capture input: focus the field, press the desired ke
 
 ### Theme: live preview
 
-Selecting a theme immediately applies `data-theme` to the Config Screen itself, giving instant visual feedback. Since save is immediate, the selected theme is the confirmed theme.
+Selecting a theme (System / Light / Dark) immediately applies `data-theme` to the Config Screen itself, giving instant visual feedback. Since save is immediate, the selected theme is the confirmed theme.
 
 ## Consequences
 

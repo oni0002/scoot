@@ -11,6 +11,7 @@ import { getErrorMessage } from './error';
 import { useAppEvents } from './hooks/useAppEvents';
 import { CommandProvider, useCommandContext } from './context/CommandContext';
 import { ConfigProvider, useConfigContext } from './context/ConfigContext';
+import { daisyTheme } from './theme';
 import './App.css';
 
 import { NotificationProvider, useNotificationContext } from './context/NotificationContext';
@@ -189,7 +190,7 @@ const AppContent = () => {
     }
 
     return (
-        <div className="app w-screen h-screen overflow-hidden" data-theme={theme}>
+        <div className="app w-screen h-screen overflow-hidden" data-theme={daisyTheme(theme)}>
             {currentView === 'search' ? (
                 <SearchWindow
                     fuzzyThreshold={fuzzyThreshold}

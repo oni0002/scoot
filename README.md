@@ -36,7 +36,7 @@ Open the Settings screen from the 3-dot menu or via the `Open Settings` preset c
 
 | Setting | Description | Default |
 | --- | --- | --- |
-| Theme | UI color theme | `dark` |
+| Theme | `system` (follows the OS light/dark setting), `light` or `dark` | `system` |
 | Hotkey | Global shortcut to show Scoot | `Alt+Space` |
 | Max Results | Maximum number of search results shown | `30` |
 | Fuzzy Threshold | How strictly queries must match (0.0 = permissive, 1.0 = strict) | `0.4` |

@@ -60,6 +60,10 @@ const externalCommands = (): Command[] => [
     cmd('s3', 'Reload', 'scoot', 'scoot', 'scoot://reload', 'Reload commands and configuration'),
 ];
 
+/** `?theme=<name>` picks the theme, so any theme can be opened by URL while evaluating the UI. */
+const previewTheme = (): string | null =>
+    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('theme');
+
 const defaultConfig = (): Config => ({
     maxResults: 10,
     fuzzyThreshold: 0.5,
@@ -71,7 +75,7 @@ const defaultConfig = (): Config => ({
     },
     markdown: { enabled: false, paths: [] },
     ignored: ['https://example.com/old-bookmark'],
-    theme: 'dim',
+    theme: previewTheme() ?? 'dark',
     hotkey: 'Alt+Space',
     reloadIntervalMinutes: 30,
 });

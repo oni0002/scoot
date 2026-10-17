@@ -1,7 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-pub const DEFAULT_THEME: &str = "dark";
+pub const DEFAULT_THEME: &str = "system";
+const THEMES: [&str; 3] = ["system", "light", "dark"];
 pub const DEFAULT_SHORTCUT: &str = "Alt+Space";
 
 /// Config struct
@@ -16,9 +17,7 @@ pub struct Config {
     pub applications: ApplicationConfig,
     pub markdown: MarkdownConfig,
     pub ignored: Vec<String>,
-    #[schemars(regex(
-        pattern = r"^(light|dark|cupcake|bumblebee|emerald|corporate|synthwave|retro|cyberpunk|valentine|halloween|garden|forest|aqua|lofi|pastel|fantasy|wireframe|black|luxury|dracula|cmyk|autumn|business|acid|lemonade|night|coffee|winter|dim|nord|sunset)$"
-    ))]
+    #[schemars(regex(pattern = r"^(system|light|dark)$"))]
     pub theme: String,
     #[schemars(regex(
         pattern = r"^((Cmd|Command|Ctrl|Control|Alt|Shift|Super|Option|cmd|command|ctrl|control|alt|shift|super|option)\+)+([A-Z0-9a-z]|Space|Enter|Tab|F[1-9]|F1[0-2]|space|enter|tab|f[1-9]|f1[0-2])$"
@@ -104,8 +103,19 @@ impl Default for Config {
 }
 
 impl Config {
+    /// An unknown `theme` (one of the old daisyUI names, say) falls back to the default instead of
+    /// failing the whole config: the theme is cosmetic, and the next save writes a valid value.
     pub fn from_json_with_validation(json_str: &str) -> Result<Self, crate::error::AppError> {
-        crate::validation::parse_and_validate::<Self>(json_str)
+        let mut value: serde_json::Value = json5::from_str(json_str).map_err(|e| {
+            crate::error::AppError::Validation(format!("Failed to parse JSON: {}", e))
+        })?;
+        if let Some(theme) = value.get_mut("theme") {
+            if theme.as_str().is_some_and(|t| !THEMES.contains(&t)) {
+                log::warn!("Unknown theme {}; using '{}'.", theme, DEFAULT_THEME);
+                *theme = serde_json::Value::from(DEFAULT_THEME);
+            }
+        }
+        crate::validation::parse_and_validate::<Self>(&value.to_string())
     }
 }
 
@@ -146,10 +156,19 @@ mod tests {
     }
 
     #[test]
-    fn theme_must_be_a_known_theme() {
-        assert!(parse(r#"{"theme": "nord"}"#).is_ok());
-        assert!(parse(r#"{"theme": "not-a-theme"}"#).is_err());
-        assert!(parse(r#"{"theme": "darkness"}"#).is_err());
+    fn theme_accepts_system_light_and_dark() {
+        for theme in ["system", "light", "dark"] {
+            let config = parse(&format!(r#"{{"theme": "{theme}"}}"#)).unwrap();
+            assert_eq!(config.theme, theme);
+        }
+    }
+
+    #[test]
+    fn unknown_theme_falls_back_to_the_default() {
+        for theme in ["nord", "dim", "not-a-theme", "darkness"] {
+            let config = parse(&format!(r#"{{"theme": "{theme}"}}"#)).unwrap();
+            assert_eq!(config.theme, DEFAULT_THEME);
+        }
     }
 
     #[test]
