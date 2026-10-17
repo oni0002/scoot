@@ -36,6 +36,13 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 - URL コマンドの引数はパーセントエンコードする。置換ロジックは Rust(`Command::substitute_args`)と TS(`substituteArgs`、プレビュー用)の2箇所にあるため、変更時は両方を揃える
 - `source` は実行時のみ保持し、commands.json には保存しない
 
+## UI
+
+- スタイルは Tailwind 4 + daisyUI 5。設定は `tailwind.config.js` ではなく `src/App.css`(`@plugin "daisyui"`)に書く。テーマ名を増やすときは `src-tauri/src/config/domain.rs` の `theme` の正規表現と揃える
+- daisyUI 4 の `form-control` / `label-text` / `input-bordered` は v5 で廃止。フォームのラベルは Tailwind のユーティリティで組む
+- Tailwind 4 の `space-y-*` は、最初の要素の上余白(`margin-top`)を 0 にする。先頭に余白が要る要素(`.divider` など)を置くときは、コンテナに `pt-*` を持たせる
+- 新しいクラスを使うときは、v4 の記憶ではなく v5 のドキュメントで存在を確認する
+
 ## 開発
 
 - 起動: `pnpm tauri:dev`
