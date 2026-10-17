@@ -14,28 +14,6 @@ import { useCommandExecution } from '../hooks/useCommandExecution';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { useWindowEvents } from '../hooks/useWindowEvents';
 
-function menuHandler(action: () => Promise<void>, label: string) {
-    return async (event: React.MouseEvent) => {
-        event.stopPropagation();
-        try {
-            await action();
-        } catch (e) {
-            console.error(`Failed to ${label}:`, e);
-        }
-    };
-}
-
-const handleOpenCommandsJson = menuHandler(() => TauriAPI.openCommandsJson(), 'open commands.json');
-const handleOpenConfigJson = menuHandler(() => TauriAPI.openConfigJson(), 'open config.json');
-const handleShowReadme = menuHandler(() => TauriAPI.openReadme(), 'open README');
-const handleShowAbout = menuHandler(async () => {
-    const version = await TauriAPI.getVersion();
-    await TauriAPI.showMessage(
-        `Scoot - Command Launcher\nVersion ${version}\n\nA fast and efficient command launcher for your desktop.`,
-        'About Scoot',
-    );
-}, 'show About dialog');
-
 interface SearchWindowProps {
     fuzzyThreshold?: number;
     maxResults?: number;
@@ -183,6 +161,34 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         },
         [onCopyCommand],
     );
+
+    // Menu actions run from the ⋮ menu; a failure must reach the user, not just the console.
+    const menuHandler =
+        (action: () => Promise<void>, label: string) => async (event: React.MouseEvent) => {
+            event.stopPropagation();
+            try {
+                await action();
+            } catch (e) {
+                console.error(`Failed to ${label}:`, e);
+                showError(`Could not ${label}: ${getErrorMessage(e)}`);
+            }
+        };
+    const handleOpenCommandsJson = menuHandler(
+        () => TauriAPI.openCommandsJson(),
+        'open commands.json',
+    );
+    const handleOpenConfigJson = menuHandler(() => TauriAPI.openConfigJson(), 'open config.json');
+    const handleShowReadme = menuHandler(() => TauriAPI.openReadme(), 'open the README');
+    const handleShowAbout = menuHandler(async () => {
+        const version = await TauriAPI.getVersion();
+        await TauriAPI.showMessage(
+            `Scoot - Command Launcher
+Version ${version}
+
+A fast and efficient command launcher for your desktop.`,
+            'About Scoot',
+        );
+    }, 'show the About dialog');
 
     const handleReload = useCallback(
         (event: React.MouseEvent) => {

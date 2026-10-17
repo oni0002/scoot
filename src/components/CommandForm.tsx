@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Command } from '../types';
 import { open } from '@tauri-apps/plugin-dialog';
 import { LuFile, LuFolder, LuArrowLeft } from 'react-icons/lu';
@@ -11,46 +11,39 @@ interface CommandFormProps {
     onCancel: () => void;
 }
 
+const toFormData = (command?: Command) => ({
+    id: command?.id ?? '',
+    name: command?.name ?? '',
+    category: command?.category ?? 'url',
+    command: command?.command ?? '',
+    description: command?.description ?? '',
+    alias: command?.alias ?? '',
+    workingDir: command?.workingDir ?? '',
+    showWindow: command?.showWindow ?? false,
+});
+
 export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCancel }) => {
-    const [formData, setFormData] = useState({
-        id: '',
-        name: '',
-        category: '',
-        command: '',
-        description: '',
-        alias: '',
-        workingDir: '',
-        showWindow: false,
-    });
+    const [formData, setFormData] = useState(() => toFormData(command));
+    const [confirmingDiscard, setConfirmingDiscard] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (command) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- initializing form state from props is intentional
-            setFormData({
-                id: command.id,
-                name: command.name,
-                category: command.category,
-                command: command.command,
-                description: command.description,
-                alias: command.alias || '',
-                workingDir: command.workingDir || '',
-                showWindow: command.showWindow || false,
-            });
-        } else {
-            setFormData({
-                id: '',
-                name: '',
-                category: 'url',
-                command: '',
-                description: '',
-                alias: '',
-                workingDir: '',
-                showWindow: false,
-            });
-        }
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- initializing form state from props is intentional
+        setFormData(toFormData(command));
         setErrors({});
+        setConfirmingDiscard(false);
     }, [command]);
+
+    const dirty = JSON.stringify(formData) !== JSON.stringify(toFormData(command));
+
+    // Leaving with unsaved edits asks once; a second Esc (or "Discard") confirms.
+    const requestCancel = useCallback(() => {
+        if (!dirty || confirmingDiscard) {
+            onCancel();
+            return;
+        }
+        setConfirmingDiscard(true);
+    }, [dirty, confirmingDiscard, onCancel]);
 
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
@@ -155,19 +148,19 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
-                onCancel();
+                requestCancel();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onCancel]);
+    }, [requestCancel]);
 
     return (
         <div className="h-screen w-screen flex flex-col bg-base-100 text-base-content scrollbar-gutter-auto">
             {/* Header */}
             <div className="flex-none p-4 flex items-center gap-2">
                 <button
-                    onClick={onCancel}
+                    onClick={requestCancel}
                     className="btn btn-ghost btn-sm btn-square"
                     title="Back"
                     aria-label="Back"
@@ -387,8 +380,28 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                     </div>
                 </div>
 
+                {confirmingDiscard && (
+                    <div
+                        role="alert"
+                        className="mx-4 flex flex-none items-center gap-3 rounded-lg border border-warning p-2 text-sm"
+                    >
+                        <span className="flex-1">Discard your changes?</span>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-xs"
+                            onClick={() => setConfirmingDiscard(false)}
+                            autoFocus
+                        >
+                            Keep editing
+                        </button>
+                        <button type="button" className="btn btn-soft btn-xs" onClick={onCancel}>
+                            Discard
+                        </button>
+                    </div>
+                )}
+
                 <div className="flex-none flex justify-end gap-2 p-4">
-                    <button type="button" onClick={onCancel} className="btn btn-ghost btn-sm">
+                    <button type="button" onClick={requestCancel} className="btn btn-ghost btn-sm">
                         Cancel
                     </button>
                     <button type="submit" className="btn btn-primary btn-sm">
