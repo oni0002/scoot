@@ -53,7 +53,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
             return (
                 <div className="text-center py-8">
                     <div className="text-lg mb-1">{argumentMode.command.name}</div>
-                    <div className="text-xs opacity-70 mb-4">
+                    <div className="text-xs text-muted mb-4">
                         {argumentMode.command.description || 'Enter arguments'}
                     </div>
                     {preview && (
@@ -63,7 +63,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                             </div>
                             <button
                                 onClick={() => handleCopyPreview(preview)}
-                                className="flex-none btn btn-square btn-xs btn-ghost text-base-content/50 hover:text-base-content transition-colors"
+                                className="flex-none btn btn-square btn-xs btn-ghost text-muted hover:text-base-content transition-colors"
                                 title="Copy"
                             >
                                 {copied ? <LuCheck /> : <LuCopy />}
@@ -76,14 +76,14 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
 
         if (query) {
             return (
-                <div className="flex flex-col items-center justify-center py-12 text-base-content/50 h-full select-none">
+                <div className="flex flex-col items-center justify-center py-12 text-muted h-full select-none">
                     <p>No commands found for "{query}"</p>
                 </div>
             );
         }
 
         return (
-            <div className="flex flex-col items-center justify-center py-12 text-base-content/50 h-full select-none">
+            <div className="flex flex-col items-center justify-center py-12 text-muted h-full select-none">
                 <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
                     <div className="text-right">
                         <span>Search</span>
@@ -97,9 +97,9 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                     </div>
                     <div className="flex items-center gap-1">
                         <kbd className="kbd kbd-xs">Tab</kbd>
-                        <span className="opacity-50 mx-1">/</span>
+                        <span className="text-muted mx-1">/</span>
                         <kbd className="kbd kbd-xs">⇧</kbd>
-                        <span className="opacity-50">+</span>
+                        <span className="text-muted">+</span>
                         <kbd className="kbd kbd-xs">Tab</kbd>
                     </div>
 
@@ -115,7 +115,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                     </div>
                     <div className="flex items-center gap-1">
                         <kbd className="kbd kbd-xs">Alt</kbd>
-                        <span className="opacity-50">+</span>
+                        <span className="text-muted">+</span>
                         <kbd className="kbd kbd-xs">Space</kbd>
                     </div>
 

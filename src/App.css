@@ -35,6 +35,18 @@
         sunset;
 }
 
+/* Secondary text. Opacity-based grays (text-base-content/50, opacity-70) fell below WCAG AA in most
+   themes; this token is the only way to dim text, so it can be tuned in one place. */
+@utility text-muted {
+    color: color-mix(in oklab, var(--color-base-content) 85%, transparent);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: color-mix(in oklab, var(--color-base-content) 85%, transparent);
+    opacity: 1;
+}
+
 /* Fix for DaisyUI modal scrollbar-gutter issue */
 /* https://github.com/saadeghi/daisyui/issues/3726 */
 .modal {

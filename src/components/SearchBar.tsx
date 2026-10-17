@@ -56,7 +56,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
                 {/* Dropdown menu */}
                 <div className="dropdown dropdown-end">
-                    <div tabIndex={0} role="button" className="btn btn-ghost btn-sm btn-square p-2">
+                    <div
+                        tabIndex={0}
+                        role="button"
+                        aria-label="More actions"
+                        aria-haspopup="menu"
+                        className="btn btn-ghost btn-sm btn-square p-2"
+                    >
                         <LuEllipsisVertical />
                     </div>
                     <ul
@@ -79,14 +85,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         <li>
                             <a onClick={onReloadCommands}>Reload</a>
                         </li>
-                        <li></li>
+                        <li
+                            role="separator"
+                            aria-hidden="true"
+                            className="my-1 h-px bg-base-content/10 p-0"
+                        ></li>
                         <li>
                             <a onClick={onOpenCommandsJson}>Open commands.json</a>
                         </li>
                         <li>
                             <a onClick={onOpenConfigJson}>Open config.json</a>
                         </li>
-                        <li></li>
+                        <li
+                            role="separator"
+                            aria-hidden="true"
+                            className="my-1 h-px bg-base-content/10 p-0"
+                        ></li>
                         <li>
                             <a onClick={onShowReadme}>Show README</a>
                         </li>
