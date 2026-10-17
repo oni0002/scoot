@@ -75,3 +75,23 @@ describe('ConfigScreen closing', () => {
         expect(onBack).toHaveBeenCalled();
     });
 });
+
+describe('ConfigScreen sections', () => {
+    it('disables a sources controls while its switch is off', async () => {
+        renderScreen();
+        const browser = await screen.findByLabelText('Browser');
+        expect(browser).toBeEnabled();
+        await userEvent.click(screen.getByRole('checkbox', { name: 'Enable Bookmarks' }));
+        expect(browser).toBeDisabled();
+        await userEvent.click(screen.getByRole('checkbox', { name: 'Enable Bookmarks' }));
+        expect(browser).toBeEnabled();
+    });
+
+    it('lets plain Tab leave the hotkey field instead of trapping focus', async () => {
+        renderScreen();
+        const hotkey = await screen.findByLabelText('Hotkey');
+        hotkey.focus();
+        await userEvent.tab();
+        expect(hotkey).not.toHaveFocus();
+    });
+});

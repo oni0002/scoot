@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { LuArrowLeft, LuX } from 'react-icons/lu';
+import { LuArrowLeft } from 'react-icons/lu';
 import { Config } from '../types';
 import { useConfigContext } from '../context/ConfigContext';
 import { useNotificationContext } from '../context/NotificationContext';
 import { getErrorMessage } from '../error';
 import { TauriAPI } from '../tauri';
 import { THEME_OPTIONS, daisyTheme } from '../theme';
+import { ListRow, Row, Section } from './SettingsLayout';
 
 const BROWSERS = ['brave', 'chrome', 'firefox', 'edge'] as const;
 
@@ -82,6 +83,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
 
     const handleHotkeyKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLInputElement>) => {
+            // A plain Tab is never a hotkey (it needs a modifier), so let it move focus on
+            if (e.key === 'Tab' && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) return;
+
             e.preventDefault();
             e.stopPropagation();
 
@@ -223,7 +227,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
             data-theme={daisyTheme(local.theme)}
         >
             {/* Header */}
-            <div className="flex-none p-4 flex items-center gap-2">
+            <div className="flex-none p-4 pb-2 flex items-center gap-2">
                 <button
                     className="btn btn-ghost btn-sm btn-square"
                     onClick={handleBack}
@@ -250,395 +254,221 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
             )}
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-4 scrollbar-gutter-auto space-y-4">
-                {/* General */}
-                <div className="divider divider-start text-sm pb-4">General</div>
-                {/* Theme */}
-                <div className="flex flex-col w-full">
-                    <label
-                        htmlFor="cfg-theme"
-                        className="flex select-none items-center px-1 py-2 justify-between"
-                    >
-                        <span className="text-sm">Theme</span>
-                    </label>
-                    <select
-                        id="cfg-theme"
-                        className="select select-bordered select-sm w-48"
-                        value={local.theme}
-                        onChange={(e) => save({ ...local, theme: e.target.value })}
-                    >
-                        {THEME_OPTIONS.map((t) => (
-                            <option key={t.value} value={t.value}>
-                                {t.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                {/* Hotkey */}
-                <div className="flex flex-col w-full">
-                    <label
-                        htmlFor="cfg-hotkey"
-                        className="flex select-none items-center px-1 py-2 justify-between"
-                    >
-                        <span className="text-sm">Hotkey</span>
-                    </label>
-                    <p className="text-xs text-muted mb-1">
-                        Click to capture. Press a key combo (e.g. Alt+Space) to set.
-                    </p>
-                    <input
-                        id="cfg-hotkey"
-                        ref={hotkeyInputRef}
-                        className="input input-sm w-48 text-center cursor-pointer"
-                        value={capturingHotkey ? 'Press a key...' : local.hotkey}
-                        readOnly
-                        onFocus={() => setCapturingHotkey(true)}
-                        onBlur={() => setCapturingHotkey(false)}
-                        onKeyDown={handleHotkeyKeyDown}
-                    />
-                </div>
-                {/* Max Results */}
-                <div className="flex flex-col w-full">
-                    <label
-                        htmlFor="cfg-max-results"
-                        className="flex select-none items-center px-1 py-2 justify-between"
-                    >
-                        <span className="text-sm">Max Results</span>
-                    </label>
-                    <p className="text-xs text-muted mb-1">
-                        Maximum number of search results to show.
-                    </p>
-                    <input
-                        id="cfg-max-results"
-                        type="number"
-                        min={1}
-                        max={100}
-                        className="input input-sm w-24"
-                        value={local.maxResults}
-                        onChange={(e) =>
-                            save({
-                                ...local,
-                                maxResults: Math.max(1, Math.min(100, Number(e.target.value))),
-                            })
-                        }
-                    />
-                </div>
-                {/* Fuzzy Threshold */}
-                <div className="flex flex-col w-full">
-                    <label
-                        htmlFor="cfg-fuzzy"
-                        className="flex select-none items-center px-1 py-2 justify-between"
-                    >
-                        <span className="text-sm">Fuzzy Threshold</span>
-                    </label>
-                    <p className="text-xs text-muted mb-1">
-                        How strictly queries must match. Higher = stricter. Lower = more permissive.
-                    </p>
-                    <div className="flex items-center gap-2">
-                        <input
-                            id="cfg-fuzzy"
-                            type="range"
-                            min={0}
-                            max={1}
-                            step={0.1}
-                            className="range range-sm w-64"
-                            value={local.fuzzyThreshold}
-                            onChange={(e) =>
-                                save({ ...local, fuzzyThreshold: Number(e.target.value) })
-                            }
-                        />
-                        <span className="text-xs w-6 text-right tabular-nums">
-                            {local.fuzzyThreshold.toFixed(1)}
-                        </span>
-                    </div>
-                </div>
-                {/* Reload Interval */}
-                <div className="flex flex-col w-full">
-                    <label
-                        htmlFor="cfg-reload"
-                        className="flex select-none items-center px-1 py-2 justify-between"
-                    >
-                        <span className="text-sm">Reload Interval (min)</span>
-                    </label>
-                    <p className="text-xs text-muted mb-1">
-                        How often bookmarks and applications are reloaded (in minutes).
-                    </p>
-                    <input
-                        id="cfg-reload"
-                        type="number"
-                        min={1}
-                        className="input input-sm w-24"
-                        value={local.reloadIntervalMinutes}
-                        onChange={(e) =>
-                            save({
-                                ...local,
-                                reloadIntervalMinutes: Math.max(1, Number(e.target.value)),
-                            })
-                        }
-                    />
-                </div>
-                {/* Ignored */}
-                <div className="flex flex-col w-full">
-                    <p
-                        id="cfg-ignored-label"
-                        className="flex select-none items-center px-1 py-2 justify-between"
-                    >
-                        <span className="text-sm">Ignored</span>
-                    </p>
-                    <p className="text-xs text-muted mb-1">
-                        Commands hidden from search results. Add via the ⋮ menu on a search result.
-                    </p>
-                    {local.ignored.length === 0 ? (
-                        <p className="text-xs text-muted px-1">No ignored commands.</p>
-                    ) : (
-                        <ul className="space-y-1" aria-labelledby="cfg-ignored-label">
-                            {local.ignored.map((cmd, i) => (
-                                <li
-                                    key={i}
-                                    className="flex items-center gap-2 text-xs bg-base-200 rounded-sm px-2 py-1"
-                                >
-                                    <span className="flex-1 truncate">{cmd}</span>
-                                    <button
-                                        className="btn btn-ghost btn-xs p-0"
-                                        onClick={() => removeIgnored(i)}
-                                        aria-label={`Remove ${cmd}`}
-                                    >
-                                        <LuX size={12} />
-                                    </button>
-                                </li>
+            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-gutter-auto">
+                <Section title="General">
+                    <Row label="Theme" htmlFor="cfg-theme">
+                        <select
+                            id="cfg-theme"
+                            className="select select-sm w-40"
+                            value={local.theme}
+                            onChange={(e) => save({ ...local, theme: e.target.value })}
+                        >
+                            {THEME_OPTIONS.map((t) => (
+                                <option key={t.value} value={t.value}>
+                                    {t.label}
+                                </option>
                             ))}
-                        </ul>
-                    )}
-                </div>
-
-                {/* Bookmarks */}
-                <div className="divider divider-start text-sm pt-6 pb-4">Bookmarks</div>
-                {/* Enable button */}
-                <div className="flex flex-col">
-                    <label className="flex select-none items-center px-1 py-2 cursor-pointer justify-start gap-4">
-                        <span className="text-sm">Enabled</span>
+                        </select>
+                    </Row>
+                    <Row
+                        label="Hotkey"
+                        htmlFor="cfg-hotkey"
+                        description="Click, then press a key combination. Esc cancels."
+                    >
                         <input
-                            type="checkbox"
-                            className="toggle toggle-sm"
-                            checked={local.bookmarks.enabled}
+                            id="cfg-hotkey"
+                            ref={hotkeyInputRef}
+                            className="input input-sm w-40 text-center cursor-pointer"
+                            value={capturingHotkey ? 'Press a key...' : local.hotkey}
+                            readOnly
+                            onFocus={() => setCapturingHotkey(true)}
+                            onBlur={() => setCapturingHotkey(false)}
+                            onKeyDown={handleHotkeyKeyDown}
+                        />
+                    </Row>
+                    <Row
+                        label="Max results"
+                        htmlFor="cfg-max-results"
+                        description="How many results to show."
+                    >
+                        <input
+                            id="cfg-max-results"
+                            type="number"
+                            min={1}
+                            max={100}
+                            className="input input-sm w-24"
+                            value={local.maxResults}
                             onChange={(e) =>
                                 save({
                                     ...local,
-                                    bookmarks: { ...local.bookmarks, enabled: e.target.checked },
+                                    maxResults: Math.max(1, Math.min(100, Number(e.target.value))),
                                 })
                             }
                         />
-                    </label>
-                </div>
-                {/* Browser */}
-                <div className="flex flex-col w-full">
-                    <label
-                        htmlFor="cfg-browser"
-                        className="flex select-none items-center px-1 py-2 justify-between"
+                    </Row>
+                    <Row
+                        label="Fuzzy threshold"
+                        htmlFor="cfg-fuzzy"
+                        description="Higher is stricter, lower is more permissive."
                     >
-                        <span className="text-sm">Browser</span>
-                    </label>
-                    <select
-                        id="cfg-browser"
-                        className="select select-bordered select-sm w-48"
-                        value={local.bookmarks.browser}
-                        onChange={(e) =>
-                            save({
-                                ...local,
-                                bookmarks: {
-                                    ...local.bookmarks,
-                                    browser: e.target.value as (typeof BROWSERS)[number],
-                                },
-                            })
-                        }
+                        <div className="flex items-center gap-3">
+                            <input
+                                id="cfg-fuzzy"
+                                type="range"
+                                min={0}
+                                max={1}
+                                step={0.1}
+                                className="range w-44"
+                                value={local.fuzzyThreshold}
+                                onChange={(e) =>
+                                    save({ ...local, fuzzyThreshold: Number(e.target.value) })
+                                }
+                            />
+                            <span className="w-6 text-right text-sm tabular-nums">
+                                {local.fuzzyThreshold.toFixed(1)}
+                            </span>
+                        </div>
+                    </Row>
+                    <Row
+                        label="Reload interval"
+                        htmlFor="cfg-reload"
+                        description="Minutes between source reloads."
                     >
-                        {BROWSERS.map((b) => (
-                            <option key={b} value={b}>
-                                {b}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Applications */}
-                <div className="divider divider-start text-sm pt-6 pb-4">Applications</div>
-                {/* Enable button */}
-                <div className="flex flex-col">
-                    <label className="flex select-none items-center px-1 py-2 cursor-pointer justify-start gap-4">
-                        <span className="text-sm">Enabled</span>
                         <input
-                            type="checkbox"
-                            className="toggle toggle-sm"
-                            checked={local.applications.enabled}
+                            id="cfg-reload"
+                            type="number"
+                            min={1}
+                            className="input input-sm w-24"
+                            value={local.reloadIntervalMinutes}
                             onChange={(e) =>
                                 save({
                                     ...local,
-                                    applications: {
-                                        ...local.applications,
-                                        enabled: e.target.checked,
+                                    reloadIntervalMinutes: Math.max(1, Number(e.target.value)),
+                                })
+                            }
+                        />
+                    </Row>
+                </Section>
+
+                <Section
+                    title="Bookmarks"
+                    enabled={{
+                        value: local.bookmarks.enabled,
+                        onChange: (enabled) =>
+                            save({ ...local, bookmarks: { ...local.bookmarks, enabled } }),
+                    }}
+                >
+                    <Row label="Browser" htmlFor="cfg-browser">
+                        <select
+                            id="cfg-browser"
+                            className="select select-sm w-40"
+                            value={local.bookmarks.browser}
+                            onChange={(e) =>
+                                save({
+                                    ...local,
+                                    bookmarks: {
+                                        ...local.bookmarks,
+                                        browser: e.target.value as (typeof BROWSERS)[number],
                                     },
                                 })
                             }
-                        />
-                    </label>
-                </div>
-                {/* Directories */}
-                <div className="flex flex-col w-full">
-                    <p
-                        id="cfg-directories-label"
-                        className="flex select-none items-center px-1 py-2 justify-between"
-                    >
-                        <span className="text-sm">Directories</span>
-                    </p>
-                    <p className="text-xs text-muted mb-1">
-                        Folders to scan for application shortcuts (.lnk files by default).
-                    </p>
-                    <ul className="space-y-1" aria-labelledby="cfg-directories-label">
-                        {local.applications.directories.map((dir, i) => (
-                            <li
-                                key={i}
-                                className="flex items-center gap-2 text-xs bg-base-200 rounded-sm pl-2 pr-1 py-1"
-                            >
-                                <span className="flex-1 truncate">{dir}</span>
-                                <button
-                                    className="btn btn-ghost btn-xs btn-square"
-                                    onClick={() => removeDirectory(i)}
-                                    aria-label={`Remove ${dir}`}
-                                >
-                                    <LuX size={12} />
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                    <button
-                        className="btn btn-soft btn-xs mt-1 self-start"
-                        onClick={addDirectory}
-                        aria-label="Add directory"
-                    >
-                        Add
-                    </button>
-                </div>
-                {/* Extensions */}
-                <div className="flex flex-col w-full">
-                    <p
-                        id="cfg-extensions-label"
-                        className="flex select-none items-center px-1 py-2 justify-between"
-                    >
-                        <span className="text-sm">Extensions</span>
-                    </p>
-                    <p className="text-xs text-muted mb-1">
-                        File extensions treated as applications when scanning directories.
-                    </p>
-                    <ul className="space-y-1" aria-labelledby="cfg-extensions-label">
-                        {local.applications.extensions.map((ext, i) => (
-                            <li
-                                key={i}
-                                className="flex items-center gap-2 text-xs bg-base-200 rounded-sm pl-2 pr-1 py-1"
-                            >
-                                <span className="flex-1 truncate">.{ext}</span>
-                                <button
-                                    className="btn btn-ghost btn-xs btn-square"
-                                    onClick={() => removeExtension(i)}
-                                    aria-label={`Remove .${ext}`}
-                                >
-                                    <LuX size={12} />
-                                </button>
-                            </li>
-                        ))}
-                        {addingExtension && (
-                            <li className="flex items-center gap-2 text-xs bg-base-200 rounded-sm pl-2 pr-1 py-1">
-                                <input
-                                    autoFocus
-                                    autoComplete="off"
-                                    className="input input-xs flex-1 min-w-0 bg-transparent"
-                                    placeholder="e.g. lnk"
-                                    aria-label="New extension"
-                                    value={newExtension}
-                                    onChange={(e) => setNewExtension(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') confirmAddExtension();
-                                        if (e.key === 'Escape') cancelAddExtension();
-                                    }}
-                                />
-                                <button
-                                    className="btn btn-ghost btn-xs"
-                                    onClick={confirmAddExtension}
-                                >
-                                    OK
-                                </button>
-                                <button
-                                    className="btn btn-ghost btn-xs"
-                                    onClick={cancelAddExtension}
-                                >
-                                    Cancel
-                                </button>
-                            </li>
-                        )}
-                    </ul>
-                    <button
-                        className="btn btn-soft btn-xs mt-1 self-start"
-                        onClick={() => setAddingExtension(true)}
-                        aria-label="Add extension"
-                        disabled={addingExtension}
-                    >
-                        Add
-                    </button>
-                </div>
+                        >
+                            {BROWSERS.map((b) => (
+                                <option key={b} value={b}>
+                                    {b}
+                                </option>
+                            ))}
+                        </select>
+                    </Row>
+                </Section>
 
-                {/* Markdown */}
-                <div className="divider divider-start text-sm pt-6 pb-4">Markdown</div>
-                {/* Enable button */}
-                <div className="flex flex-col">
-                    <label className="flex select-none items-center px-1 py-2 cursor-pointer justify-start gap-4">
-                        <span className="text-sm">Enabled</span>
-                        <input
-                            type="checkbox"
-                            className="toggle toggle-sm"
-                            checked={local.markdown.enabled}
-                            onChange={(e) =>
-                                save({
-                                    ...local,
-                                    markdown: { ...local.markdown, enabled: e.target.checked },
-                                })
-                            }
-                        />
-                    </label>
-                </div>
-                {/* Files */}
-                <div className="flex flex-col w-full">
-                    <p
-                        id="cfg-files-label"
-                        className="flex select-none items-center px-1 py-2 justify-between"
-                    >
-                        <span className="text-sm">Files</span>
-                    </p>
-                    <p className="text-xs text-muted mb-1">
-                        Markdown files to extract URL and file-path links from.
-                    </p>
-                    <ul className="space-y-1" aria-labelledby="cfg-files-label">
-                        {local.markdown.paths.map((p, i) => (
-                            <li
-                                key={i}
-                                className="flex items-center gap-2 text-xs bg-base-200 rounded-sm px-2 py-1"
-                            >
-                                <span className="flex-1 truncate">{p}</span>
-                                <button
-                                    className="btn btn-ghost btn-xs p-0"
-                                    onClick={() => removeMarkdownPath(i)}
-                                    aria-label={`Remove ${p}`}
-                                >
-                                    <LuX size={12} />
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                    <button
-                        className="btn btn-soft btn-xs mt-1 self-start"
-                        onClick={addMarkdownPath}
-                        aria-label="Add Markdown file"
-                    >
-                        Add
-                    </button>
-                </div>
+                <Section
+                    title="Applications"
+                    enabled={{
+                        value: local.applications.enabled,
+                        onChange: (enabled) =>
+                            save({ ...local, applications: { ...local.applications, enabled } }),
+                    }}
+                >
+                    <ListRow
+                        label="Directories"
+                        description="Folders scanned for application shortcuts."
+                        items={local.applications.directories}
+                        onRemove={removeDirectory}
+                        addLabel="Add directory"
+                        onAdd={addDirectory}
+                    />
+                    <ListRow
+                        label="Extensions"
+                        description="File types treated as applications."
+                        items={local.applications.extensions.map((ext) => `.${ext}`)}
+                        onRemove={removeExtension}
+                        addLabel="Add extension"
+                        onAdd={() => setAddingExtension(true)}
+                        addDisabled={addingExtension}
+                        extra={
+                            addingExtension && (
+                                <li className="flex items-center gap-2 px-1 py-0.5">
+                                    <input
+                                        autoFocus
+                                        autoComplete="off"
+                                        className="input input-sm flex-1 min-w-0"
+                                        placeholder="e.g. lnk"
+                                        aria-label="New extension"
+                                        value={newExtension}
+                                        onChange={(e) => setNewExtension(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') confirmAddExtension();
+                                            if (e.key === 'Escape') cancelAddExtension();
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={confirmAddExtension}
+                                    >
+                                        OK
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={cancelAddExtension}
+                                    >
+                                        Cancel
+                                    </button>
+                                </li>
+                            )
+                        }
+                    />
+                </Section>
+
+                <Section
+                    title="Markdown"
+                    enabled={{
+                        value: local.markdown.enabled,
+                        onChange: (enabled) =>
+                            save({ ...local, markdown: { ...local.markdown, enabled } }),
+                    }}
+                >
+                    <ListRow
+                        label="Files"
+                        description="Markdown files to read links from."
+                        items={local.markdown.paths}
+                        onRemove={removeMarkdownPath}
+                        addLabel="Add file"
+                        onAdd={addMarkdownPath}
+                    />
+                </Section>
+
+                <Section title="Ignored">
+                    <ListRow
+                        label="Hidden from search"
+                        description="Add from the ⋮ menu on a result."
+                        items={local.ignored}
+                        onRemove={removeIgnored}
+                        emptyText="No ignored commands."
+                    />
+                </Section>
             </div>
         </div>
     );
