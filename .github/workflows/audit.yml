@@ -1,0 +1,26 @@
+name: Audit
+
+# Advisories are published independently of our code, so run on a schedule
+# (and when the lockfile changes) instead of on every PR.
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  push:
+    branches: [main]
+    paths:
+      - src-tauri/Cargo.lock
+  workflow_dispatch:
+
+jobs:
+  cargo-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: Rust security audit
+        run: cargo audit --file src-tauri/Cargo.lock
