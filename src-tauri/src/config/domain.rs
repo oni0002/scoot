@@ -108,3 +108,56 @@ impl Config {
         crate::validation::parse_and_validate::<Self>(json_str)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(json: &str) -> Result<Config, crate::error::AppError> {
+        Config::from_json_with_validation(json)
+    }
+
+    #[test]
+    fn default_config_is_valid() {
+        let json = serde_json::to_string(&Config::default()).unwrap();
+        assert!(parse(&json).is_ok());
+    }
+
+    #[test]
+    fn empty_object_falls_back_to_defaults() {
+        let config = parse("{}").unwrap();
+        assert_eq!(config.max_results, Config::default().max_results);
+    }
+
+    #[test]
+    fn max_results_must_be_within_range() {
+        assert!(parse(r#"{"maxResults": 1}"#).is_ok());
+        assert!(parse(r#"{"maxResults": 100}"#).is_ok());
+        assert!(parse(r#"{"maxResults": 0}"#).is_err());
+        assert!(parse(r#"{"maxResults": 101}"#).is_err());
+    }
+
+    #[test]
+    fn fuzzy_threshold_must_be_within_range() {
+        assert!(parse(r#"{"fuzzyThreshold": 0.0}"#).is_ok());
+        assert!(parse(r#"{"fuzzyThreshold": 1.0}"#).is_ok());
+        assert!(parse(r#"{"fuzzyThreshold": -0.1}"#).is_err());
+        assert!(parse(r#"{"fuzzyThreshold": 1.1}"#).is_err());
+    }
+
+    #[test]
+    fn theme_must_be_a_known_theme() {
+        assert!(parse(r#"{"theme": "nord"}"#).is_ok());
+        assert!(parse(r#"{"theme": "not-a-theme"}"#).is_err());
+        assert!(parse(r#"{"theme": "darkness"}"#).is_err());
+    }
+
+    #[test]
+    fn hotkey_must_match_the_pattern() {
+        assert!(parse(r#"{"hotkey": "Ctrl+Shift+K"}"#).is_ok());
+        assert!(parse(r#"{"hotkey": "Alt+Space"}"#).is_ok());
+        assert!(parse(r#"{"hotkey": "Space"}"#).is_err());
+        assert!(parse(r#"{"hotkey": "Alt+"}"#).is_err());
+        assert!(parse(r#"{"hotkey": "garbage"}"#).is_err());
+    }
+}
