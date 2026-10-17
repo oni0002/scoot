@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { LuPlus, LuX } from 'react-icons/lu';
+import { LuX } from 'react-icons/lu';
 
 interface SectionProps {
     title: string;
@@ -120,11 +120,10 @@ export const ListRow: React.FC<ListRowProps> = ({
             {addLabel && (
                 <button
                     type="button"
-                    className="btn btn-ghost btn-xs mt-2 text-accent"
+                    className="btn btn-primary btn-xs mt-2"
                     onClick={onAdd}
                     disabled={addDisabled}
                 >
-                    <LuPlus size={14} aria-hidden="true" />
                     {addLabel}
                 </button>
             )}
