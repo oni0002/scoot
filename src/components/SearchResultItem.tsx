@@ -32,7 +32,8 @@ const highlightMatches = (text: string, matches: SearchResult['matches']): React
     nameMatch.indices.forEach(([start, end], i) => {
         if (lastIndex < start) nodes.push(text.slice(lastIndex, start));
         nodes.push(
-            <span key={i} className="font-bold text-accent">
+            // Runs of 2+ characters are bold; scattered single letters are accent-coloured only
+            <span key={i} className={end > start ? 'font-bold text-accent' : 'text-accent'}>
                 {text.slice(start, end + 1)}
             </span>,
         );

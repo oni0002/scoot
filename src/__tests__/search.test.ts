@@ -113,13 +113,12 @@ describe('fuseSearch highlights', () => {
         description: '',
     });
 
-    it('drops one-letter scattered hits but keeps runs of two or more', () => {
-        const commands = [cmd('daisyUI Documentation')];
-        const fuse = createFuse(commands, 0.5);
-        const [hit] = fuseSearch(fuse, 'doc', commands, 10);
+    it('keeps scattered one-letter hits so every result shows why it matched', () => {
+        const commands = [cmd('Discord Inc')];
+        const fuse = createFuse(commands, 0.6);
+        const [hit] = fuseSearch(fuse, 'dc', commands, 10);
         const runs = hit.matches.flatMap((m) => m.indices);
         expect(runs.length).toBeGreaterThan(0);
-        expect(runs.every(([s, e]) => e - s + 1 >= 2)).toBe(true);
     });
 
     it('still highlights when the query itself is one letter', () => {
