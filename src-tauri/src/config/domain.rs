@@ -1,5 +1,9 @@
+use jsonschema::Validator;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
+
+static CONFIG_SCHEMA: LazyLock<Validator> = LazyLock::new(crate::validation::compile::<Config>);
 
 pub const DEFAULT_THEME: &str = "system";
 const THEMES: [&str; 3] = ["system", "light", "dark"];
@@ -106,16 +110,18 @@ impl Config {
     /// An unknown `theme` (one of the old daisyUI names, say) falls back to the default instead of
     /// failing the whole config: the theme is cosmetic, and the next save writes a valid value.
     pub fn from_json_with_validation(json_str: &str) -> Result<Self, crate::error::AppError> {
-        let mut value: serde_json::Value = json5::from_str(json_str).map_err(|e| {
-            crate::error::AppError::Validation(format!("Failed to parse JSON: {}", e))
-        })?;
+        let mut value: serde_json::Value = crate::validation::parse(json_str)?;
         if let Some(theme) = value.get_mut("theme") {
             if theme.as_str().is_some_and(|t| !THEMES.contains(&t)) {
                 log::warn!("Unknown theme {}; using '{}'.", theme, DEFAULT_THEME);
                 *theme = serde_json::Value::from(DEFAULT_THEME);
             }
         }
-        crate::validation::parse_and_validate::<Self>(&value.to_string())
+        let config: Self = serde_json::from_value(value).map_err(|e| {
+            crate::error::AppError::Validation(format!("Failed to parse JSON: {}", e))
+        })?;
+        crate::validation::validate(&CONFIG_SCHEMA, &config)?;
+        Ok(config)
     }
 }
 

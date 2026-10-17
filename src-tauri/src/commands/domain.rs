@@ -1,5 +1,10 @@
+use jsonschema::Validator;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
+
+static COMMANDS_SCHEMA: LazyLock<Validator> =
+    LazyLock::new(crate::validation::compile::<Vec<Command>>);
 
 // Category constants (execution type)
 pub const CATEGORY_URL: &str = "url";
@@ -53,7 +58,7 @@ pub struct Command {
 
 /// Deserialize JSON string with schema validation
 pub fn deserialize_json(json_str: &str) -> Result<Vec<Command>, crate::error::AppError> {
-    crate::validation::parse_and_validate::<Vec<Command>>(json_str)
+    crate::validation::parse_and_validate(json_str, &COMMANDS_SCHEMA)
 }
 
 /// Get the built-in commands for Scoot
