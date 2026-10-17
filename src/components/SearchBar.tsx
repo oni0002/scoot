@@ -1,6 +1,7 @@
 import React from 'react';
 import { LuEllipsisVertical, LuSearch, LuChevronRight } from 'react-icons/lu';
 import { Command } from '../types';
+import { RESULT_LIST_ID } from '../constants';
 
 interface SearchBarProps {
     query: string;
@@ -17,6 +18,10 @@ interface SearchBarProps {
     onShowReadme: (e: React.MouseEvent) => void;
     onShowAbout: (e: React.MouseEvent) => void;
     onOpenConfig?: () => void;
+
+    // Combobox wiring: the input drives the result listbox without taking focus away from it
+    hasResults: boolean;
+    activeDescendantId?: string;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -32,6 +37,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     onShowReadme,
     onShowAbout,
     onOpenConfig,
+    hasResults,
+    activeDescendantId,
 }) => {
     return (
         <div className="shrink-0 mb-4 relative">
@@ -51,6 +58,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         }
                         className="grow"
                         autoFocus
+                        role="combobox"
+                        aria-label="Search commands"
+                        aria-autocomplete="list"
+                        aria-expanded={hasResults}
+                        aria-controls={RESULT_LIST_ID}
+                        aria-activedescendant={activeDescendantId}
                     />
                 </label>
 

@@ -1,7 +1,8 @@
 import React from 'react';
 import { LuEllipsisVertical, LuCopy } from 'react-icons/lu';
 import { Command, SearchResult } from '../types';
-import { DIRECT_OPEN_ID } from '../constants';
+import { resultOptionId } from '../constants';
+import { ROW_ACTIONS, RowAction, rowActionsFor } from '../rowActions';
 
 interface SearchResultItemProps {
     result: SearchResult;
@@ -54,47 +55,80 @@ export const SearchResultItem = React.memo(
         onIgnore,
         totalCount,
     }: SearchResultItemProps) => {
+        const { command } = result;
+        const actions = rowActionsFor(command);
+        // The selected row shows its actions too, so keyboard users can see what Ctrl+E/D/I act on
+        const showActions = isHovered || isSelected;
+
+        const runAction = (action: RowAction, event: React.MouseEvent) => {
+            const handlers: Record<RowAction, typeof onCopy> = {
+                copy: onCopy,
+                edit: onEdit,
+                delete: onDelete,
+                ignore: onIgnore,
+            };
+            handlers[action]?.(command, event);
+        };
+
+        // role="none" wrapper: buttons cannot live inside an option, so the actions sit beside it
         return (
             <div
                 data-result-index={index}
-                className={`rounded-lg p-2 cursor-pointer flex items-center relative ${
-                    isSelected ? 'bg-base-content/10' : 'bg-base-100 hover:bg-base-200'
-                }`}
-                onClick={(e) => onClick(index, e)}
+                role="none"
+                className="relative"
                 onMouseEnter={() => onMouseEnter(index)}
                 onMouseLeave={onMouseLeave}
             >
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 text-sm min-w-0">
-                        <div className="font-medium truncate">
-                            {highlightMatches(result.command.name, result.matches)}
-                        </div>
-                        <div
-                            className={`text-xs truncate flex-1 min-w-0 shrink ${isSelected ? '' : 'text-muted'}`}
-                        >
-                            {result.command.description || result.command.command}
-                        </div>
-                    </div>
-                </div>
-
                 <div
-                    className={`flex items-center gap-2 ml-2 shrink-0 ${isHovered ? 'mr-14' : ''}`}
+                    id={resultOptionId(index)}
+                    role="option"
+                    aria-selected={isSelected}
+                    className={`rounded-lg p-2 cursor-pointer flex items-center ${
+                        isSelected
+                            ? 'bg-base-content/10 ring-1 ring-inset ring-base-content/30'
+                            : 'bg-base-100 hover:bg-base-200'
+                    }`}
+                    onClick={(e) => onClick(index, e)}
                 >
-                    {result.command.alias && (
-                        <div className="badge badge-sm badge-primary">{result.command.alias}</div>
-                    )}
-                    <div className="badge badge-sm badge-outline">
-                        {result.command.source || result.command.category}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 text-sm min-w-0">
+                            <div className="font-medium truncate">
+                                {highlightMatches(command.name, result.matches)}
+                            </div>
+                            <div
+                                className={`text-xs truncate flex-1 min-w-0 shrink ${isSelected ? '' : 'text-muted'}`}
+                            >
+                                {command.description || command.command}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        className={`flex items-center gap-2 ml-2 shrink-0 ${showActions ? 'mr-14' : ''}`}
+                    >
+                        {command.alias && (
+                            <div className="badge badge-sm badge-primary">{command.alias}</div>
+                        )}
+                        <div className="badge badge-sm badge-outline">
+                            {command.source || command.category}
+                        </div>
                     </div>
                 </div>
 
-                {/* Quick Actions & Dropdown menu */}
-                {isHovered && (
-                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 z-[1] flex items-center gap-1">
+                {/* Mouse convenience only: keyboard and screen-reader users have Ctrl+C/E/D/I,
+                    listed in the hint bar, so these controls stay out of the tab order and tree. */}
+                {showActions && (
+                    <div
+                        aria-hidden="true"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 z-[1] flex items-center gap-1"
+                    >
                         <button
+                            type="button"
+                            tabIndex={-1}
                             className="btn btn-ghost btn-xs btn-square p-1"
-                            onClick={(e) => onCopy?.(result.command, e)}
+                            onClick={(e) => onCopy?.(command, e)}
                             title="Copy"
+                            aria-label={`Copy ${command.name}`}
                         >
                             <LuCopy />
                         </button>
@@ -102,42 +136,35 @@ export const SearchResultItem = React.memo(
                             className={`dropdown ${totalCount > 4 && index >= totalCount - 2 ? 'dropdown-top' : ''} dropdown-end`}
                         >
                             <div
-                                tabIndex={0}
+                                tabIndex={-1}
                                 role="button"
+                                aria-label={`More actions for ${command.name}`}
+                                aria-haspopup="menu"
                                 className="btn btn-ghost btn-xs btn-square p-1"
                             >
                                 <LuEllipsisVertical />
                             </div>
                             <ul
-                                tabIndex={0}
-                                className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-40 p-2 shadow-sm"
+                                tabIndex={-1}
+                                className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-48 p-2 shadow-sm"
                             >
-                                <li>
-                                    <a onClick={(e) => onCopy?.(result.command, e)}>Copy</a>
-                                </li>
-                                {result.command.source === 'user' &&
-                                    result.command.id !== DIRECT_OPEN_ID && (
-                                        <>
-                                            <li>
-                                                <a onClick={(e) => onEdit?.(result.command, e)}>
-                                                    Edit
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a
-                                                    className="text-error"
-                                                    onClick={(e) => onDelete?.(result.command, e)}
-                                                >
-                                                    Delete
-                                                </a>
-                                            </li>
-                                        </>
-                                    )}
-                                {result.command.source !== 'user' && (
-                                    <li>
-                                        <a onClick={(e) => onIgnore?.(result.command, e)}>Ignore</a>
+                                {actions.map((action) => (
+                                    <li key={action}>
+                                        <button
+                                            type="button"
+                                            tabIndex={-1}
+                                            className={
+                                                ROW_ACTIONS[action].danger ? 'text-error' : ''
+                                            }
+                                            onClick={(e) => runAction(action, e)}
+                                        >
+                                            {ROW_ACTIONS[action].label}
+                                            <kbd className="kbd kbd-xs ml-auto">
+                                                {ROW_ACTIONS[action].shortcut}
+                                            </kbd>
+                                        </button>
                                     </li>
-                                )}
+                                ))}
                             </ul>
                         </div>
                     </div>

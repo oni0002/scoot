@@ -3,11 +3,13 @@ import React from 'react';
 import { KEYBOARD_SHORTCUTS } from '../constants';
 import { TauriAPI } from '../tauri';
 import { SearchMode } from './useSearchState';
+import { ROW_ACTION_BY_KEY, RowAction } from '../rowActions';
 
 interface UseKeyboardNavigationProps {
     moveSelection: (direction: 'up' | 'down') => void;
     executeCommand: () => void;
     copySelectedCommand?: () => void;
+    onRowAction?: (action: Exclude<RowAction, 'copy'>) => void;
     resetState: () => void;
     query: string;
     setQuery: (query: string) => void;
@@ -20,6 +22,7 @@ export const useKeyboardNavigation = ({
     moveSelection,
     executeCommand,
     copySelectedCommand,
+    onRowAction,
     resetState,
     query,
     setQuery,
@@ -47,6 +50,12 @@ export const useKeyboardNavigation = ({
                         e.preventDefault();
                         copySelectedCommand?.();
                     }
+                    return;
+                }
+                const rowAction = e.altKey ? undefined : ROW_ACTION_BY_KEY[e.key.toLowerCase()];
+                if (rowAction) {
+                    e.preventDefault();
+                    onRowAction?.(rowAction);
                     return;
                 }
             }
@@ -79,6 +88,7 @@ export const useKeyboardNavigation = ({
             moveSelection,
             executeCommand,
             copySelectedCommand,
+            onRowAction,
             searchMode,
             query,
             resetState,

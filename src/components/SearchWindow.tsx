@@ -1,10 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { Command } from '../types';
 import { TauriAPI } from '../tauri';
-import { NOTIFICATION_DURATION } from '../constants';
+import { NOTIFICATION_DURATION, resultOptionId } from '../constants';
+import { RowAction, rowActionsFor } from '../rowActions';
 import { getErrorMessage } from '../error';
 import { SearchBar } from './SearchBar';
 import { SearchResultList } from './SearchResultList';
+import { SearchHints } from './SearchHints';
 import { useCommandContext } from '../context/CommandContext';
 import { useNotificationContext } from '../context/NotificationContext';
 import { useSearchState } from '../hooks/useSearchState';
@@ -113,10 +115,22 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         if (command) onCopyCommand?.(command);
     }, [selectedIndex, results, onCopyCommand]);
 
+    const handleRowAction = useCallback(
+        (action: Exclude<RowAction, 'copy'>) => {
+            const command = results[selectedIndex]?.command;
+            if (!command || !rowActionsFor(command).includes(action)) return;
+            if (action === 'edit') onEditCommand?.(command);
+            else if (action === 'delete') onDeleteCommand?.(command);
+            else onIgnoreCommand?.(command);
+        },
+        [results, selectedIndex, onEditCommand, onDeleteCommand, onIgnoreCommand],
+    );
+
     const { handleKeyDown } = useKeyboardNavigation({
         moveSelection: searchState.moveSelection,
         executeCommand: runSelectedCommand,
         copySelectedCommand: handleCopySelectedCommand,
+        onRowAction: handleRowAction,
         resetState,
         query,
         setQuery,
@@ -193,7 +207,14 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
                 onShowReadme={handleShowReadme}
                 onShowAbout={handleShowAbout}
                 onOpenConfig={onOpenConfig}
+                hasResults={results.length > 0}
+                activeDescendantId={results.length > 0 ? resultOptionId(selectedIndex) : undefined}
             />
+
+            {/* Announces the result count to screen readers as the query changes */}
+            <div className="sr-only" role="status" aria-live="polite">
+                {searchMode.mode === 'search' && query.trim() ? `${results.length} results` : ''}
+            </div>
 
             <SearchResultList
                 results={results}
@@ -219,6 +240,11 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
                 onEdit={handleEditCommand}
                 onDelete={handleDeleteCommand}
                 onIgnore={onIgnoreCommand}
+            />
+
+            <SearchHints
+                mode={searchMode.mode}
+                command={searchMode.mode === 'search' ? results[selectedIndex]?.command : undefined}
             />
         </div>
     );

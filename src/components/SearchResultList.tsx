@@ -3,6 +3,7 @@ import { LuCopy, LuCheck } from 'react-icons/lu';
 import { Command, SearchResult } from '../types';
 import { SearchResultItem } from './SearchResultItem';
 import { substituteArgs } from '../command';
+import { RESULT_LIST_ID } from '../constants';
 
 interface SearchResultListProps {
     results: SearchResult[];
@@ -138,7 +139,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                 </div>
             ) : (
                 // Distinct key forces a remount so orphaned rows can't linger into other modes
-                <div key="results">
+                <div key="results" id={RESULT_LIST_ID} role="listbox" aria-label="Search results">
                     {results.map((result, index) => (
                         <SearchResultItem
                             key={result.command.id}
