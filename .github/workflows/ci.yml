@@ -24,10 +24,9 @@ jobs:
           version: 9
           run_install: false
 
+      # Version and components come from rust-toolchain.toml
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
+        run: rustup toolchain install
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
