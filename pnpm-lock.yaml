@@ -14,12 +14,6 @@ importers:
       '@tauri-apps/plugin-dialog':
         specifier: ^2.8.3
         version: 2.8.3
-      '@tauri-apps/plugin-global-shortcut':
-        specifier: ^2.4.1
-        version: 2.4.1
-      '@tauri-apps/plugin-opener':
-        specifier: ^2.7.2
-        version: 2.7.2
       fuse.js:
         specifier: ^7.5.0
         version: 7.5.0
@@ -1057,12 +1051,6 @@ packages:
 
   '@tauri-apps/plugin-dialog@2.8.3':
     resolution: {integrity: sha512-Hd/yBfk2R5v2MFrz/0VArSXeh8xKLLXGunqSiTtcHKn1zNZwaKujuA0VSwUvNfwC4hDoF1PveS+gBDNe3nHspw==}
-
-  '@tauri-apps/plugin-global-shortcut@2.4.1':
-    resolution: {integrity: sha512-NVCoQ0ShDFncsj9f8iAzhRBTnsJj5sf60vOjcV6emeQHzmEFd6+RXH+fUHHuJAbEYP4mdT2vGlvVOG7tMr/e8g==}
-
-  '@tauri-apps/plugin-opener@2.7.2':
-    resolution: {integrity: sha512-LyybP1VSzTMQiaFYcsbAse47KpivlyXdLZMQzGLEnkgQacGESnpjAfFoQ6h5sqWgAdZDH9szYjPzHMpv0Sz+TQ==}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -4196,14 +4184,6 @@ snapshots:
       '@tauri-apps/cli-win32-x64-msvc': 2.12.3
 
   '@tauri-apps/plugin-dialog@2.8.3':
-    dependencies:
-      '@tauri-apps/api': 2.12.4
-
-  '@tauri-apps/plugin-global-shortcut@2.4.1':
-    dependencies:
-      '@tauri-apps/api': 2.12.4
-
-  '@tauri-apps/plugin-opener@2.7.2':
     dependencies:
       '@tauri-apps/api': 2.12.4
 

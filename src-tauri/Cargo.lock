@@ -516,10 +516,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aa79e62e7697b8e29b513a68abacf485adcd1fe8284a4316c5ae868e6633327"
 dependencies = [
  "iana-time-zone",
- "js-sys",
  "num-traits",
  "serde",
- "wasm-bindgen",
  "windows-link",
 ]
 
@@ -3396,7 +3394,6 @@ dependencies = [
 name = "scoot"
 version = "0.2.10"
 dependencies = [
- "chrono",
  "dirs",
  "json5",
  "jsonschema",
@@ -3414,7 +3411,6 @@ dependencies = [
  "tauri-plugin-log",
  "tauri-plugin-opener",
  "tauri-plugin-single-instance",
- "tempfile",
  "thiserror 2.0.21",
  "tokio",
  "walkdir",
@@ -4397,9 +4393,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio 1.2.4",
- "parking_lot",
  "pin-project-lite",
- "signal-hook-registry",
  "socket2",
  "tokio-macros",
  "windows-sys 0.61.2",
