@@ -46,18 +46,10 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 
 グローバル設定(`~/.claude/CLAUDE.md`)に従う。
 
-## Agent skills
+## ドキュメント
 
-`docs/` と `CONTEXT.md` は `.gitignore` 対象で、手元にのみ存在する。
+- 用語集(下記で取り込み済み)。用語は `Avoid` に挙げた言い換えを使わない
+- 設計判断の記録は `docs/adr/`。関連する領域を触る前に読む
+- Issues は GitHub Issues(`github.com/oni0002/scoot`)
 
-### Issue tracker
-
-Issues live in GitHub Issues (`github.com/oni0002/scoot`). See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Default label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context repo — `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+@CONTEXT.md
