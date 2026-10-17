@@ -10,11 +10,12 @@ describe('QuickGuide', () => {
         expect(screen.queryByText('Alt')).not.toBeInTheDocument();
     });
 
-    it('covers arguments, direct open and copy', () => {
+    it('lists only what the hint bar does not show', () => {
         render(<QuickGuide hotkey="Alt+Space" />);
         expect(screen.getByText('Arguments')).toBeInTheDocument();
         expect(screen.getByText('Open')).toBeInTheDocument();
-        expect(screen.getByText('Copy')).toBeInTheDocument();
+        expect(screen.queryByText('Run')).not.toBeInTheDocument();
+        expect(screen.queryByText('Copy')).not.toBeInTheDocument();
     });
 });
 

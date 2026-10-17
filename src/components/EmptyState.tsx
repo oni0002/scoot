@@ -16,7 +16,6 @@ const Or: React.FC = () => <span aria-hidden="true">/</span>;
 /** What the launcher can do, shown while the search field is empty. */
 export const QuickGuide: React.FC<{ hotkey: string }> = ({ hotkey }) => {
     const rows: Array<[label: string, body: React.ReactNode]> = [
-        ['Search', <span key="s">Type part of a name or alias</span>],
         [
             'Move',
             <span key="m" className="flex items-center gap-1">
@@ -25,7 +24,6 @@ export const QuickGuide: React.FC<{ hotkey: string }> = ({ hotkey }) => {
                 <Keys keys={['Shift', 'Tab']} />
             </span>,
         ],
-        ['Run', <Keys key="r" keys={['Enter']} />],
         [
             'Arguments',
             <span key="a">
@@ -33,8 +31,6 @@ export const QuickGuide: React.FC<{ hotkey: string }> = ({ hotkey }) => {
             </span>,
         ],
         ['Open', <span key="o">Type a URL or a file path</span>],
-        ['Copy', <Keys key="c" keys={['Ctrl', 'C']} />],
-        ['Close', <Keys key="x" keys={['Esc']} />],
         ['Show / hide', <Keys key="h" keys={hotkey.split('+')} />],
     ];
 
