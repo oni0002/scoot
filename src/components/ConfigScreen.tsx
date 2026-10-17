@@ -408,11 +408,11 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         addDisabled={addingExtension}
                         extra={
                             addingExtension && (
-                                <li className="flex items-center gap-2 px-1 py-0.5">
+                                <li className="flex items-center gap-2 rounded-md bg-base-100 py-1 pl-2 pr-1">
                                     <input
                                         autoFocus
                                         autoComplete="off"
-                                        className="input input-sm flex-1 min-w-0"
+                                        className="input input-xs flex-1 min-w-0 bg-transparent"
                                         placeholder="e.g. lnk"
                                         aria-label="New extension"
                                         value={newExtension}
@@ -424,14 +424,14 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                                     />
                                     <button
                                         type="button"
-                                        className="btn btn-ghost btn-sm"
+                                        className="btn btn-ghost btn-xs"
                                         onClick={confirmAddExtension}
                                     >
                                         OK
                                     </button>
                                     <button
                                         type="button"
-                                        className="btn btn-ghost btn-sm"
+                                        className="btn btn-ghost btn-xs"
                                         onClick={cancelAddExtension}
                                     >
                                         Cancel

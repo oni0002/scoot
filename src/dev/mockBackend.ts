@@ -74,7 +74,10 @@ const defaultConfig = (): Config => ({
         extensions: ['lnk'],
     },
     markdown: { enabled: false, paths: [] },
-    ignored: ['https://example.com/old-bookmark'],
+    ignored: [
+        'https://example.com/old-bookmark',
+        'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Administrative Tools\\dfrgui.lnk',
+    ],
     theme: previewTheme() ?? 'dark',
     hotkey: 'Alt+Space',
     reloadIntervalMinutes: 30,

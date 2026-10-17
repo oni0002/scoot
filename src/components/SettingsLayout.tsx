@@ -30,7 +30,7 @@ export const Section: React.FC<SectionProps> = ({ title, enabled, children }) =>
             {/* A disabled fieldset disables every control inside it, natively */}
             <fieldset
                 disabled={enabled ? !enabled.value : false}
-                className="divide-y divide-base-content/10 rounded-lg bg-base-content/[0.06] disabled:opacity-60"
+                className="min-w-0 divide-y divide-base-content/10 rounded-lg bg-base-content/[0.06] disabled:opacity-60"
             >
                 {children}
             </fieldset>
@@ -92,15 +92,19 @@ export const ListRow: React.FC<ListRowProps> = ({
                 {label}
             </p>
             {description && <p className="text-xs text-subtle">{description}</p>}
-            <ul className="mt-2 -mx-1" aria-labelledby={labelId}>
+            <ul className="mt-2 space-y-1" aria-labelledby={labelId}>
                 {items.map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 px-1 py-0.5">
-                        <span className="min-w-0 flex-1 truncate font-mono text-sm" title={item}>
+                    // Paths wrap instead of truncating: the end of a path is the part that matters
+                    <li
+                        key={i}
+                        className="flex items-start gap-2 rounded-md bg-base-100 py-1 pl-2 pr-1"
+                    >
+                        <span className="min-w-0 flex-1 break-all py-0.5 font-mono text-xs leading-5">
                             {item}
                         </span>
                         <button
                             type="button"
-                            className="btn btn-ghost btn-sm btn-square"
+                            className="btn btn-ghost btn-xs btn-square flex-none"
                             onClick={() => onRemove(i)}
                             aria-label={`Remove ${item}`}
                         >
@@ -116,7 +120,7 @@ export const ListRow: React.FC<ListRowProps> = ({
             {addLabel && (
                 <button
                     type="button"
-                    className="btn btn-soft btn-sm mt-1"
+                    className="btn btn-soft btn-sm mt-2"
                     onClick={onAdd}
                     disabled={addDisabled}
                 >
