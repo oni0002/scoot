@@ -4,6 +4,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { LuFile, LuFolder, LuArrowLeft } from 'react-icons/lu';
 import { TauriAPI } from '../tauri';
 import { hasPlaceholders } from '../command';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface CommandFormProps {
     command?: Command; // If provided, we're editing; otherwise, we're adding
@@ -36,14 +37,14 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
 
     const dirty = JSON.stringify(formData) !== JSON.stringify(toFormData(command));
 
-    // Leaving with unsaved edits asks once; a second Esc (or "Discard") confirms.
+    // Leaving with unsaved edits asks first; the dialog's own Esc means "keep editing".
     const requestCancel = useCallback(() => {
-        if (!dirty || confirmingDiscard) {
+        if (dirty) {
+            setConfirmingDiscard(true);
+        } else {
             onCancel();
-            return;
         }
-        setConfirmingDiscard(true);
-    }, [dirty, confirmingDiscard, onCancel]);
+    }, [dirty, onCancel]);
 
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
@@ -147,13 +148,15 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
     // Keyboard navigation for Escape key to cancel
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && !confirmingDiscard) {
+                // Without this the same Esc would also close the dialog that requestCancel opens
+                e.preventDefault();
                 requestCancel();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [requestCancel]);
+    }, [requestCancel, confirmingDiscard]);
 
     return (
         <div className="h-screen w-screen flex flex-col bg-base-100 text-base-content scrollbar-gutter-auto">
@@ -380,26 +383,6 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                     </div>
                 </div>
 
-                {confirmingDiscard && (
-                    <div
-                        role="alert"
-                        className="mx-4 flex flex-none items-center gap-3 rounded-lg border border-warning p-2 text-sm"
-                    >
-                        <span className="flex-1">Discard your changes?</span>
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-xs"
-                            onClick={() => setConfirmingDiscard(false)}
-                            autoFocus
-                        >
-                            Keep editing
-                        </button>
-                        <button type="button" className="btn btn-soft btn-xs" onClick={onCancel}>
-                            Discard
-                        </button>
-                    </div>
-                )}
-
                 <div className="flex-none flex justify-end gap-2 p-4">
                     <button type="button" onClick={requestCancel} className="btn btn-ghost btn-sm">
                         Cancel
@@ -409,6 +392,18 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                     </button>
                 </div>
             </form>
+
+            <ConfirmDialog
+                isOpen={confirmingDiscard}
+                title="Discard changes?"
+                confirmLabel="Discard"
+                cancelLabel="Keep editing"
+                destructive
+                onConfirm={onCancel}
+                onCancel={() => setConfirmingDiscard(false)}
+            >
+                Your edits to this command have not been saved.
+            </ConfirmDialog>
         </div>
     );
 };

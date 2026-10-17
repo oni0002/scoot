@@ -17,6 +17,11 @@ export const useWindowEvents = (
             const target = e.target as HTMLElement;
             if (target.closest('.dropdown, .dropdown-content')) return;
 
+            // A click on empty space (or one that closes the menu) would leave focus on nothing
+            if (!target.closest('button, a, input, select, textarea, [tabindex]')) {
+                inputRef.current?.focus();
+            }
+
             const searchWindow = document.querySelector('.h-full');
             if (searchWindow) {
                 const rect = searchWindow.getBoundingClientRect();
@@ -34,7 +39,7 @@ export const useWindowEvents = (
 
         document.addEventListener('click', handleDocumentClick, true);
         return () => document.removeEventListener('click', handleDocumentClick, true);
-    }, [isDialogOpen]);
+    }, [isDialogOpen, inputRef]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

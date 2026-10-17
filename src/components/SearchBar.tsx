@@ -80,6 +80,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     </div>
                     <ul
                         tabIndex={0}
+                        // Picking an item hands focus back to the search field, which also closes the menu
+                        onClickCapture={() => inputRef.current?.focus()}
                         className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-20 w-48 p-2 shadow-sm"
                     >
                         <li>

@@ -16,7 +16,7 @@ const Or: React.FC = () => <span aria-hidden="true">/</span>;
 /** The three things a first-time user needs; the hint bar covers the rest once something is selected. */
 export const QuickGuide: React.FC = () => {
     const rows: Array<[label: string, body: React.ReactNode]> = [
-        ['Search', <span key="s">Type any keyword</span>],
+        ['Search', <span key="s">Type a keyword, alias or URL</span>],
         [
             'Move',
             <span key="m" className="flex items-center gap-1">
