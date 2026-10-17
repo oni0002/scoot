@@ -49,15 +49,12 @@ interface ConfigScreenProps {
 
 export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
     const { config, saveConfig } = useConfigContext();
-    const [local, setLocal] = useState<Config | null>(null);
+    const [edited, setEdited] = useState<Config | null>(null);
+    const local = edited ?? config;
     const [capturingHotkey, setCapturingHotkey] = useState(false);
     const hotkeyInputRef = useRef<HTMLInputElement>(null);
-    useEffect(() => {
-        if (config) setLocal((prev) => prev ?? { ...config });
-    }, [config]);
-
     const save = useCallback((updated: Config) => {
-        setLocal(updated);
+        setEdited(updated);
     }, []);
 
     const handleBack = useCallback(async () => {

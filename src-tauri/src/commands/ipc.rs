@@ -8,7 +8,7 @@ use tauri::{Manager, State};
 pub fn get_all_commands(
     state: State<'_, CommandsState>,
 ) -> Result<Vec<Command>, crate::error::AppError> {
-    let manager = state.commands.lock().map_err(|e| AppError::lock(e))?;
+    let manager = state.commands.lock().map_err(AppError::lock)?;
     Ok(manager.get_all_commands())
 }
 
@@ -20,7 +20,7 @@ pub async fn add_command(
 ) -> Result<String, crate::error::AppError> {
     command.source = crate::commands::domain::SOURCE_USER.to_string();
     let (id, commands) = {
-        let mut manager = state.commands.lock().map_err(|e| AppError::lock(e))?;
+        let mut manager = state.commands.lock().map_err(AppError::lock)?;
         // Validate
         manager.validate_command(&command)?;
 
@@ -44,7 +44,7 @@ pub async fn update_command(
 ) -> Result<(), crate::error::AppError> {
     command.source = crate::commands::domain::SOURCE_USER.to_string();
     let commands = {
-        let mut manager = state.commands.lock().map_err(|e| AppError::lock(e))?;
+        let mut manager = state.commands.lock().map_err(AppError::lock)?;
         // Validate
         manager.validate_command(&command)?;
 
@@ -66,7 +66,7 @@ pub async fn delete_command(
     state: State<'_, CommandsState>,
 ) -> Result<(), crate::error::AppError> {
     let commands = {
-        let mut manager = state.commands.lock().map_err(|e| AppError::lock(e))?;
+        let mut manager = state.commands.lock().map_err(AppError::lock)?;
         // Delete command
         manager.delete_user_command(&id)?;
         manager.get_user_commands()
@@ -84,7 +84,7 @@ pub fn get_commands_by_alias(
     alias: String,
     state: State<'_, CommandsState>,
 ) -> Result<Vec<Command>, crate::error::AppError> {
-    let manager = state.commands.lock().map_err(|e| AppError::lock(e))?;
+    let manager = state.commands.lock().map_err(AppError::lock)?;
     Ok(manager.get_commands_by_alias(&alias))
 }
 

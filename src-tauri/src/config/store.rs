@@ -9,6 +9,12 @@ pub struct ConfigStore {
 
 /// Config store
 /// Load, save, and validate config.json
+impl Default for ConfigStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConfigStore {
     pub fn new() -> Self {
         // Get the target directory
@@ -98,7 +104,7 @@ pub async fn reload(
 
     // Update state config
     {
-        let mut locked_config = state_config.lock().map_err(|e| AppError::lock(e))?;
+        let mut locked_config = state_config.lock().map_err(AppError::lock)?;
         *locked_config = new_config.clone();
     }
 

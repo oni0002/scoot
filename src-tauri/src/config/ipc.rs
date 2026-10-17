@@ -12,7 +12,7 @@ pub async fn get_config(state: State<'_, ConfigState>) -> Result<Config, crate::
         .config
         .lock()
         .map(|c| c.clone())
-        .map_err(|e| AppError::lock(e))
+        .map_err(AppError::lock)
 }
 
 /// Save config
@@ -23,7 +23,7 @@ pub async fn save_config(
 ) -> Result<(), crate::error::AppError> {
     // state
     {
-        let mut locked_config = state.config.lock().map_err(|e| AppError::lock(e))?;
+        let mut locked_config = state.config.lock().map_err(AppError::lock)?;
         *locked_config = config.clone();
     }
 
@@ -42,7 +42,7 @@ pub async fn ignore_command(
     use tauri::Emitter;
 
     let config_snapshot = {
-        let mut config = config_state.config.lock().map_err(|e| AppError::lock(e))?;
+        let mut config = config_state.config.lock().map_err(AppError::lock)?;
         if config.ignored.contains(&command_str) {
             return Ok(());
         }
@@ -53,10 +53,7 @@ pub async fn ignore_command(
     config_state.config_store.save(&config_snapshot).await?;
 
     {
-        let mut registry = commands_state
-            .commands
-            .lock()
-            .map_err(|e| AppError::lock(e))?;
+        let mut registry = commands_state.commands.lock().map_err(AppError::lock)?;
         registry
             .external_commands
             .retain(|c| c.command != command_str);

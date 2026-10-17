@@ -90,7 +90,7 @@ pub async fn reload(
     external.extend(markdown_commands);
     external.extend(scoot_commands);
 
-    let mut manager = command_registry.lock().map_err(|e| AppError::lock(e))?;
+    let mut manager = command_registry.lock().map_err(AppError::lock)?;
     manager.set_user_commands(commands);
     manager.set_external_commands(external);
 

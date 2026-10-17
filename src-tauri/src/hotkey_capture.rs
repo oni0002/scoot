@@ -25,6 +25,8 @@ pub async fn stop_hotkey_capture(app: AppHandle) {
 }
 
 #[cfg(target_os = "windows")]
+/// # Safety
+/// `hwnd` must be a valid window handle owned by this process.
 pub unsafe fn setup_window_subclass(hwnd: *mut core::ffi::c_void) {
     imp::setup_subclass(hwnd);
 }
@@ -83,7 +85,7 @@ mod imp {
 
         let orig = ORIGINAL_WNDPROC.load(Ordering::SeqCst);
         if orig != 0 {
-            let orig_fn: WNDPROC = Some(std::mem::transmute(orig));
+            let orig_fn = std::mem::transmute::<isize, WNDPROC>(orig);
             CallWindowProcW(orig_fn, hwnd, msg, wparam, lparam)
         } else {
             DefWindowProcW(hwnd, msg, wparam, lparam)
@@ -104,7 +106,7 @@ mod imp {
     }
 
     pub unsafe fn setup_subclass(hwnd: HWND) {
-        let orig = SetWindowLongPtrW(hwnd, GWLP_WNDPROC, subclass_wndproc as isize);
+        let orig = SetWindowLongPtrW(hwnd, GWLP_WNDPROC, subclass_wndproc as usize as isize);
         ORIGINAL_WNDPROC.store(orig, Ordering::SeqCst);
     }
 

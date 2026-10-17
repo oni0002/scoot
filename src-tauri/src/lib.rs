@@ -111,9 +111,7 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 if let Ok(hwnd) = window.hwnd() {
                     unsafe {
-                        crate::hotkey_capture::setup_window_subclass(
-                            hwnd.0 as *mut core::ffi::c_void,
-                        );
+                        crate::hotkey_capture::setup_window_subclass(hwnd.0);
                     }
                 }
             }

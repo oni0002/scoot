@@ -47,11 +47,23 @@ impl ConfigState {
     }
 }
 
+impl Default for ShortcutState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ShortcutState {
     pub fn new() -> Self {
         Self {
             shortcut: Mutex::new(None),
         }
+    }
+}
+
+impl Default for WindowState {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -66,7 +66,7 @@ impl FileWatcher {
                 let is_target_file = event.paths.iter().any(|path| {
                     path.file_name()
                         .and_then(|n| n.to_str())
-                        .map_or(false, |name| name == file_name)
+                        .is_some_and(|name| name == file_name)
                 });
 
                 if is_target_file {

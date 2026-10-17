@@ -6,6 +6,12 @@ pub struct CommandStore {
     commands_path: String,
 }
 
+impl Default for CommandStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CommandStore {
     pub fn new() -> Self {
         let target_dir = std::env::current_exe()
@@ -74,8 +80,8 @@ impl CommandStore {
     }
 
     /// Save commands (strips runtime-only fields like source before writing)
-    pub async fn save(&self, commands: &Vec<Command>) -> Result<(), crate::error::AppError> {
-        let mut commands_to_save = commands.clone();
+    pub async fn save(&self, commands: &[Command]) -> Result<(), crate::error::AppError> {
+        let mut commands_to_save = commands.to_vec();
         for cmd in &mut commands_to_save {
             cmd.source = String::new();
         }

@@ -72,7 +72,7 @@ async fn execute_scoot_command(
 
     match command {
         "scoot://add-command" => {
-            crate::lifecycle::open_add_command_dialog(&app_handle)?;
+            crate::lifecycle::open_add_command_dialog(app_handle)?;
             Ok(ExecuteResult::keep_open())
         }
         "scoot://open-commands" => {
@@ -84,19 +84,19 @@ async fn execute_scoot_command(
             Ok(ExecuteResult::hide())
         }
         "scoot://open-settings" => {
-            crate::lifecycle::open_settings_dialog(&app_handle)?;
+            crate::lifecycle::open_settings_dialog(app_handle)?;
             Ok(ExecuteResult::keep_open())
         }
         "scoot://open-readme" => {
-            crate::lifecycle::open_readme_file(&app_handle)?;
+            crate::lifecycle::open_readme_file(app_handle)?;
             Ok(ExecuteResult::hide())
         }
         "scoot://open-log" => {
-            crate::lifecycle::open_log(&app_handle)?;
+            crate::lifecycle::open_log(app_handle)?;
             Ok(ExecuteResult::hide())
         }
         "scoot://reload" => {
-            crate::lifecycle::reload(&app_handle).await?;
+            crate::lifecycle::reload(app_handle).await?;
             Ok(ExecuteResult::keep_open())
         }
         "scoot://kill" => {

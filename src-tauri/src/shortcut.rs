@@ -113,7 +113,7 @@ pub fn setup_shortcuts(app: &App) -> Result<(), crate::error::AppError> {
         DEFAULT_SHORTCUT.to_string()
     };
 
-    setup_global_shortcuts(&handle, &hotkey)
+    setup_global_shortcuts(handle, &hotkey)
 }
 
 /// Register global shortcuts

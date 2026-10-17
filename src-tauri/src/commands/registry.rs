@@ -8,6 +8,12 @@ pub struct CommandRegistry {
     alias_index: HashMap<String, String>, // alias string → id
 }
 
+impl Default for CommandRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CommandRegistry {
     pub fn new() -> Self {
         Self {
@@ -101,7 +107,7 @@ impl CommandRegistry {
     pub fn get_commands_by_alias(&self, alias: &str) -> Vec<Command> {
         self.user_commands
             .values()
-            .filter(|cmd| cmd.alias.as_ref().map_or(false, |a| a == alias))
+            .filter(|cmd| cmd.alias.as_ref().is_some_and(|a| a == alias))
             .cloned()
             .collect()
     }
@@ -137,7 +143,7 @@ impl CommandRegistry {
 
     pub fn is_alias_used(&self, alias: &str, exclude_id: Option<&str>) -> bool {
         match self.alias_index.get(alias) {
-            Some(id) => exclude_id.map_or(true, |ex| ex != id),
+            Some(id) => exclude_id.is_none_or(|ex| ex != id),
             None => false,
         }
     }
