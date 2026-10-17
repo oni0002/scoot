@@ -20,7 +20,7 @@ pub fn validate<T: Serialize + JsonSchema>(data: &T) -> Result<(), crate::error:
 
     let errors: Vec<String> = validator
         .iter_errors(&normalized)
-        .map(|err| format!("Error at {}: {}", err.instance_path, err))
+        .map(|err| format!("Error at {}: {}", err.instance_path(), err))
         .collect();
 
     if !errors.is_empty() {
