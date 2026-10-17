@@ -59,8 +59,10 @@ pub async fn ignore_command(
             .retain(|c| c.command != command_str);
     }
 
-    if let Err(e) = app_handle.emit("request-reload", ()) {
-        log::error!("Failed to emit request-reload after ignore: {}", e);
+    // The registry is already up to date, so the webview only has to refetch; no rescan of the
+    // sources is needed (the config file watcher still triggers one for the new ignored list).
+    if let Err(e) = app_handle.emit("config-reloaded", ()) {
+        log::error!("Failed to emit config-reloaded after ignore: {}", e);
     }
 
     Ok(())

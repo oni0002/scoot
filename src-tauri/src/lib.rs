@@ -85,12 +85,6 @@ pub fn run() {
             app.manage(shortcut_state);
             app.manage(window_state);
 
-            // Run common data loading process
-            tauri::async_runtime::block_on(async {
-                if let Err(e) = crate::lifecycle::reload(app.handle()).await {
-                    log::error!("Initial configuration load failed: {}", e);
-                }
-            });
             // Set window events
             crate::window::setup_window_events(
                 app,
@@ -115,6 +109,14 @@ pub fn run() {
                     }
                 }
             }
+            // Load the command sources in the background: scanning them must not delay the
+            // hotkey and tray. The webview refetches when `config-reloaded` arrives.
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = crate::lifecycle::reload(&handle).await {
+                    log::error!("Initial configuration load failed: {}", e);
+                }
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

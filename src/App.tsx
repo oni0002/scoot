@@ -116,14 +116,13 @@ const AppContent = () => {
     const handleIgnoreCommand = useCallback(
         async (command: Command) => {
             try {
+                // The backend announces config-reloaded, which refetches the list
                 await TauriAPI.ignoreCommand(command.command);
-                await loadCommands();
                 showSuccess(`Ignored "${command.name}"`, NOTIFICATION_DURATION.UNDO, {
                     label: 'Undo',
                     onClick: async () => {
                         try {
                             await TauriAPI.unignoreCommand(command.command);
-                            await loadCommands();
                         } catch (err) {
                             showError(
                                 `Could not undo ignoring "${command.name}": ${getErrorMessage(err)}`,
@@ -140,7 +139,7 @@ const AppContent = () => {
                 );
             }
         },
-        [loadCommands, showSuccess, showError],
+        [showSuccess, showError],
     );
 
     const handleCopyCommand = useCallback(
@@ -159,14 +158,13 @@ const AppContent = () => {
 
     const handleReloadCommands = useCallback(async () => {
         try {
-            await TauriAPI.reloadAll();
-            await loadCommands();
+            await TauriAPI.reloadAll(); // emits config-reloaded, which refetches the list
             showSuccess('Commands and config reloaded', 2000);
         } catch (err) {
             console.error('Failed to reload:', err);
             showError(`Could not reload configuration: ${getErrorMessage(err)}`);
         }
-    }, [loadCommands, showSuccess, showError]);
+    }, [showSuccess, showError]);
 
     // 初期化とイベントリスナー設定
     useAppEvents({

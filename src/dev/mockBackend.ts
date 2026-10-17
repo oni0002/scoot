@@ -130,11 +130,15 @@ export function createMockHandlers(): Record<string, Handler> {
                 await emit('open-add-command-dialog');
                 return { keepWindowOpen: true };
             }
-            if (found.command === 'scoot://reload') return { keepWindowOpen: true };
+            if (found.command === 'scoot://reload') {
+                await emit('config-reloaded');
+                return { keepWindowOpen: true };
+            }
             return { keepWindowOpen: false };
         },
         open_target: () => ({ keepWindowOpen: false }),
-        reload_all: () => undefined,
+        // Like the real backend, anything that reloads announces it with config-reloaded
+        reload_all: () => emit('config-reloaded'),
         hide_window: () => undefined,
         open_commands_json: () => undefined,
         open_config_json: () => undefined,
@@ -146,12 +150,15 @@ export function createMockHandlers(): Record<string, Handler> {
         get_config: () => config,
         save_config: ({ config: next }) => {
             config = next as Config;
+            return emit('config-reloaded');
         },
         ignore_command: ({ commandStr }) => {
             config = { ...config, ignored: [...config.ignored, String(commandStr)] };
+            return emit('config-reloaded');
         },
         unignore_command: ({ commandStr }) => {
             config = { ...config, ignored: config.ignored.filter((c) => c !== commandStr) };
+            return emit('config-reloaded');
         },
         'plugin:app|version': () => '0.2.10',
         'plugin:dialog|message': () => undefined,

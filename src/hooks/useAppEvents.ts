@@ -24,10 +24,6 @@ export const useAppEvents = ({
     setError,
 }: UseAppEventsProps) => {
     useEffect(() => {
-        // Initial load
-        loadCommands();
-        loadConfig();
-
         const unlistenFunctions: (() => void)[] = [];
         let isMounted = true;
 
@@ -36,11 +32,8 @@ export const useAppEvents = ({
                 const eventHandlers = {
                     'open-add-command-dialog': handleAddCommand,
                     'open-settings-dialog': handleOpenConfig,
+                    // The backend turns config file changes into a reload, so this is the only refetch
                     'config-reloaded': () => {
-                        loadCommands();
-                        loadConfig();
-                    },
-                    'config-file-changed': () => {
                         loadCommands();
                         loadConfig();
                     },
@@ -62,6 +55,11 @@ export const useAppEvents = ({
                     } else {
                         unlisten();
                     }
+                }
+                // Load only once subscribed, so a reload finishing during startup cannot be missed
+                if (isMounted) {
+                    loadCommands();
+                    loadConfig();
                 }
             } catch (err) {
                 if (isMounted) {
