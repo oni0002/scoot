@@ -78,16 +78,6 @@ pub async fn delete_command(
     Ok(())
 }
 
-/// Search commands by alias
-#[tauri::command]
-pub fn get_commands_by_alias(
-    alias: String,
-    state: State<'_, CommandsState>,
-) -> Result<Vec<Command>, crate::error::AppError> {
-    let manager = state.commands.lock().map_err(AppError::lock)?;
-    Ok(manager.get_commands_by_alias(&alias))
-}
-
 /// Open commands.json
 #[tauri::command]
 pub async fn open_commands_json(

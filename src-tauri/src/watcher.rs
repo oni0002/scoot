@@ -1,5 +1,5 @@
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -8,8 +8,6 @@ use tauri::Emitter;
 /// File watcher struct
 pub struct FileWatcher {
     _watcher: RecommendedWatcher,
-    #[allow(dead_code)]
-    file_path: PathBuf,
 }
 
 /// File watcher
@@ -89,44 +87,6 @@ impl FileWatcher {
             }
         });
 
-        Ok(Self {
-            _watcher: watcher,
-            file_path: file_path.clone(),
-        })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    use std::fs;
-    use tempfile::TempDir;
-
-    #[test]
-    fn test_file_watcher_creation() {
-        let temp_dir = TempDir::new().unwrap();
-        let file_path = temp_dir.path().join("test.json");
-
-        // Create a file
-        fs::write(&file_path, "{}").unwrap();
-
-        // AppHandle mock is not available here; full FileWatcher tests are covered by integration tests
-        assert!(file_path.exists());
-    }
-
-    #[test]
-    fn test_file_path_operations() {
-        let temp_dir = TempDir::new().unwrap();
-        let file_path = temp_dir.path().join("test.json");
-
-        // Create a file
-        fs::write(&file_path, "{}").unwrap();
-
-        // Verify the file exists
-        assert!(file_path.exists());
-
-        // Delete the file
-        fs::remove_file(&file_path).unwrap();
-        assert!(!file_path.exists());
+        Ok(Self { _watcher: watcher })
     }
 }

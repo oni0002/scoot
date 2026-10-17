@@ -32,10 +32,6 @@ export const useNotifications = () => {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
     }, []);
 
-    const clearAll = useCallback(() => {
-        setNotifications([]);
-    }, []);
-
     // Convenience methods
     const showSuccess = useCallback(
         (message: string, duration?: number, action?: Notification['action']) => {
@@ -58,21 +54,11 @@ export const useNotifications = () => {
         [addNotification],
     );
 
-    const showInfo = useCallback(
-        (message: string, duration?: number) => {
-            return addNotification('info', message, duration);
-        },
-        [addNotification],
-    );
-
     return {
         notifications,
-        addNotification,
         removeNotification,
-        clearAll,
         showSuccess,
         showError,
         showWarning,
-        showInfo,
     };
 };

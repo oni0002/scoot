@@ -7,18 +7,17 @@ interface NotificationContextType {
     showSuccess: (message: string, duration?: number, action?: Notification['action']) => void;
     showError: (message: string, duration?: number, action?: Notification['action']) => void;
     showWarning: (message: string, duration?: number) => void;
-    showInfo: (message: string, duration?: number) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const theme = useConfigTheme();
-    const { notifications, removeNotification, showSuccess, showError, showWarning, showInfo } =
+    const { notifications, removeNotification, showSuccess, showError, showWarning } =
         useNotifications();
 
     return (
-        <NotificationContext.Provider value={{ showSuccess, showError, showWarning, showInfo }}>
+        <NotificationContext.Provider value={{ showSuccess, showError, showWarning }}>
             {children}
             <NotificationToast
                 notifications={notifications}

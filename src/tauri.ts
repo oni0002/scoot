@@ -28,10 +28,6 @@ export const TauriAPI = {
         return await invoke('open_target', { target });
     },
 
-    async getCommandsByAlias(alias: string): Promise<Command[]> {
-        return await invoke('get_commands_by_alias', { alias });
-    },
-
     async reloadAll(): Promise<void> {
         return await invoke('reload_all');
     },

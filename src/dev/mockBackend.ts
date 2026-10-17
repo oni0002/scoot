@@ -134,7 +134,6 @@ export function createMockHandlers(): Record<string, Handler> {
             return { keepWindowOpen: false };
         },
         open_target: () => ({ keepWindowOpen: false }),
-        get_commands_by_alias: ({ alias }) => users.filter((u) => u.alias === alias),
         reload_all: () => undefined,
         hide_window: () => undefined,
         open_commands_json: () => undefined,

@@ -104,14 +104,6 @@ impl CommandRegistry {
         self.user_commands.values().cloned().collect()
     }
 
-    pub fn get_commands_by_alias(&self, alias: &str) -> Vec<Command> {
-        self.user_commands
-            .values()
-            .filter(|cmd| cmd.alias.as_ref().is_some_and(|a| a == alias))
-            .cloned()
-            .collect()
-    }
-
     pub fn validate_command(&self, command: &Command) -> Result<(), crate::error::AppError> {
         command.validate()?;
 

@@ -17,30 +17,12 @@ pub fn show_main_window(app: &AppHandle) {
 
 // --- Tauri Commands ---
 
-/// Toggle window visibility
-pub async fn toggle_window(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
-    if let Some(window) = app_handle.get_webview_window("main") {
-        if window.is_visible().unwrap_or(false) {
-            let _ = window.hide();
-        } else {
-            show_main_window(&app_handle);
-        }
-    }
-    Ok(())
-}
-
 /// Hide window
 #[tauri::command]
 pub async fn hide_window(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     if let Some(window) = app_handle.get_webview_window("main") {
         let _ = window.hide();
     }
-    Ok(())
-}
-
-/// Show window
-pub async fn show_window(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
-    show_main_window(&app_handle);
     Ok(())
 }
 
