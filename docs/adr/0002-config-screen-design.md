@@ -13,6 +13,8 @@ Config was previously only editable by opening `config.json` directly in a text 
 
 Config fields save on change, validated before writing. This matches the UX pattern of modern desktop settings screens (VS Code, macOS System Settings) and aligns with Scoot's "simple and clean" principle. A cancel/discard flow was considered unnecessary given that the save target is a local JSON file with no latency.
 
+**Amended**: the write happens when the screen closes (Esc or Back), not per field, so one validation covers every edit. A failed write keeps the screen open and shows the reason, with a "Discard and close" escape; a successful one shows a "Settings saved" toast.
+
 **Alternative considered**: Save button with cancel. Rejected because it adds UI chrome for no practical benefit in a local-file setting.
 
 ### `ignored` list: remove only

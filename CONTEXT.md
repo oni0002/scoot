@@ -75,7 +75,7 @@ _Avoid_: Settings, preferences
 _Avoid_: Shortcut (ファイルショートカットと混同するため), keybinding
 
 **Config Screen**:
-Config を GUI で編集するための画面。Scoot Command (OpenSettings) または3点メニューから開く。変更は即時保存される。`ignored` の削除・各外部ソースの有効化・パス設定・テーマ・Hotkey などを編集できる。
+Config を GUI で編集するための画面。Scoot Command (OpenSettings) または3点メニューから開く。変更は画面を閉じるとき(Esc・戻る)にまとめて保存される。保存に失敗したら画面は閉じず、理由を表示する。`ignored` の削除・各外部ソースの有効化・パス設定・テーマ・Hotkey などを編集できる。
 _Avoid_: Settings screen, preferences screen
 
 **Reload**:

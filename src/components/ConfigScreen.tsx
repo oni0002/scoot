@@ -4,6 +4,8 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { LuArrowLeft, LuX } from 'react-icons/lu';
 import { Config } from '../types';
 import { useConfigContext } from '../context/ConfigContext';
+import { useNotificationContext } from '../context/NotificationContext';
+import { getErrorMessage } from '../error';
 import { TauriAPI } from '../tauri';
 import { THEME_OPTIONS, daisyTheme } from '../theme';
 
@@ -15,24 +17,33 @@ interface ConfigScreenProps {
 
 export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
     const { config, saveConfig } = useConfigContext();
+    const { showSuccess } = useNotificationContext();
+    const [saveError, setSaveError] = useState<string | null>(null);
     const [edited, setEdited] = useState<Config | null>(null);
     const local = edited ?? config;
     const [capturingHotkey, setCapturingHotkey] = useState(false);
     const hotkeyInputRef = useRef<HTMLInputElement>(null);
     const save = useCallback((updated: Config) => {
         setEdited(updated);
+        setSaveError(null);
     }, []);
 
+    // Settings are written when the screen closes. A failed write keeps the screen open, so the
+    // edits are not lost behind a screen that looks saved.
     const handleBack = useCallback(async () => {
-        if (local) {
-            try {
-                await saveConfig(local);
-            } catch (err) {
-                console.error('Failed to save config:', err);
-            }
+        if (!edited || JSON.stringify(edited) === JSON.stringify(config)) {
+            onBack();
+            return;
         }
+        try {
+            await saveConfig(edited);
+        } catch (err) {
+            setSaveError(getErrorMessage(err));
+            return;
+        }
+        showSuccess('Settings saved');
         onBack();
-    }, [local, saveConfig, onBack]);
+    }, [edited, config, saveConfig, showSuccess, onBack]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -223,6 +234,20 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 </button>
                 <h3>Settings</h3>
             </div>
+
+            {saveError && (
+                <div
+                    role="alert"
+                    className="mx-4 flex flex-none items-center gap-3 rounded-lg border border-error p-2 text-sm text-error"
+                >
+                    <span className="min-w-0 flex-1 break-words">
+                        Could not save settings: {saveError}
+                    </span>
+                    <button type="button" className="btn btn-ghost btn-xs" onClick={onBack}>
+                        Discard and close
+                    </button>
+                </div>
+            )}
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-4 scrollbar-gutter-auto space-y-4">
