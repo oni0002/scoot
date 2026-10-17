@@ -1,9 +1,11 @@
 use crate::commands::domain::Command;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::hash::{Hash, Hasher};
 
 pub struct CommandRegistry {
     pub user_commands: HashMap<String, Command>,
-    pub external_commands: Vec<Command>, // bookmark + app + markdown + scoot (reload-only)
+    external_commands: Vec<Command>, // bookmark + app + markdown + scoot (reload-only)
+    external_index: HashMap<String, usize>, // id → position in external_commands
     command_index: HashMap<String, String>, // command string → id
     alias_index: HashMap<String, String>, // alias string → id
 }
@@ -19,6 +21,7 @@ impl CommandRegistry {
         Self {
             user_commands: HashMap::new(),
             external_commands: Vec::new(),
+            external_index: HashMap::new(),
             command_index: HashMap::new(),
             alias_index: HashMap::new(),
         }
@@ -31,12 +34,44 @@ impl CommandRegistry {
         }
     }
 
+    /// A reload must hand out the same ID for the same command, or an ID the webview already holds
+    /// would stop resolving. Derived from what identifies the command, not from a counter.
+    fn external_id(command: &Command) -> String {
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        (&command.source, &command.category, &command.command).hash(&mut hasher);
+        format!("ext-{:016x}", hasher.finish())
+    }
+
     pub fn set_external_commands(&mut self, commands: Vec<Command>) {
-        self.external_commands.clear();
-        for mut command in commands {
-            Self::assign_id(&mut command);
-            self.external_commands.push(command);
-        }
+        let mut seen = HashSet::new();
+        self.external_commands = commands
+            .into_iter()
+            .map(|mut command| {
+                let mut id = Self::external_id(&command);
+                // Two commands that identify alike still need distinct IDs
+                while !seen.insert(id.clone()) {
+                    id.push('x');
+                }
+                command.id = id;
+                command
+            })
+            .collect();
+        self.rebuild_external_index();
+    }
+
+    /// Drop external commands by their command string (used when one is ignored)
+    pub fn remove_external_by_command(&mut self, command: &str) {
+        self.external_commands.retain(|c| c.command != command);
+        self.rebuild_external_index();
+    }
+
+    fn rebuild_external_index(&mut self) {
+        self.external_index = self
+            .external_commands
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (c.id.clone(), i))
+            .collect();
     }
 
     pub fn add_user_command(&mut self, mut command: Command) -> String {
@@ -143,7 +178,11 @@ impl CommandRegistry {
     pub fn get_command(&self, id: &str) -> Option<Command> {
         self.user_commands
             .get(id)
-            .or_else(|| self.external_commands.iter().find(|c| c.id == id))
+            .or_else(|| {
+                self.external_index
+                    .get(id)
+                    .and_then(|&i| self.external_commands.get(i))
+            })
             .cloned()
     }
 
@@ -219,11 +258,44 @@ mod tests {
         let mut manager = CommandRegistry::new();
         let user_id = manager.add_user_command(create_dummy_command(Some("p1")));
         manager.set_external_commands(vec![create_dummy_command(None)]);
-        let external_id = manager.external_commands[0].id.clone();
+        let external_id = manager.get_all_commands().last().unwrap().id.clone();
 
         assert!(manager.get_command(&user_id).is_some());
         assert!(manager.get_command(&external_id).is_some());
         assert!(manager.get_command("missing").is_none());
+    }
+
+    #[test]
+    fn external_ids_survive_a_reload() {
+        let mut manager = CommandRegistry::new();
+        manager.set_external_commands(vec![create_dummy_command(None)]);
+        let before = manager.get_all_commands()[0].id.clone();
+
+        manager.set_external_commands(vec![
+            create_dummy_command(Some("x")),
+            create_dummy_command(None),
+        ]);
+        assert!(manager.get_command(&before).is_some());
+    }
+
+    #[test]
+    fn external_ids_stay_distinct_for_identical_commands() {
+        let mut manager = CommandRegistry::new();
+        manager.set_external_commands(vec![create_dummy_command(None), create_dummy_command(None)]);
+        let all = manager.get_all_commands();
+        assert_ne!(all[0].id, all[1].id);
+    }
+
+    #[test]
+    fn removing_an_external_command_keeps_lookups_correct() {
+        let mut manager = CommandRegistry::new();
+        manager.set_external_commands(vec![
+            create_dummy_command(Some("a")),
+            create_dummy_command(Some("b")),
+        ]);
+        let kept = manager.get_all_commands()[1].clone();
+        manager.remove_external_by_command(&manager.get_all_commands()[0].command.clone());
+        assert_eq!(manager.get_command(&kept.id).unwrap().command, kept.command);
     }
 
     #[test]

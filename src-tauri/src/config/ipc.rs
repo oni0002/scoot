@@ -54,9 +54,7 @@ pub async fn ignore_command(
 
     {
         let mut registry = commands_state.commands.lock().map_err(AppError::lock)?;
-        registry
-            .external_commands
-            .retain(|c| c.command != command_str);
+        registry.remove_external_by_command(&command_str);
     }
 
     // The registry is already up to date, so the webview only has to refetch; no rescan of the
