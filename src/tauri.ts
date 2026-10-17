@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { message } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
-import { Command, Config } from './types';
+import { Command, Config, UsageMap } from './types';
 
 export const TauriAPI = {
     async getAllCommands(): Promise<Command[]> {
@@ -22,6 +22,14 @@ export const TauriAPI = {
 
     async executeCommand(id: string, args: string[] = []): Promise<{ keepWindowOpen: boolean }> {
         return await invoke('execute_command', { id, args });
+    },
+
+    async getUsage(): Promise<UsageMap> {
+        return await invoke<UsageMap>('get_usage');
+    },
+
+    async clearUsage(): Promise<void> {
+        return await invoke('clear_usage');
     },
 
     async openTarget(target: string): Promise<{ keepWindowOpen: boolean }> {

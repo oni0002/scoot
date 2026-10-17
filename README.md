@@ -65,7 +65,7 @@ Open the Settings screen from the 3-dot menu or via the `Open Settings` preset c
 | Enabled | Extract links from Markdown files                   | `false` |
 | Files   | Markdown files to read URL and file-path links from | `[]`    |
 
-The `config.json` and `commands.json` files are stored in the same directory as the `.exe` file.
+The `config.json` and `commands.json` files are stored in the same directory as the `.exe` file. So is `usage.json`, the run history that nudges frequently and recently used commands up in search results; turn it off or clear it under Settings > General.
 
 ## User Custom Commands
 

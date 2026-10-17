@@ -7,3 +7,4 @@ pub mod loader;
 pub mod markdown;
 pub mod registry;
 pub mod store;
+pub mod usage;

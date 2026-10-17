@@ -1,5 +1,6 @@
 use crate::commands::registry::CommandRegistry;
 use crate::commands::store::CommandStore;
+use crate::commands::usage::UsageTracker;
 use crate::config::domain::Config;
 use crate::config::store::ConfigStore;
 use crate::watcher::FileWatcher;
@@ -9,6 +10,7 @@ use std::time::Instant;
 pub struct CommandsState {
     pub commands: Mutex<CommandRegistry>,
     pub command_store: CommandStore,
+    pub usage: UsageTracker,
 }
 
 pub struct ConfigState {
@@ -33,6 +35,7 @@ impl CommandsState {
         Self {
             commands: Mutex::new(registry),
             command_store: store,
+            usage: UsageTracker::new(),
         }
     }
 }

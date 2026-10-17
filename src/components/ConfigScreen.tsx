@@ -13,10 +13,11 @@ import { MarkdownSection } from './settings/MarkdownSection';
 import { IgnoredSection } from './settings/IgnoredSection';
 
 interface ConfigScreenProps {
+    onClearHistory: () => Promise<void>;
     onBack: () => void;
 }
 
-export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
+export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHistory }) => {
     const { config, saveConfig } = useConfigContext();
     const { showSuccess } = useNotificationContext();
     const [saveError, setSaveError] = useState<string | null>(null);
@@ -97,7 +98,12 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-4 pb-2 scrollbar-gutter-auto">
-                <GeneralSection config={local} onChange={change} hotkey={hotkey} />
+                <GeneralSection
+                    config={local}
+                    onChange={change}
+                    hotkey={hotkey}
+                    onClearHistory={onClearHistory}
+                />
                 <BookmarksSection config={local} onChange={change} />
                 <ApplicationsSection config={local} onChange={change} />
                 <MarkdownSection config={local} onChange={change} />

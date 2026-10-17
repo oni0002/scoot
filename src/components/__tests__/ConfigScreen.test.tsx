@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { ConfigScreen } from '../ConfigScreen';
@@ -12,22 +12,43 @@ jest.mock('@tauri-apps/api/event', () => ({ listen: jest.fn().mockResolvedValue(
 jest.mock('@tauri-apps/plugin-dialog', () => ({ open: jest.fn() }));
 jest.mock('../../tauri');
 
+// jsdom does not implement <dialog> modals
+beforeAll(() => {
+    HTMLDialogElement.prototype.showModal = function () {
+        this.setAttribute('open', '');
+    };
+    HTMLDialogElement.prototype.close = function () {
+        if (!this.hasAttribute('open')) return;
+        this.removeAttribute('open');
+        this.dispatchEvent(new Event('close'));
+    };
+});
+
 const config = createMockHandlers().get_config({}) as Config;
 
-const Loaded = ({ onBack }: { onBack: () => void }) => {
+const Loaded = ({
+    onBack,
+    onClearHistory,
+}: {
+    onBack: () => void;
+    onClearHistory: () => Promise<void>;
+}) => {
     const { config: loaded, loadConfig } = useConfigContext();
     if (!loaded) {
         void loadConfig();
         return null;
     }
-    return <ConfigScreen onBack={onBack} />;
+    return <ConfigScreen onBack={onBack} onClearHistory={onClearHistory} />;
 };
 
-const renderScreen = (onBack = jest.fn()) => {
+const renderScreen = (
+    onBack = jest.fn(),
+    onClearHistory = jest.fn().mockResolvedValue(undefined),
+) => {
     render(
         <NotificationProvider>
             <ConfigProvider>
-                <Loaded onBack={onBack} />
+                <Loaded onBack={onBack} onClearHistory={onClearHistory} />
             </ConfigProvider>
         </NotificationProvider>,
     );
@@ -93,5 +114,32 @@ describe('ConfigScreen sections', () => {
         hotkey.focus();
         await userEvent.tab();
         expect(hotkey).not.toHaveFocus();
+    });
+});
+
+describe('ConfigScreen usage history', () => {
+    it('saves the toggle with the other settings', async () => {
+        jest.mocked(TauriAPI.saveConfig).mockResolvedValue();
+        renderScreen();
+        await userEvent.click(await screen.findByLabelText('Usage history'));
+        await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+        await waitFor(() =>
+            expect(TauriAPI.saveConfig).toHaveBeenCalledWith(
+                expect.objectContaining({ usageHistory: false }),
+            ),
+        );
+    });
+
+    it('clears the history only after confirming', async () => {
+        const onClearHistory = jest.fn().mockResolvedValue(undefined);
+        renderScreen(jest.fn(), onClearHistory);
+        await userEvent.click(await screen.findByRole('button', { name: 'Clear' }));
+        expect(onClearHistory).not.toHaveBeenCalled();
+
+        await userEvent.click(
+            within(screen.getByRole('dialog')).getByRole('button', { name: 'Clear' }),
+        );
+        await waitFor(() => expect(onClearHistory).toHaveBeenCalledTimes(1));
+        expect(await screen.findByText('History cleared')).toBeInTheDocument();
     });
 });

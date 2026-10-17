@@ -26,6 +26,8 @@ pub struct Config {
     pub theme: String,
     pub hotkey: String,
     pub reload_interval_minutes: u64,
+    /// Whether runs are recorded and used to order search results
+    pub usage_history: bool,
 }
 
 /// Bookmark config struct
@@ -100,6 +102,7 @@ impl Default for Config {
             theme: DEFAULT_THEME.to_string(),
             hotkey: DEFAULT_SHORTCUT.to_string(),
             reload_interval_minutes: 30,
+            usage_history: true,
         }
     }
 }
@@ -180,6 +183,12 @@ mod tests {
     fn empty_object_falls_back_to_defaults() {
         let config = parse("{}").unwrap();
         assert_eq!(config.max_results, Config::default().max_results);
+    }
+
+    #[test]
+    fn usage_history_is_on_unless_turned_off() {
+        assert!(parse("{}").unwrap().usage_history);
+        assert!(!parse(r#"{"usageHistory": false}"#).unwrap().usage_history);
     }
 
     #[test]

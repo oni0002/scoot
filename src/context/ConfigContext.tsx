@@ -7,6 +7,7 @@ interface ConfigContextType {
     theme: string;
     fuzzyThreshold: number;
     maxResults: number;
+    usageHistory: boolean;
     loadConfig: () => Promise<void>;
     saveConfig: (config: Config) => Promise<void>;
 }
@@ -38,6 +39,7 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
             theme: config?.theme ?? '',
             fuzzyThreshold: config?.fuzzyThreshold ?? 0,
             maxResults: config?.maxResults ?? 0,
+            usageHistory: config?.usageHistory ?? true,
             loadConfig,
             saveConfig,
         }),

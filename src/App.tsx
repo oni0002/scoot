@@ -29,9 +29,10 @@ const AppContent = () => {
         addCommand,
         updateCommand,
         deleteCommand,
+        clearUsage,
     } = useCommandContext();
 
-    const { theme, fuzzyThreshold, maxResults, loadConfig } = useConfigContext();
+    const { theme, fuzzyThreshold, maxResults, usageHistory, loadConfig } = useConfigContext();
 
     const [currentView, setCurrentView] = useState<'search' | 'form' | 'config'>('search');
     const [editingCommand, setEditingCommand] = useState<Command | undefined>(undefined);
@@ -211,6 +212,7 @@ const AppContent = () => {
                 <SearchWindow
                     fuzzyThreshold={fuzzyThreshold}
                     maxResults={maxResults}
+                    usageHistory={usageHistory}
                     onEditCommand={handleEditCommandFromSearch}
                     onDuplicateCommand={handleDuplicateCommandFromSearch}
                     onDeleteCommand={handleDeleteCommandFromSearch}
@@ -223,6 +225,7 @@ const AppContent = () => {
                 />
             ) : currentView === 'config' ? (
                 <ConfigScreen
+                    onClearHistory={clearUsage}
                     onBack={() => {
                         setCurrentView('search');
                         loadConfig();

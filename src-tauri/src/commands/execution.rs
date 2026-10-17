@@ -30,6 +30,7 @@ pub async fn execute_command(
     id: String,
     args: Vec<String>,
     state: tauri::State<'_, crate::state::CommandsState>,
+    config_state: tauri::State<'_, crate::state::ConfigState>,
     app_handle: tauri::AppHandle,
 ) -> Result<ExecuteResult, crate::error::AppError> {
     let command = state
@@ -38,7 +39,16 @@ pub async fn execute_command(
         .map_err(crate::error::AppError::lock)?
         .get_command(&id)
         .ok_or_else(|| crate::error::AppError::NotFound(format!("Command not found: {}", id)))?;
-    run_command(&app_handle, command, args).await
+    let result = run_command(&app_handle, command, args).await?;
+    let usage_history = config_state
+        .config
+        .lock()
+        .map_err(crate::error::AppError::lock)?
+        .usage_history;
+    if usage_history {
+        state.usage.record(&id).await;
+    }
+    Ok(result)
 }
 
 /// Open a URL or file path typed directly into the search box (Tauri command)

@@ -19,6 +19,7 @@ import { useRestoreFocus } from '../hooks/useRestoreFocus';
 interface SearchWindowProps {
     fuzzyThreshold?: number;
     maxResults?: number;
+    usageHistory?: boolean;
     onEditCommand?: (command: Command) => void;
     onDuplicateCommand?: (command: Command) => void;
     onDeleteCommand?: (command: Command) => void;
@@ -33,6 +34,7 @@ interface SearchWindowProps {
 export const SearchWindow: React.FC<SearchWindowProps> = ({
     fuzzyThreshold = 0.5,
     maxResults = 10,
+    usageHistory = true,
     onEditCommand,
     onDuplicateCommand,
     onDeleteCommand,
@@ -43,7 +45,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     onOpenConfig,
     isDialogOpen = false,
 }) => {
-    const { commands, executeCommand: rawExecuteCommand } = useCommandContext();
+    const { commands, usage, executeCommand: rawExecuteCommand } = useCommandContext();
     const { showError } = useNotificationContext();
 
     const executeContextCommand = useCallback(
@@ -66,7 +68,12 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         [rawExecuteCommand, showError, onEditCommand],
     );
 
-    const searchState = useSearchState(commands, fuzzyThreshold, maxResults);
+    const searchState = useSearchState(
+        commands,
+        fuzzyThreshold,
+        maxResults,
+        usageHistory ? usage : undefined,
+    );
     const {
         query,
         setQuery,

@@ -6,7 +6,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 - キーワードでfuzzy search、Tab/Shift-Tabで選択、Enterで実行
 - カスタムコマンド(URL/Command/File)、Bookmark、ローカルアプリケーション、任意のMarkdownファイル内のリンクが対象
 - エイリアス + 引数(`g react` → `https://google.com/search?q=react`)
-- 軽量で省メモリ。ポータブル運用で、`config.json` / `commands.json` / `logs/` は exe と同じディレクトリに置く
+- 軽量で省メモリ。ポータブル運用で、`config.json` / `commands.json` / `usage.json`(実行履歴) / `logs/` は exe と同じディレクトリに置く
 
 ## 設計方針
 
@@ -36,6 +36,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 - 検索欄に直接入力した URL/パスは `open_target` で開く。URL は許可スキーム(http/https/mailto/ftp)のみ
 - URL コマンドの引数はパーセントエンコードする。置換ロジックは Rust(`Command::substitute_args`)と TS(`substituteArgs`、プレビュー用)の2箇所にあるため、変更時は両方を揃える
 - `source` は実行時のみ保持し、commands.json には保存しない
+- 実行履歴(`usage.json`)は検索結果の並べ替えにだけ使う。順位は `fuseScore - boost`(小さいほど上)で、`boost = 0.05 * w / (w + 3)`、`w = 回数 * 0.5^(最終使用からの日数 / 30)`。上限があるので、履歴だけで良く一致する候補を逆転させない。式は `src/search.ts` にあるので、変えるときは `search.test.ts` と揃える
 
 ## UI
 

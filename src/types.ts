@@ -10,6 +10,14 @@ export interface Command {
     showWindow?: boolean;
 }
 
+/** How often and how recently a command was run, keyed by command id. */
+export interface Usage {
+    count: number;
+    lastUsed: number; // Unix time in milliseconds
+}
+
+export type UsageMap = Record<string, Usage>;
+
 export interface ApplicationConfig {
     enabled: boolean;
     directories: string[];
@@ -36,6 +44,7 @@ export interface Config {
     theme: string;
     hotkey: string;
     reloadIntervalMinutes: number;
+    usageHistory: boolean;
 }
 
 export interface SearchResult {

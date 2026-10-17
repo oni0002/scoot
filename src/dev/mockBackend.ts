@@ -84,17 +84,23 @@ const defaultConfig = (): Config => ({
     theme: previewTheme() ?? 'dark',
     hotkey: 'Alt+Space',
     reloadIntervalMinutes: 30,
+    usageHistory: true,
 });
 
 export function createMockHandlers(): Record<string, Handler> {
     let users = userCommands();
     let config = defaultConfig();
     let nextId = 100;
+    const usage: Record<string, { count: number; lastUsed: number }> = {};
     const visibleExternal = () =>
         externalCommands().filter((c) => !config.ignored.includes(c.command));
 
     return {
         get_all_commands: () => [...users, ...visibleExternal()],
+        get_usage: () => ({ ...usage }),
+        clear_usage: () => {
+            for (const id of Object.keys(usage)) delete usage[id];
+        },
         add_command: ({ command }) => {
             const c = command as Command;
             if (c.alias && users.some((u) => u.alias === c.alias)) {
@@ -122,6 +128,11 @@ export function createMockHandlers(): Record<string, Handler> {
                     `File not found: '${found.command}'. Please check if the file exists and the path is correct.`,
                 );
             }
+            if (config.usageHistory)
+                usage[found.id] = {
+                    count: (usage[found.id]?.count ?? 0) + 1,
+                    lastUsed: Date.now(),
+                };
             if (found.command === 'scoot://open-settings') {
                 await emit('open-settings-dialog');
                 return { keepWindowOpen: true };

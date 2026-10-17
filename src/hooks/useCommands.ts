@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { TauriAPI } from '../tauri';
-import { Command } from '../types';
+import { Command, UsageMap } from '../types';
 import { getErrorMessage } from '../error';
 import { DIRECT_OPEN_ID } from '../constants';
 
@@ -9,6 +9,7 @@ export type CommandResult = { ok: true } | { ok: false; message: string };
 
 export function useCommands() {
     const [commands, setCommands] = useState<Command[]>([]);
+    const [usage, setUsage] = useState<UsageMap>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const isInitialLoad = useRef(true);
@@ -18,6 +19,10 @@ export function useCommands() {
             if (isInitialLoad.current) setLoading(true);
             const loadedCommands = await TauriAPI.getAllCommands();
             setCommands(loadedCommands);
+            // History only reorders results: failing to read it must not fail the load
+            TauriAPI.getUsage().then(setUsage, (err) =>
+                console.warn('Failed to load usage:', getErrorMessage(err)),
+            );
             setError(null);
         } catch (err) {
             const message = getErrorMessage(err);
@@ -86,6 +91,11 @@ export function useCommands() {
         [mutate],
     );
 
+    const clearUsage = useCallback(async () => {
+        await TauriAPI.clearUsage();
+        setUsage({});
+    }, []);
+
     /** Resolves with keepWindowOpen; rejects with the backend's error when the command fails. */
     const executeCommand = useCallback(
         async (command: Command, args: string[] = []): Promise<boolean> => {
@@ -93,6 +103,16 @@ export function useCommands() {
                 command.id === DIRECT_OPEN_ID
                     ? await TauriAPI.openTarget(command.command)
                     : await TauriAPI.executeCommand(command.id, args);
+            if (command.id !== DIRECT_OPEN_ID) {
+                // Mirrors what the backend recorded, so the next search is ranked without a refetch
+                setUsage((prev) => ({
+                    ...prev,
+                    [command.id]: {
+                        count: (prev[command.id]?.count ?? 0) + 1,
+                        lastUsed: Date.now(),
+                    },
+                }));
+            }
             return result.keepWindowOpen;
         },
         [],
@@ -102,6 +122,7 @@ export function useCommands() {
     return useMemo(
         () => ({
             commands,
+            usage,
             loading,
             error,
             setError,
@@ -110,9 +131,11 @@ export function useCommands() {
             updateCommand,
             deleteCommand,
             executeCommand,
+            clearUsage,
         }),
         [
             commands,
+            usage,
             loading,
             error,
             loadCommands,
@@ -120,6 +143,7 @@ export function useCommands() {
             updateCommand,
             deleteCommand,
             executeCommand,
+            clearUsage,
         ],
     );
 }

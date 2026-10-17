@@ -1,4 +1,4 @@
-import { detectDirectOpen, createFuse, fuseSearch } from '../search';
+import { detectDirectOpen, createFuse, fuseSearch, usageBoost } from '../search';
 import { DIRECT_OPEN_ID } from '../constants';
 import { Command } from '../types';
 
@@ -126,5 +126,43 @@ describe('fuseSearch highlights', () => {
         const fuse = createFuse(commands, 0.5);
         const [hit] = fuseSearch(fuse, 'g', commands, 10);
         expect(hit.matches.flatMap((m) => m.indices).length).toBeGreaterThan(0);
+    });
+});
+
+describe('run history', () => {
+    const NOW = Date.UTC(2026, 9, 18);
+    const DAY = 24 * 60 * 60 * 1000;
+    const commands = [makeCommand('Docs A'), makeCommand('Docs B'), makeCommand('Zebra')];
+    const fuse = createFuse(commands, 0.6);
+    const names = (usage: Record<string, { count: number; lastUsed: number }>) =>
+        fuseSearch(fuse, 'docs', commands, 10, usage, NOW).map((r) => r.command.name);
+
+    it('keeps the match order when nothing was run', () => {
+        expect(names({})).toEqual(['Docs A', 'Docs B']);
+    });
+
+    it('puts the command run more often first among equal matches', () => {
+        expect(names({ 'Docs B': { count: 5, lastUsed: NOW } })[0]).toBe('Docs B');
+    });
+
+    it('lets a recent run outweigh an old one', () => {
+        const usage = {
+            'Docs A': { count: 5, lastUsed: NOW - 365 * DAY },
+            'Docs B': { count: 2, lastUsed: NOW },
+        };
+        expect(names(usage)[0]).toBe('Docs B');
+    });
+
+    it('never lifts a poor match over a clearly better one', () => {
+        const list = [makeCommand('Terminal'), makeCommand('Term sheet notes archive')];
+        const f = createFuse(list, 0.6);
+        const usage = { 'Term sheet notes archive': { count: 1000, lastUsed: NOW } };
+        const [first] = fuseSearch(f, 'terminal', list, 10, usage, NOW);
+        expect(first.command.name).toBe('Terminal');
+    });
+
+    it('caps the boost', () => {
+        expect(usageBoost({ count: 1e6, lastUsed: NOW }, NOW)).toBeLessThanOrEqual(0.05);
+        expect(usageBoost(undefined, NOW)).toBe(0);
     });
 });

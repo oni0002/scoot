@@ -124,6 +124,8 @@ pub fn run() {
             crate::commands::ipc::delete_command,
             crate::commands::execution::execute_command,
             crate::commands::execution::open_target,
+            crate::commands::usage::get_usage,
+            crate::commands::usage::clear_usage,
             crate::commands::ipc::open_commands_json,
             // Config
             crate::config::ipc::get_config,

@@ -1,13 +1,20 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Command, SearchResult } from '../types';
+import { Command, SearchResult, UsageMap } from '../types';
 import { createFuse, fuseSearch, detectDirectOpen } from '../search';
+
+const NO_USAGE: UsageMap = {};
 
 export type SearchMode =
     | { mode: 'idle' }
     | { mode: 'argument'; alias: string; command: Command }
     | { mode: 'search'; results: SearchResult[]; selectedIndex: number };
 
-export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxResults: number) => {
+export const useSearchState = (
+    commands: Command[],
+    fuzzyThreshold: number,
+    maxResults: number,
+    usage: UsageMap = NO_USAGE,
+) => {
     const [query, setQuery] = useState('');
     const [searchMode, setSearchMode] = useState<SearchMode>({ mode: 'idle' });
 
@@ -55,14 +62,14 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
                 return currentMode;
             }
 
-            const searchResults = fuseSearch(fuse, newQuery, commands, maxResults);
+            const searchResults = fuseSearch(fuse, newQuery, commands, maxResults, usage);
             const dynamicItem = detectDirectOpen(newQuery);
             if (dynamicItem) {
                 searchResults.push({ command: dynamicItem, score: -1, matches: [] });
             }
             return { mode: 'search', results: searchResults, selectedIndex: 0 };
         },
-        [commands, commandByAlias, maxResults, fuse],
+        [commands, commandByAlias, maxResults, fuse, usage],
     );
 
     const handleQueryChange = useCallback(
