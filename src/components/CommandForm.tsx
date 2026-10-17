@@ -58,7 +58,12 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
         }
 
         if (!formData.command.trim()) {
-            newErrors.command = 'Command is required';
+            newErrors.command =
+                formData.category === 'url'
+                    ? 'URL is required'
+                    : formData.category === 'file'
+                      ? 'Path is required'
+                      : 'Command is required';
         }
 
         if (hasPlaceholders(formData.command) && !formData.alias.trim()) {
@@ -317,6 +322,11 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                 className={`input input-sm w-full ${errors.alias ? 'input-error' : ''}`}
                                 disabled={!hasPlaceholders(formData.command)}
                             />
+                            {!hasPlaceholders(formData.command) && (
+                                <p className="px-1 py-1 text-xs text-muted">
+                                    Enabled when the command has {'{$1}'}
+                                </p>
+                            )}
                             {errors.alias && (
                                 <p
                                     role="alert"

@@ -5,7 +5,7 @@ import { useConfigTheme } from './ConfigContext';
 
 interface NotificationContextType {
     showSuccess: (message: string, duration?: number, action?: Notification['action']) => void;
-    showError: (message: string, duration?: number) => void;
+    showError: (message: string, duration?: number, action?: Notification['action']) => void;
     showWarning: (message: string, duration?: number) => void;
     showInfo: (message: string, duration?: number) => void;
 }

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { daisyTheme } from '../theme';
-import { LuCheck, LuTriangleAlert, LuCircleX, LuInfo } from 'react-icons/lu';
+import { LuX, LuCheck, LuTriangleAlert, LuCircleX, LuInfo } from 'react-icons/lu';
 
 export interface Notification {
     id: string;
@@ -116,6 +116,16 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
                     {notification.message}
                 </div>
             </div>
+            {notification.type === 'error' && (
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-xs btn-square"
+                    aria-label="Dismiss"
+                    onClick={handleRemove}
+                >
+                    <LuX />
+                </button>
+            )}
             {notification.action && (
                 <button
                     type="button"

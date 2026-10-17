@@ -18,6 +18,8 @@ interface SearchResultItemProps {
     onDelete?: (command: Command, event: React.MouseEvent) => void;
     onIgnore?: (command: Command, event: React.MouseEvent) => void;
     totalCount: number;
+    /** Hands focus back to the search field (after Esc or an action in the row menu). */
+    focusSearch?: () => void;
 }
 
 const highlightMatches = (text: string, matches: SearchResult['matches']): React.ReactNode => {
@@ -55,6 +57,7 @@ export const SearchResultItem = React.memo(
         onDelete,
         onIgnore,
         totalCount,
+        focusSearch,
     }: SearchResultItemProps) => {
         const { command } = result;
         const actions = rowActionsFor(command);
@@ -136,6 +139,13 @@ export const SearchResultItem = React.memo(
                         {actions.length > 1 && (
                             <div
                                 className={`dropdown ${totalCount > 4 && index >= totalCount - 2 ? 'dropdown-top' : ''} dropdown-end`}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        focusSearch?.();
+                                    }
+                                }}
                             >
                                 <div
                                     tabIndex={-1}

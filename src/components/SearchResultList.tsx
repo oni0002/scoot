@@ -23,6 +23,7 @@ interface SearchResultListProps {
     aliasExample?: string;
     /** Copies the expanded command while in argument mode. */
     onCopyExpanded?: () => void;
+    focusSearch?: () => void;
 }
 
 export const SearchResultList: React.FC<SearchResultListProps> = ({
@@ -41,6 +42,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     onIgnore,
     aliasExample,
     onCopyExpanded,
+    focusSearch,
 }) => {
     const renderEmptyState = () => {
         if (argumentMode) {
@@ -82,6 +84,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                             onDelete={onDelete}
                             onIgnore={onIgnore}
                             totalCount={results.length}
+                            focusSearch={focusSearch}
                         />
                     ))}
                 </div>

@@ -188,10 +188,14 @@ async fn execute_local_file(
 
     // Check if file exists
     if !std::path::Path::new(&expanded_path).exists() {
-        let error_msg = format!(
-            "File not found: '{}' (expanded from '{}'). Please check if the file exists and the path is correct.",
-            expanded_path, file_path
-        );
+        let error_msg = if expanded_path == file_path {
+            format!("File not found: '{}'", file_path)
+        } else {
+            format!(
+                "File not found: '{}' (expanded from '{}')",
+                expanded_path, file_path
+            )
+        };
         log::error!("Error: {}", error_msg);
         return Err(crate::error::AppError::CommandExecution(error_msg));
     }

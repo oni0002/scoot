@@ -68,3 +68,18 @@ describe('CommandForm leaving', () => {
         expect(onCancel).toHaveBeenCalledTimes(1);
     });
 });
+
+describe('CommandForm validation copy', () => {
+    it('names the field that is missing for the category', async () => {
+        render(<CommandForm onSave={jest.fn()} onCancel={jest.fn()} />);
+        await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+        expect(screen.getByText('URL is required')).toBeInTheDocument();
+        expect(screen.queryByText('Command is required')).not.toBeInTheDocument();
+    });
+
+    it('says why the alias is disabled', () => {
+        render(<CommandForm onSave={jest.fn()} onCancel={jest.fn()} />);
+        expect(screen.getByLabelText(/alias/i)).toBeDisabled();
+        expect(screen.getByText(/Enabled when the command has/)).toBeInTheDocument();
+    });
+});

@@ -36,4 +36,20 @@ describe('NotificationToast', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
         expect(onClick).toHaveBeenCalledTimes(1);
     });
+
+    it('lets an error be dismissed, but not a success', async () => {
+        const onRemove = jest.fn();
+        jest.useFakeTimers();
+        render(
+            <NotificationToast
+                onRemove={onRemove}
+                notifications={[
+                    { id: 'e', type: 'error', message: 'Could not run' },
+                    { id: 's', type: 'success', message: 'Copied' },
+                ]}
+            />,
+        );
+        expect(screen.getAllByRole('button', { name: 'Dismiss' })).toHaveLength(1);
+        jest.useRealTimers();
+    });
 });

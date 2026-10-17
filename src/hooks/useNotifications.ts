@@ -45,8 +45,8 @@ export const useNotifications = () => {
     );
 
     const showError = useCallback(
-        (message: string, duration?: number) => {
-            return addNotification('error', message, duration || 8000); // Errors stay longer
+        (message: string, duration?: number, action?: Notification['action']) => {
+            return addNotification('error', message, duration || 8000, action); // Errors stay longer
         },
         [addNotification],
     );

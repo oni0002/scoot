@@ -76,7 +76,27 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                             e.preventDefault();
                             e.stopPropagation();
                             inputRef.current?.focus();
+                            return;
                         }
+                        // Items are not tab stops (this is a search box first); arrows move through them
+                        const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
+                        if (!keys.includes(e.key)) return;
+                        const items = Array.from(
+                            e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+                        );
+                        const at = items.indexOf(document.activeElement as HTMLElement);
+                        const next =
+                            e.key === 'Home'
+                                ? 0
+                                : e.key === 'End'
+                                  ? items.length - 1
+                                  : e.key === 'ArrowDown'
+                                    ? (at + 1) % items.length
+                                    : at <= 0
+                                      ? items.length - 1
+                                      : at - 1;
+                        e.preventDefault();
+                        items[next]?.focus();
                     }}
                 >
                     <div
@@ -90,20 +110,26 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     </div>
                     <ul
                         role="menu"
-                        tabIndex={0}
+                        tabIndex={-1}
                         // Picking an item hands focus back to the search field, which also closes the menu
                         onClickCapture={() => inputRef.current?.focus()}
                         className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-20 w-48 p-2 shadow-sm"
                     >
-                        <li>
-                            <button type="button" role="menuitem" onClick={onAddCommand}>
-                                Add Command
-                            </button>
-                        </li>
-                        <li>
+                        <li role="none">
                             <button
                                 type="button"
                                 role="menuitem"
+                                tabIndex={-1}
+                                onClick={onAddCommand}
+                            >
+                                Add Command
+                            </button>
+                        </li>
+                        <li role="none">
+                            <button
+                                type="button"
+                                role="menuitem"
+                                tabIndex={-1}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onOpenConfig?.();
@@ -112,8 +138,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                                 Settings
                             </button>
                         </li>
-                        <li>
-                            <button type="button" role="menuitem" onClick={onReloadCommands}>
+                        <li role="none">
+                            <button
+                                type="button"
+                                role="menuitem"
+                                tabIndex={-1}
+                                onClick={onReloadCommands}
+                            >
                                 Reload
                             </button>
                         </li>
@@ -122,13 +153,23 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                             aria-hidden="true"
                             className="my-1 h-px bg-base-content/10 p-0"
                         ></li>
-                        <li>
-                            <button type="button" role="menuitem" onClick={onOpenCommandsJson}>
+                        <li role="none">
+                            <button
+                                type="button"
+                                role="menuitem"
+                                tabIndex={-1}
+                                onClick={onOpenCommandsJson}
+                            >
                                 Open commands.json
                             </button>
                         </li>
-                        <li>
-                            <button type="button" role="menuitem" onClick={onOpenConfigJson}>
+                        <li role="none">
+                            <button
+                                type="button"
+                                role="menuitem"
+                                tabIndex={-1}
+                                onClick={onOpenConfigJson}
+                            >
                                 Open config.json
                             </button>
                         </li>
@@ -137,13 +178,23 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                             aria-hidden="true"
                             className="my-1 h-px bg-base-content/10 p-0"
                         ></li>
-                        <li>
-                            <button type="button" role="menuitem" onClick={onShowReadme}>
+                        <li role="none">
+                            <button
+                                type="button"
+                                role="menuitem"
+                                tabIndex={-1}
+                                onClick={onShowReadme}
+                            >
                                 Show README
                             </button>
                         </li>
-                        <li>
-                            <button type="button" role="menuitem" onClick={onShowAbout}>
+                        <li role="none">
+                            <button
+                                type="button"
+                                role="menuitem"
+                                tabIndex={-1}
+                                onClick={onShowAbout}
+                            >
                                 About
                             </button>
                         </li>

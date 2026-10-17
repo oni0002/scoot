@@ -54,11 +54,14 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
                 showError(
                     `Could not run "${command.name}": ${message}`,
                     NOTIFICATION_DURATION.LONG,
+                    command.source === 'user'
+                        ? { label: 'Edit', onClick: () => onEditCommand?.(command) }
+                        : undefined,
                 );
                 return null;
             }
         },
-        [rawExecuteCommand, showError],
+        [rawExecuteCommand, showError, onEditCommand],
     );
 
     const searchState = useSearchState(commands, fuzzyThreshold, maxResults);
@@ -263,7 +266,9 @@ A fast and efficient command launcher for your desktop.`,
 
             {/* Announces the result count to screen readers as the query changes */}
             <div className="sr-only" role="status" aria-live="polite">
-                {searchMode.mode === 'search' && query.trim() ? `${results.length} results` : ''}
+                {searchMode.mode === 'search' && query.trim()
+                    ? `${results.length} ${results.length === 1 ? 'result' : 'results'}`
+                    : ''}
             </div>
 
             <SearchResultList
@@ -282,6 +287,7 @@ A fast and efficient command launcher for your desktop.`,
                 onIgnore={handleIgnore}
                 aliasExample={aliasExample}
                 onCopyExpanded={copyExpanded}
+                focusSearch={() => inputRef.current?.focus()}
             />
 
             <SearchHints
