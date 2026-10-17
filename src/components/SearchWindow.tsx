@@ -225,7 +225,6 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         'open commands.json',
     );
     const handleOpenConfigJson = menuHandler(() => TauriAPI.openConfigJson(), 'open config.json');
-    const handleShowReadme = menuHandler(() => TauriAPI.openReadme(), 'open the README');
     const handleShowAbout = menuHandler(async () => {
         const version = await TauriAPI.getVersion();
         await TauriAPI.showMessage(
@@ -257,7 +256,6 @@ A fast and efficient command launcher for your desktop.`,
                 onReloadCommands={handleReload}
                 onOpenCommandsJson={handleOpenCommandsJson}
                 onOpenConfigJson={handleOpenConfigJson}
-                onShowReadme={handleShowReadme}
                 onShowAbout={handleShowAbout}
                 onOpenConfig={onOpenConfig}
                 hasResults={results.length > 0}

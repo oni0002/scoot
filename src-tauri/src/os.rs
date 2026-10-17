@@ -4,7 +4,7 @@ use std::sync::LazyLock;
 
 static ENV_VAR_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"%([^%]+)%").expect("invalid regex"));
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
 
 /// Open the specified path (file, directory, URL) with the default application
@@ -23,31 +23,6 @@ pub fn open_url(app_handle: &AppHandle, url: &str) -> Result<(), crate::error::A
         .opener()
         .open_url(url, None::<&str>)
         .map_err(|e| crate::error::AppError::System(format!("Failed to open URL '{}': {}", url, e)))
-}
-
-/// Resolve the path to a resource file
-pub fn resolve_resource(
-    app_handle: &AppHandle,
-    path: &str,
-) -> Result<PathBuf, crate::error::AppError> {
-    let resource_path = app_handle
-        .path()
-        .resolve(path, tauri::path::BaseDirectory::Resource)
-        .map_err(|e| {
-            crate::error::AppError::System(format!(
-                "Failed to resolve resource path '{}': {}",
-                path, e
-            ))
-        })?;
-
-    if !resource_path.exists() {
-        return Err(crate::error::AppError::NotFound(format!(
-            "Resource not found: {}",
-            path
-        )));
-    }
-
-    Ok(resource_path)
 }
 
 /// Get the path to the log directory

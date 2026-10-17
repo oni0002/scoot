@@ -15,7 +15,6 @@ interface SearchBarProps {
     onReloadCommands: (e: React.MouseEvent) => void;
     onOpenCommandsJson: (e: React.MouseEvent) => void;
     onOpenConfigJson: (e: React.MouseEvent) => void;
-    onShowReadme: (e: React.MouseEvent) => void;
     onShowAbout: (e: React.MouseEvent) => void;
     onOpenConfig?: () => void;
 
@@ -34,7 +33,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     onReloadCommands,
     onOpenCommandsJson,
     onOpenConfigJson,
-    onShowReadme,
     onShowAbout,
     onOpenConfig,
     hasResults,
@@ -179,16 +177,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                             aria-hidden="true"
                             className="my-1 h-px bg-base-content/10 p-0"
                         ></li>
-                        <li role="none">
-                            <button
-                                type="button"
-                                role="menuitem"
-                                tabIndex={-1}
-                                onClick={onShowReadme}
-                            >
-                                Show README
-                            </button>
-                        </li>
                         <li role="none">
                             <button
                                 type="button"

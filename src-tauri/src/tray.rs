@@ -19,7 +19,6 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let open_config_item =
         MenuItem::with_id(app, "open_config", "Open config.json", true, None::<&str>)?;
-    let readme_item = MenuItem::with_id(app, "readme", "Open README", true, None::<&str>)?;
     let open_log_item = MenuItem::with_id(app, "open_log", "Open log", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
@@ -29,7 +28,6 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         .item(&add_command_item)
         .item(&open_commands_item)
         .item(&open_config_item)
-        .item(&readme_item)
         .item(&open_log_item)
         .separator()
         .item(&quit_item)
@@ -57,9 +55,6 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                 tauri::async_runtime::spawn(async move {
                     let _ = crate::config::ipc::open_config_json(h).await;
                 });
-            }
-            "readme" => {
-                let _ = crate::lifecycle::open_readme_file(app_handle);
             }
             "open_log" => {
                 let _ = crate::lifecycle::open_log(app_handle);

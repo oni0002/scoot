@@ -118,10 +118,6 @@ async fn execute_scoot_command(
             crate::lifecycle::open_settings_dialog(app_handle)?;
             Ok(ExecuteResult::keep_open())
         }
-        "scoot://open-readme" => {
-            crate::lifecycle::open_readme_file(app_handle)?;
-            Ok(ExecuteResult::hide())
-        }
         "scoot://open-log" => {
             crate::lifecycle::open_log(app_handle)?;
             Ok(ExecuteResult::hide())

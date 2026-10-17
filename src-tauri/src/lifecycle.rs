@@ -1,22 +1,10 @@
 use crate::state::{CommandsState, ConfigState};
 use tauri::{AppHandle, Manager};
 
-/// Open README file
-pub fn open_readme_file(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
-    let resource_path = crate::os::resolve_resource(app_handle, "README.md")?;
-    crate::os::open_path(app_handle, &resource_path.to_string_lossy())
-}
-
 /// Reload config and commands (IPC)
 #[tauri::command]
 pub async fn reload_all(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     reload(&app_handle).await
-}
-
-/// Open README (IPC)
-#[tauri::command]
-pub async fn open_readme(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
-    open_readme_file(&app_handle)
 }
 
 /// Quit app (IPC)

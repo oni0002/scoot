@@ -18,7 +18,6 @@ pub const CMD_SCOOT_ADD_COMMAND: &str = "scoot://add-command";
 pub const CMD_SCOOT_OPEN_COMMANDS: &str = "scoot://open-commands";
 pub const CMD_SCOOT_OPEN_CONFIG: &str = "scoot://open-config";
 pub const CMD_SCOOT_OPEN_SETTINGS: &str = "scoot://open-settings";
-pub const CMD_SCOOT_OPEN_README: &str = "scoot://open-readme";
 pub const CMD_SCOOT_OPEN_LOG: &str = "scoot://open-log";
 pub const CMD_SCOOT_RELOAD: &str = "scoot://reload";
 pub const CMD_SCOOT_KILL: &str = "scoot://kill";
@@ -78,13 +77,6 @@ pub fn get_scoot_commands() -> Vec<Command> {
             SOURCE_SCOOT,
             CMD_SCOOT_OPEN_CONFIG,
             "Open config.json configuration file",
-        ),
-        Command::new(
-            "Open README",
-            CATEGORY_SCOOT,
-            SOURCE_SCOOT,
-            CMD_SCOOT_OPEN_README,
-            "Open application README",
         ),
         Command::new(
             "Open Logs",
@@ -274,7 +266,6 @@ impl Command {
                 CMD_SCOOT_OPEN_COMMANDS,
                 CMD_SCOOT_OPEN_CONFIG,
                 CMD_SCOOT_OPEN_SETTINGS,
-                CMD_SCOOT_OPEN_README,
                 CMD_SCOOT_OPEN_LOG,
                 CMD_SCOOT_RELOAD,
                 CMD_SCOOT_KILL,

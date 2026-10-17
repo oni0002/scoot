@@ -48,10 +48,6 @@ export const TauriAPI = {
         return await invoke('open_config_json');
     },
 
-    async openReadme(): Promise<void> {
-        return await invoke('open_readme');
-    },
-
     async quitApp(): Promise<void> {
         return await invoke('quit_app');
     },
