@@ -83,3 +83,28 @@ describe('CommandForm validation copy', () => {
         expect(screen.getByText(/Enabled when the command has/)).toBeInTheDocument();
     });
 });
+
+describe('CommandForm duplicating', () => {
+    const template = {
+        id: 'c1',
+        name: 'git status',
+        category: 'command',
+        source: 'user',
+        command: 'git {$1}',
+        description: 'Git',
+        alias: 'g',
+    };
+
+    it('starts from the original but saves a new command without its id or alias', async () => {
+        const onSave = jest.fn();
+        render(<CommandForm template={template} onSave={onSave} onCancel={jest.fn()} />);
+        expect(screen.getByLabelText(/name/i)).toHaveValue('git status');
+        expect(screen.getByLabelText(/alias/i)).toHaveValue('');
+
+        await userEvent.type(screen.getByLabelText(/alias/i), 'gs');
+        await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({ id: '', name: 'git status', alias: 'gs' }),
+        );
+    });
+});

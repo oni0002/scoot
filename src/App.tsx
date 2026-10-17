@@ -35,6 +35,7 @@ const AppContent = () => {
 
     const [currentView, setCurrentView] = useState<'search' | 'form' | 'config'>('search');
     const [editingCommand, setEditingCommand] = useState<Command | undefined>(undefined);
+    const [duplicatingCommand, setDuplicatingCommand] = useState<Command | undefined>(undefined);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [deletingCommand, setDeletingCommand] = useState<Command | undefined>(undefined);
 
@@ -42,6 +43,7 @@ const AppContent = () => {
 
     const handleAddCommand = useCallback(() => {
         setEditingCommand(undefined);
+        setDuplicatingCommand(undefined);
         setCurrentView('form');
     }, []);
 
@@ -63,6 +65,7 @@ const AppContent = () => {
             showSuccess(`"${command.name}" ${editing ? 'updated' : 'added'} successfully.`);
             setCurrentView('search');
             setEditingCommand(undefined);
+            setDuplicatingCommand(undefined);
         },
         [editingCommand, updateCommand, addCommand, showSuccess, showError],
     );
@@ -94,11 +97,19 @@ const AppContent = () => {
         } else {
             setCurrentView('search');
             setEditingCommand(undefined);
+            setDuplicatingCommand(undefined);
         }
     }, [showDeleteDialog]);
 
     const handleEditCommandFromSearch = useCallback((command: Command) => {
         setEditingCommand(command);
+        setDuplicatingCommand(undefined);
+        setCurrentView('form');
+    }, []);
+
+    const handleDuplicateCommandFromSearch = useCallback((command: Command) => {
+        setEditingCommand(undefined);
+        setDuplicatingCommand(command);
         setCurrentView('form');
     }, []);
 
@@ -201,6 +212,7 @@ const AppContent = () => {
                     fuzzyThreshold={fuzzyThreshold}
                     maxResults={maxResults}
                     onEditCommand={handleEditCommandFromSearch}
+                    onDuplicateCommand={handleDuplicateCommandFromSearch}
                     onDeleteCommand={handleDeleteCommandFromSearch}
                     onAddCommand={handleAddCommand}
                     onCopyCommand={handleCopyCommand}
@@ -219,6 +231,7 @@ const AppContent = () => {
             ) : (
                 <CommandForm
                     command={editingCommand}
+                    template={duplicatingCommand}
                     onSave={handleSaveCommand}
                     onCancel={handleCancelDialog}
                 />

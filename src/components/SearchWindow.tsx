@@ -20,6 +20,7 @@ interface SearchWindowProps {
     fuzzyThreshold?: number;
     maxResults?: number;
     onEditCommand?: (command: Command) => void;
+    onDuplicateCommand?: (command: Command) => void;
     onDeleteCommand?: (command: Command) => void;
     onAddCommand?: () => void;
     onCopyCommand?: (command: Command) => void;
@@ -33,6 +34,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     fuzzyThreshold = 0.5,
     maxResults = 10,
     onEditCommand,
+    onDuplicateCommand,
     onDeleteCommand,
     onAddCommand,
     onCopyCommand,
@@ -144,10 +146,11 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
             if (!rowActionsFor(command).includes(action)) return;
             if (action === 'copy') onCopyCommand?.(command);
             else if (action === 'edit') onEditCommand?.(command);
+            else if (action === 'duplicate') onDuplicateCommand?.(command);
             else if (action === 'delete') onDeleteCommand?.(command);
             else handleIgnore(command);
         },
-        [onCopyCommand, onEditCommand, onDeleteCommand, handleIgnore],
+        [onCopyCommand, onEditCommand, onDuplicateCommand, onDeleteCommand, handleIgnore],
     );
 
     const handleRowAction = useCallback(

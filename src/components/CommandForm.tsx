@@ -8,34 +8,45 @@ import { ConfirmDialog } from './ConfirmDialog';
 
 interface CommandFormProps {
     command?: Command; // If provided, we're editing; otherwise, we're adding
+    template?: Command; // Prefills a new command from an existing one (duplicate)
     onSave: (command: Command) => void;
     onCancel: () => void;
 }
 
-const toFormData = (command?: Command) => ({
-    id: command?.id ?? '',
-    name: command?.name ?? '',
-    category: command?.category ?? 'url',
-    command: command?.command ?? '',
-    description: command?.description ?? '',
-    alias: command?.alias ?? '',
-    workingDir: command?.workingDir ?? '',
-    showWindow: command?.showWindow ?? false,
-});
+// A duplicate starts from the original's values but is a new command: no id, and no alias since
+// an alias must stay unique.
+const toFormData = (command?: Command, template?: Command) => {
+    const source = command ?? template;
+    return {
+        id: command?.id ?? '',
+        name: source?.name ?? '',
+        category: source?.category ?? 'url',
+        command: source?.command ?? '',
+        description: source?.description ?? '',
+        alias: command?.alias ?? '',
+        workingDir: source?.workingDir ?? '',
+        showWindow: source?.showWindow ?? false,
+    };
+};
 
-export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCancel }) => {
-    const [formData, setFormData] = useState(() => toFormData(command));
+export const CommandForm: React.FC<CommandFormProps> = ({
+    command,
+    template,
+    onSave,
+    onCancel,
+}) => {
+    const [formData, setFormData] = useState(() => toFormData(command, template));
     const [confirmingDiscard, setConfirmingDiscard] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- initializing form state from props is intentional
-        setFormData(toFormData(command));
+        setFormData(toFormData(command, template));
         setErrors({});
         setConfirmingDiscard(false);
-    }, [command]);
+    }, [command, template]);
 
-    const dirty = JSON.stringify(formData) !== JSON.stringify(toFormData(command));
+    const dirty = JSON.stringify(formData) !== JSON.stringify(toFormData(command, template));
 
     // Leaving with unsaved edits asks first; the dialog's own Esc means "keep editing".
     const requestCancel = useCallback(() => {

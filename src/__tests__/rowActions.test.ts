@@ -12,8 +12,8 @@ const base: Command = {
 };
 
 describe('rowActionsFor', () => {
-    it('lets a custom command be copied, edited and deleted', () => {
-        expect(rowActionsFor(base)).toEqual(['copy', 'edit', 'delete']);
+    it('lets a custom command be copied, edited, duplicated and deleted', () => {
+        expect(rowActionsFor(base)).toEqual(['copy', 'edit', 'duplicate', 'delete']);
     });
 
     it.each(['bookmark', 'application', 'scoot'])(
