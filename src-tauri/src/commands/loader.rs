@@ -80,17 +80,17 @@ pub async fn reload(
     let bookmarks = filter_ignored(bookmarks, &config.ignored);
     let app_commands = filter_ignored(app_commands, &config.ignored);
     let markdown_commands = filter_ignored(markdown_commands, &config.ignored);
-    let scoot_commands =
-        filter_ignored(crate::commands::domain::get_scoot_commands(), &config.ignored);
+    let scoot_commands = filter_ignored(
+        crate::commands::domain::get_scoot_commands(),
+        &config.ignored,
+    );
 
     let mut external = bookmarks;
     external.extend(app_commands);
     external.extend(markdown_commands);
     external.extend(scoot_commands);
 
-    let mut manager = command_registry
-        .lock()
-        .map_err(|e| AppError::lock(e))?;
+    let mut manager = command_registry.lock().map_err(|e| AppError::lock(e))?;
     manager.set_user_commands(commands);
     manager.set_external_commands(external);
 

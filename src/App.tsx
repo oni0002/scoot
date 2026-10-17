@@ -16,11 +16,7 @@ import { NotificationProvider, useNotificationContext } from './context/Notifica
 
 // 内部コンポーネント: Contextを使用するために分離する
 const AppContent = () => {
-    const {
-        showSuccess,
-        showError,
-        showWarning,
-    } = useNotificationContext();
+    const { showSuccess, showError, showWarning } = useNotificationContext();
 
     const {
         loading,
@@ -42,7 +38,9 @@ const AppContent = () => {
     useEffect(() => {
         if (currentView !== 'search') {
             TauriAPI.enterModal();
-            return () => { TauriAPI.leaveModal(); };
+            return () => {
+                TauriAPI.leaveModal();
+            };
         }
     }, [currentView]);
 
@@ -197,7 +195,12 @@ const AppContent = () => {
                     isDialogOpen={showDeleteDialog}
                 />
             ) : currentView === 'config' ? (
-                <ConfigScreen onBack={() => { setCurrentView('search'); loadConfig(); }} />
+                <ConfigScreen
+                    onBack={() => {
+                        setCurrentView('search');
+                        loadConfig();
+                    }}
+                />
             ) : (
                 <CommandForm
                     command={editingCommand}

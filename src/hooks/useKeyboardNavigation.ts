@@ -75,7 +75,17 @@ export const useKeyboardNavigation = ({
                 }
             }
         },
-        [moveSelection, executeCommand, copySelectedCommand, searchMode, query, resetState, setQuery, setSearchMode, inputRef],
+        [
+            moveSelection,
+            executeCommand,
+            copySelectedCommand,
+            searchMode,
+            query,
+            resetState,
+            setQuery,
+            setSearchMode,
+            inputRef,
+        ],
     );
 
     return { handleKeyDown };

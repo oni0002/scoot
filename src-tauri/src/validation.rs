@@ -71,7 +71,11 @@ mod tests {
         let result: Result<Item, _> = parse_and_validate(json);
         assert!(result.is_err());
         let msg = result.unwrap_err().to_string();
-        assert!(msg.contains("Validation error"), "expected Validation error, got: {}", msg);
+        assert!(
+            msg.contains("Validation error"),
+            "expected Validation error, got: {}",
+            msg
+        );
     }
 
     #[test]
@@ -90,7 +94,10 @@ mod tests {
 
     #[test]
     fn validate_valid_data() {
-        let item = Item { name: "test".to_string(), value: 0 };
+        let item = Item {
+            name: "test".to_string(),
+            value: 0,
+        };
         assert!(validate(&item).is_ok());
     }
 

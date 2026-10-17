@@ -67,7 +67,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                             <a onClick={onAddCommand}>Add Command</a>
                         </li>
                         <li>
-                            <a onClick={(e) => { e.stopPropagation(); onOpenConfig?.(); }}>Settings</a>
+                            <a
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onOpenConfig?.();
+                                }}
+                            >
+                                Settings
+                            </a>
                         </li>
                         <li>
                             <a onClick={onReloadCommands}>Reload</a>

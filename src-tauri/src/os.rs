@@ -62,11 +62,12 @@ pub fn get_log_dir(_app_handle: &AppHandle) -> Result<PathBuf, crate::error::App
 
 /// Expand Windows environment variables like %APPDATA%
 pub fn expand_env_vars(path: &str) -> String {
-    ENV_VAR_RE.replace_all(path, |caps: &regex::Captures| {
-        let key = &caps[1];
-        std::env::var(key).unwrap_or_else(|_| format!("%{}%", key))
-    })
-    .to_string()
+    ENV_VAR_RE
+        .replace_all(path, |caps: &regex::Captures| {
+            let key = &caps[1];
+            std::env::var(key).unwrap_or_else(|_| format!("%{}%", key))
+        })
+        .to_string()
 }
 
 #[cfg(test)]

@@ -227,8 +227,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                     {formData.category === 'url'
                                         ? 'URL *'
                                         : formData.category === 'file'
-                                            ? 'Path *'
-                                            : 'Command *'}
+                                          ? 'Path *'
+                                          : 'Command *'}
                                 </span>
                             </label>
                             <div className="flex gap-2 w-full">
@@ -240,8 +240,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                         formData.category === 'url'
                                             ? 'https://example.com'
                                             : formData.category === 'file'
-                                                ? 'C:\\path\\to\\file.txt'
-                                                : 'Command line'
+                                              ? 'C:\\path\\to\\file.txt'
+                                              : 'Command line'
                                     }
                                     className={`input input-bordered input-sm flex-1 ${errors.command ? 'input-error' : ''}`}
                                 />

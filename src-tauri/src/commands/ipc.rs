@@ -20,10 +20,7 @@ pub async fn add_command(
 ) -> Result<String, crate::error::AppError> {
     command.source = crate::commands::domain::SOURCE_USER.to_string();
     let (id, commands) = {
-        let mut manager = state
-            .commands
-            .lock()
-            .map_err(|e| AppError::lock(e))?;
+        let mut manager = state.commands.lock().map_err(|e| AppError::lock(e))?;
         // Validate
         manager.validate_command(&command)?;
 
@@ -47,10 +44,7 @@ pub async fn update_command(
 ) -> Result<(), crate::error::AppError> {
     command.source = crate::commands::domain::SOURCE_USER.to_string();
     let commands = {
-        let mut manager = state
-            .commands
-            .lock()
-            .map_err(|e| AppError::lock(e))?;
+        let mut manager = state.commands.lock().map_err(|e| AppError::lock(e))?;
         // Validate
         manager.validate_command(&command)?;
 
@@ -72,10 +66,7 @@ pub async fn delete_command(
     state: State<'_, CommandsState>,
 ) -> Result<(), crate::error::AppError> {
     let commands = {
-        let mut manager = state
-            .commands
-            .lock()
-            .map_err(|e| AppError::lock(e))?;
+        let mut manager = state.commands.lock().map_err(|e| AppError::lock(e))?;
         // Delete command
         manager.delete_user_command(&id)?;
         manager.get_user_commands()
@@ -109,4 +100,3 @@ pub async fn open_commands_json(
     }
     Ok(())
 }
-

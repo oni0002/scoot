@@ -65,18 +65,10 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::error:
     let mut seen_urls = std::collections::HashSet::new();
 
     // Load bookmarks from the bookmark bar
-    collect(
-        &root.roots.bookmark_bar,
-        &mut commands,
-        &mut seen_urls,
-    );
+    collect(&root.roots.bookmark_bar, &mut commands, &mut seen_urls);
 
     // Load bookmarks from the other bookmarks
-    collect(
-        &root.roots.other,
-        &mut commands,
-        &mut seen_urls,
-    );
+    collect(&root.roots.other, &mut commands, &mut seen_urls);
 
     // Load bookmarks from the synced bookmarks (if they exist)
     if let Some(synced) = &root.roots.synced {
@@ -121,7 +113,13 @@ fn collect(
                 return;
             }
 
-            commands.push(Command::new(bookmark.name.clone(), "url", "bookmark", url.clone(), url.clone()));
+            commands.push(Command::new(
+                bookmark.name.clone(),
+                "url",
+                "bookmark",
+                url.clone(),
+                url.clone(),
+            ));
             seen_urls.insert(url.clone());
         }
     } else if bookmark.bookmark_type == BookmarkType::Folder {
@@ -132,5 +130,3 @@ fn collect(
         }
     }
 }
-
-

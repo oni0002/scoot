@@ -51,14 +51,62 @@ pub fn deserialize_json(json_str: &str) -> Result<Vec<Command>, crate::error::Ap
 /// Get the built-in commands for Scoot
 pub fn get_scoot_commands() -> Vec<Command> {
     vec![
-        Command::new("Add Command", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_ADD_COMMAND, "Add a new command to the launcher"),
-        Command::new("Open Settings", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_SETTINGS, "Open the settings screen"),
-        Command::new("Open Commands.json", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_COMMANDS, "Open commands.json configuration file"),
-        Command::new("Open Config.json", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_CONFIG, "Open config.json configuration file"),
-        Command::new("Open README", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_README, "Open application README"),
-        Command::new("Open Logs", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_OPEN_LOG, "Open application log directory"),
-        Command::new("Reload", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_RELOAD, "Reload commands and configuration"),
-        Command::new("Kill Scoot", CATEGORY_SCOOT, SOURCE_SCOOT, CMD_SCOOT_KILL, "Terminate the application"),
+        Command::new(
+            "Add Command",
+            CATEGORY_SCOOT,
+            SOURCE_SCOOT,
+            CMD_SCOOT_ADD_COMMAND,
+            "Add a new command to the launcher",
+        ),
+        Command::new(
+            "Open Settings",
+            CATEGORY_SCOOT,
+            SOURCE_SCOOT,
+            CMD_SCOOT_OPEN_SETTINGS,
+            "Open the settings screen",
+        ),
+        Command::new(
+            "Open Commands.json",
+            CATEGORY_SCOOT,
+            SOURCE_SCOOT,
+            CMD_SCOOT_OPEN_COMMANDS,
+            "Open commands.json configuration file",
+        ),
+        Command::new(
+            "Open Config.json",
+            CATEGORY_SCOOT,
+            SOURCE_SCOOT,
+            CMD_SCOOT_OPEN_CONFIG,
+            "Open config.json configuration file",
+        ),
+        Command::new(
+            "Open README",
+            CATEGORY_SCOOT,
+            SOURCE_SCOOT,
+            CMD_SCOOT_OPEN_README,
+            "Open application README",
+        ),
+        Command::new(
+            "Open Logs",
+            CATEGORY_SCOOT,
+            SOURCE_SCOOT,
+            CMD_SCOOT_OPEN_LOG,
+            "Open application log directory",
+        ),
+        Command::new(
+            "Reload",
+            CATEGORY_SCOOT,
+            SOURCE_SCOOT,
+            CMD_SCOOT_RELOAD,
+            "Reload commands and configuration",
+        ),
+        Command::new(
+            "Kill Scoot",
+            CATEGORY_SCOOT,
+            SOURCE_SCOOT,
+            CMD_SCOOT_KILL,
+            "Terminate the application",
+        ),
     ]
 }
 

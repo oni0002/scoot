@@ -98,9 +98,7 @@ pub async fn reload(
 
     // Update state config
     {
-        let mut locked_config = state_config
-            .lock()
-            .map_err(|e| AppError::lock(e))?;
+        let mut locked_config = state_config.lock().map_err(|e| AppError::lock(e))?;
         *locked_config = new_config.clone();
     }
 

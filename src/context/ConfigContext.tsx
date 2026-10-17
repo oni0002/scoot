@@ -40,7 +40,9 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
     }, []);
 
     return (
-        <ConfigContext.Provider value={{ config, theme, fuzzyThreshold, maxResults, loadConfig, saveConfig }}>
+        <ConfigContext.Provider
+            value={{ config, theme, fuzzyThreshold, maxResults, loadConfig, saveConfig }}
+        >
             {children}
         </ConfigContext.Provider>
     );

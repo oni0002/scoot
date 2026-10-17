@@ -5,7 +5,7 @@ pub struct CommandRegistry {
     pub user_commands: HashMap<String, Command>,
     pub external_commands: Vec<Command>, // bookmark + app + markdown + scoot (reload-only)
     command_index: HashMap<String, String>, // command string → id
-    alias_index: HashMap<String, String>,   // alias string → id
+    alias_index: HashMap<String, String>, // alias string → id
 }
 
 impl CommandRegistry {
@@ -36,7 +36,8 @@ impl CommandRegistry {
     pub fn add_user_command(&mut self, mut command: Command) -> String {
         Self::assign_id(&mut command);
         let id = command.id.clone();
-        self.command_index.insert(command.command.clone(), id.clone());
+        self.command_index
+            .insert(command.command.clone(), id.clone());
         if let Some(ref a) = command.alias {
             self.alias_index.insert(a.clone(), id.clone());
         }
@@ -45,16 +46,18 @@ impl CommandRegistry {
     }
 
     pub fn update_user_command(&mut self, command: Command) -> Result<(), crate::error::AppError> {
-        let old = self.user_commands.get(&command.id).ok_or_else(|| {
-            crate::error::AppError::NotFound("Command not found".to_string())
-        })?;
+        let old = self
+            .user_commands
+            .get(&command.id)
+            .ok_or_else(|| crate::error::AppError::NotFound("Command not found".to_string()))?;
         // Remove old index entries
         self.command_index.remove(&old.command);
         if let Some(ref a) = old.alias {
             self.alias_index.remove(a);
         }
         // Insert new index entries
-        self.command_index.insert(command.command.clone(), command.id.clone());
+        self.command_index
+            .insert(command.command.clone(), command.id.clone());
         if let Some(ref a) = command.alias {
             self.alias_index.insert(a.clone(), command.id.clone());
         }
@@ -80,9 +83,10 @@ impl CommandRegistry {
     }
 
     pub fn delete_user_command(&mut self, id: &str) -> Result<(), crate::error::AppError> {
-        let command = self.user_commands.remove(id).ok_or_else(|| {
-            crate::error::AppError::NotFound("Command not found".to_string())
-        })?;
+        let command = self
+            .user_commands
+            .remove(id)
+            .ok_or_else(|| crate::error::AppError::NotFound("Command not found".to_string()))?;
         self.command_index.remove(&command.command);
         if let Some(ref a) = command.alias {
             self.alias_index.remove(a);
@@ -107,7 +111,11 @@ impl CommandRegistry {
 
         if let Some(existing_id) = self.command_index.get(&command.command) {
             if existing_id != &command.id {
-                let name = self.user_commands.get(existing_id).map(|c| c.name.as_str()).unwrap_or("unknown");
+                let name = self
+                    .user_commands
+                    .get(existing_id)
+                    .map(|c| c.name.as_str())
+                    .unwrap_or("unknown");
                 return Err(crate::error::AppError::Validation(format!(
                     "This command path/URL is already registered as '{}'.",
                     name

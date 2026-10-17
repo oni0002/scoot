@@ -47,7 +47,9 @@ pub async fn show_window(app_handle: tauri::AppHandle) -> Result<(), crate::erro
 /// Increment the modal refcount to prevent auto-hide
 #[tauri::command]
 pub async fn enter_modal(state: State<'_, WindowState>) -> Result<(), crate::error::AppError> {
-    state.prevent_hide.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    state
+        .prevent_hide
+        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     Ok(())
 }
 
@@ -56,7 +58,9 @@ pub async fn enter_modal(state: State<'_, WindowState>) -> Result<(), crate::err
 pub async fn leave_modal(state: State<'_, WindowState>) -> Result<(), crate::error::AppError> {
     let prev = state.prevent_hide.load(std::sync::atomic::Ordering::SeqCst);
     if prev > 0 {
-        state.prevent_hide.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+        state
+            .prevent_hide
+            .fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
     }
     Ok(())
 }

@@ -23,10 +23,7 @@ pub async fn save_config(
 ) -> Result<(), crate::error::AppError> {
     // state
     {
-        let mut locked_config = state
-            .config
-            .lock()
-            .map_err(|e| AppError::lock(e))?;
+        let mut locked_config = state.config.lock().map_err(|e| AppError::lock(e))?;
         *locked_config = config.clone();
     }
 
@@ -56,8 +53,13 @@ pub async fn ignore_command(
     config_state.config_store.save(&config_snapshot).await?;
 
     {
-        let mut registry = commands_state.commands.lock().map_err(|e| AppError::lock(e))?;
-        registry.external_commands.retain(|c| c.command != command_str);
+        let mut registry = commands_state
+            .commands
+            .lock()
+            .map_err(|e| AppError::lock(e))?;
+        registry
+            .external_commands
+            .retain(|c| c.command != command_str);
     }
 
     if let Err(e) = app_handle.emit("request-reload", ()) {

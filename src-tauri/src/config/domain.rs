@@ -108,4 +108,3 @@ impl Config {
         crate::validation::parse_and_validate::<Self>(json_str)
     }
 }
-

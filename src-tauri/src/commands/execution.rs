@@ -9,10 +9,14 @@ pub struct ExecuteResult {
 
 impl ExecuteResult {
     fn hide() -> Self {
-        Self { keep_window_open: false }
+        Self {
+            keep_window_open: false,
+        }
     }
     fn keep_open() -> Self {
-        Self { keep_window_open: true }
+        Self {
+            keep_window_open: true,
+        }
     }
 }
 
@@ -176,8 +180,7 @@ async fn execute_local_file(
 async fn execute_shell_command(
     command: &str,
     working_dir: &Option<String>,
-    #[cfg_attr(not(target_os = "windows"), allow(unused_variables))]
-    show_window: bool,
+    #[cfg_attr(not(target_os = "windows"), allow(unused_variables))] show_window: bool,
 ) -> Result<(), crate::error::AppError> {
     use std::process::Command as StdCommand;
     log::debug!("Executing shell command: {}", command);

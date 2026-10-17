@@ -62,16 +62,20 @@ pub async fn load(config: &MarkdownConfig) -> Result<Vec<Command>, crate::error:
                     "file"
                 };
 
-                commands.push(Command::new(name, category, file_name.clone(), url.clone(), url.clone()));
+                commands.push(Command::new(
+                    name,
+                    category,
+                    file_name.clone(),
+                    url.clone(),
+                    url.clone(),
+                ));
             }
         }
 
         commands
     })
     .await
-    .map_err(|e| {
-        crate::error::AppError::System(format!("Failed to load markdown links: {}", e))
-    })?;
+    .map_err(|e| crate::error::AppError::System(format!("Failed to load markdown links: {}", e)))?;
 
     Ok(commands)
 }
@@ -113,8 +117,17 @@ mod tests {
         }
 
         assert_eq!(results.len(), 3);
-        assert_eq!(results[0], ("Google".to_string(), "https://google.com".to_string()));
-        assert_eq!(results[1], ("GitHub".to_string(), "https://github.com".to_string()));
-        assert_eq!(results[2], ("Local File".to_string(), r"C:\path\to\file.txt".to_string()));
+        assert_eq!(
+            results[0],
+            ("Google".to_string(), "https://google.com".to_string())
+        );
+        assert_eq!(
+            results[1],
+            ("GitHub".to_string(), "https://github.com".to_string())
+        );
+        assert_eq!(
+            results[2],
+            ("Local File".to_string(), r"C:\path\to\file.txt".to_string())
+        );
     }
 }
