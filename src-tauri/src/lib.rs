@@ -2,13 +2,13 @@ pub mod commands;
 pub mod config;
 pub mod error;
 pub mod hotkey_capture;
+pub mod json;
 pub mod lifecycle;
 pub mod os;
 pub mod shortcut;
 pub mod state;
 pub mod system_theme;
 pub mod tray;
-pub mod validation;
 pub mod watcher;
 pub mod window;
 

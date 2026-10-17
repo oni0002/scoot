@@ -1,10 +1,4 @@
-use jsonschema::Validator;
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::sync::LazyLock;
-
-static COMMANDS_SCHEMA: LazyLock<Validator> =
-    LazyLock::new(crate::validation::compile::<Vec<Command>>);
 
 // Category constants (execution type)
 pub const CATEGORY_URL: &str = "url";
@@ -37,7 +31,7 @@ pub const SCOOT_COMMANDS: [&str; 7] = [
 ];
 
 /// Command struct
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Command {
     #[serde(default, skip_serializing_if = "String::is_empty")]
@@ -56,9 +50,9 @@ pub struct Command {
     pub show_window: Option<bool>,
 }
 
-/// Deserialize JSON string with schema validation
+/// Deserialize commands.json. The fields' own rules are checked per command by `Command::validate`.
 pub fn deserialize_json(json_str: &str) -> Result<Vec<Command>, crate::error::AppError> {
-    crate::validation::parse_and_validate(json_str, &COMMANDS_SCHEMA)
+    crate::json::parse(json_str)
 }
 
 /// Get the built-in commands for Scoot
@@ -345,7 +339,7 @@ mod tests {
     }
 
     #[test]
-    fn test_schema_with_skipped_id() {
+    fn test_missing_id_is_accepted() {
         let json =
             r#"[{"name": "test", "category": "url", "command": "http", "description": "desc"}]"#;
         assert!(deserialize_json(json).is_ok());

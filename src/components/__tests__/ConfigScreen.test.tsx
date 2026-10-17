@@ -61,13 +61,13 @@ describe('ConfigScreen closing', () => {
 
     it('stays open and shows why when saving fails', async () => {
         jest.mocked(TauriAPI.saveConfig).mockRejectedValue(
-            'Validation error: Schema validation failed: maxResults',
+            'Validation error: maxResults must be between 1 and 100 (got 0).',
         );
         const onBack = renderScreen();
         await userEvent.selectOptions(await screen.findByLabelText('Theme'), 'light');
         await userEvent.click(screen.getByRole('button', { name: 'Back' }));
         expect(await screen.findByRole('alert')).toHaveTextContent(
-            'Could not save settings: Schema validation failed: maxResults',
+            'Could not save settings: maxResults must be between 1 and 100 (got 0).',
         );
         expect(onBack).not.toHaveBeenCalled();
 

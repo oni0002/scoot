@@ -1,37 +1,35 @@
-use jsonschema::Validator;
-use schemars::JsonSchema;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 
-static CONFIG_SCHEMA: LazyLock<Validator> = LazyLock::new(crate::validation::compile::<Config>);
+static HOTKEY_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"^((Cmd|Command|Ctrl|Control|Alt|Shift|Super|Option|cmd|command|ctrl|control|alt|shift|super|option)\+)+([A-Z0-9a-z]|Space|Enter|Tab|F[1-9]|F1[0-2]|space|enter|tab|f[1-9]|f1[0-2])$",
+    )
+    .expect("invalid regex")
+});
 
 pub const DEFAULT_THEME: &str = "system";
 const THEMES: [&str; 3] = ["system", "light", "dark"];
 pub const DEFAULT_SHORTCUT: &str = "Alt+Space";
 
 /// Config struct
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Config {
-    #[schemars(range(min = 1, max = 100))]
     pub max_results: usize,
-    #[schemars(range(min = 0.0, max = 1.0))]
     pub fuzzy_threshold: f64,
     pub bookmarks: BookmarkConfig,
     pub applications: ApplicationConfig,
     pub markdown: MarkdownConfig,
     pub ignored: Vec<String>,
-    #[schemars(regex(pattern = r"^(system|light|dark)$"))]
     pub theme: String,
-    #[schemars(regex(
-        pattern = r"^((Cmd|Command|Ctrl|Control|Alt|Shift|Super|Option|cmd|command|ctrl|control|alt|shift|super|option)\+)+([A-Z0-9a-z]|Space|Enter|Tab|F[1-9]|F1[0-2]|space|enter|tab|f[1-9]|f1[0-2])$"
-    ))]
     pub hotkey: String,
     pub reload_interval_minutes: u64,
 }
 
 /// Bookmark config struct
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BookmarkConfig {
     pub enabled: bool,
@@ -39,7 +37,7 @@ pub struct BookmarkConfig {
 }
 
 /// Application config struct
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApplicationConfig {
     pub enabled: bool,
@@ -62,7 +60,7 @@ impl Default for ApplicationConfig {
 }
 
 /// Markdown config struct
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarkdownConfig {
     pub enabled: bool,
@@ -110,7 +108,7 @@ impl Config {
     /// An unknown `theme` (one of the old daisyUI names, say) falls back to the default instead of
     /// failing the whole config: the theme is cosmetic, and the next save writes a valid value.
     pub fn from_json_with_validation(json_str: &str) -> Result<Self, crate::error::AppError> {
-        let mut value: serde_json::Value = crate::validation::parse(json_str)?;
+        let mut value: serde_json::Value = crate::json::parse(json_str)?;
         if let Some(theme) = value.get_mut("theme") {
             if theme.as_str().is_some_and(|t| !THEMES.contains(&t)) {
                 log::warn!("Unknown theme {}; using '{}'.", theme, DEFAULT_THEME);
@@ -120,8 +118,39 @@ impl Config {
         let config: Self = serde_json::from_value(value).map_err(|e| {
             crate::error::AppError::Validation(format!("Failed to parse JSON: {}", e))
         })?;
-        crate::validation::validate(&CONFIG_SCHEMA, &config)?;
+        config.validate()?;
         Ok(config)
+    }
+
+    /// Range and format rules for the values serde cannot check by type alone
+    pub fn validate(&self) -> Result<(), crate::error::AppError> {
+        let fail = |msg: String| Err(crate::error::AppError::Validation(msg));
+        if !(1..=100).contains(&self.max_results) {
+            return fail(format!(
+                "maxResults must be between 1 and 100 (got {}).",
+                self.max_results
+            ));
+        }
+        if !(0.0..=1.0).contains(&self.fuzzy_threshold) {
+            return fail(format!(
+                "fuzzyThreshold must be between 0 and 1 (got {}).",
+                self.fuzzy_threshold
+            ));
+        }
+        if !THEMES.contains(&self.theme.as_str()) {
+            return fail(format!(
+                "theme must be one of {} (got '{}').",
+                THEMES.join(", "),
+                self.theme
+            ));
+        }
+        if !HOTKEY_RE.is_match(&self.hotkey) {
+            return fail(format!(
+                "hotkey '{}' is not a valid shortcut such as Alt+Space or Ctrl+Shift+K.",
+                self.hotkey
+            ));
+        }
+        Ok(())
     }
 }
 
