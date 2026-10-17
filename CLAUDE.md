@@ -46,6 +46,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 ## 開発
 
 - 起動: `pnpm tauri:dev`
+- ブラウザでの UI 確認: `pnpm dev` を起動して `http://localhost:1420` を開くと、`src/dev/mockBackend.ts` のモックで動く(開発時のみ・Tauri の外でのみ有効、本番ビルドには入らない)。ウィンドウ特性(透過・ホットキー・WebView2)は再現しないので、そこは `pnpm tauri:dev` で確認する。`TauriAPI` にコマンドを足したら、モックにも足す(テストが漏れを検出する)
 - push 前に CI と同じチェックを通す: `pnpm tsc --noEmit` / `pnpm lint` / `pnpm format:check` / `pnpm test` / `cargo fmt --check` / `cargo clippy -D warnings` / `cargo test`(いずれも `--manifest-path src-tauri/Cargo.toml` 付きで実行)
 - `cargo audit` は週次の別ワークフロー(`.github/workflows/audit.yml`)
 
