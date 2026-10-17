@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Command } from '../types';
 import { TauriAPI } from '../tauri';
 import { NOTIFICATION_DURATION, resultOptionId } from '../constants';
@@ -14,6 +14,7 @@ import { useSearchState } from '../hooks/useSearchState';
 import { useCommandExecution } from '../hooks/useCommandExecution';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { useWindowEvents } from '../hooks/useWindowEvents';
+import { useRestoreFocus } from '../hooks/useRestoreFocus';
 
 interface SearchWindowProps {
     fuzzyThreshold?: number;
@@ -79,11 +80,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
 
     // A row menu that closes because the pointer left takes its focus with it; give it back so the
     // next keystroke still lands in the search field.
-    useEffect(() => {
-        if (hoveredIndex === null && !isDialogOpen && document.activeElement === document.body) {
-            inputRef.current?.focus();
-        }
-    }, [hoveredIndex, isDialogOpen, inputRef]);
+    useRestoreFocus(inputRef, hoveredIndex === null && !isDialogOpen);
 
     const { runSelectedCommand } = useCommandExecution({
         query,
