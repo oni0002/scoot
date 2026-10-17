@@ -77,7 +77,7 @@ export const SearchResultItem = React.memo(
                     aria-selected={isSelected}
                     className={`rounded-lg p-2 cursor-pointer flex items-center ${
                         isSelected
-                            ? 'bg-base-content/10 ring-1 ring-inset ring-base-content/50'
+                            ? 'bg-base-content/10 ring-1 ring-inset ring-base-content/40'
                             : 'bg-base-100 hover:bg-base-200'
                     }`}
                     onClick={(e) => onClick(index, e)}
