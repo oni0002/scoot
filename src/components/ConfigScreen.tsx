@@ -10,7 +10,7 @@ import { TauriAPI } from '../tauri';
 import { THEME_OPTIONS, daisyTheme } from '../theme';
 import { ListRow, Row, Section } from './SettingsLayout';
 
-const BROWSERS = ['brave', 'chrome', 'firefox', 'edge'] as const;
+const BROWSERS = ['brave', 'chrome', 'edge'] as const; // the browsers bookmark.rs can read
 
 interface ConfigScreenProps {
     onBack: () => void;

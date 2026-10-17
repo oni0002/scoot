@@ -18,7 +18,7 @@ export interface ApplicationConfig {
 
 export interface BookmarkConfig {
     enabled: boolean;
-    browser: 'brave' | 'chrome' | 'firefox' | 'edge';
+    browser: 'brave' | 'chrome' | 'edge'; // the browsers bookmark.rs can read
 }
 
 export interface MarkdownConfig {
