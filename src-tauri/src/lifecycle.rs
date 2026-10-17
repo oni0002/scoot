@@ -7,7 +7,7 @@ pub async fn reload_all(app_handle: tauri::AppHandle) -> Result<(), crate::error
     reload(&app_handle).await
 }
 
-/// Quit app (IPC)
+/// Quit app (IPC). commands.json needs no final write: every change is saved as it happens.
 #[tauri::command]
 pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     log::info!("Terminating application...");
@@ -18,21 +18,6 @@ pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::
 
     use tauri_plugin_global_shortcut::GlobalShortcutExt;
     let _ = app_handle.global_shortcut().unregister_all();
-
-    if let Some(state) = app_handle.try_state::<CommandsState>() {
-        let commands_config_opt = {
-            if let Ok(manager) = state.commands.try_lock() {
-                Some(manager.get_user_commands())
-            } else {
-                None
-            }
-        };
-        if let Some(commands_config) = commands_config_opt {
-            if let Err(e) = state.command_store.save(&commands_config).await {
-                log::error!("Failed to save commands on quit: {}", e);
-            }
-        }
-    }
 
     app_handle.exit(0);
     Ok(())

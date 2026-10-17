@@ -1,14 +1,8 @@
 use crate::commands::domain::Command;
 use crate::commands::registry::CommandRegistry;
 use crate::error::AppError;
+use std::collections::HashSet;
 use tauri::Emitter;
-
-fn filter_ignored(commands: Vec<Command>, ignored: &[String]) -> Vec<Command> {
-    commands
-        .into_iter()
-        .filter(|c| !ignored.contains(&c.command))
-        .collect()
-}
 
 /// Reload commands, bookmarks, and apps into the registry
 pub async fn reload(
@@ -77,18 +71,14 @@ pub async fn reload(
         cmd.source = crate::commands::domain::SOURCE_USER.to_string();
     }
 
-    let bookmarks = filter_ignored(bookmarks, &config.ignored);
-    let app_commands = filter_ignored(app_commands, &config.ignored);
-    let markdown_commands = filter_ignored(markdown_commands, &config.ignored);
-    let scoot_commands = filter_ignored(
-        crate::commands::domain::get_scoot_commands(),
-        &config.ignored,
-    );
-
-    let mut external = bookmarks;
-    external.extend(app_commands);
-    external.extend(markdown_commands);
-    external.extend(scoot_commands);
+    let ignored: HashSet<&str> = config.ignored.iter().map(String::as_str).collect();
+    let external: Vec<Command> = bookmarks
+        .into_iter()
+        .chain(app_commands)
+        .chain(markdown_commands)
+        .chain(crate::commands::domain::get_scoot_commands())
+        .filter(|c| !ignored.contains(c.command.as_str()))
+        .collect();
 
     let mut manager = command_registry.lock().map_err(AppError::lock)?;
     manager.set_user_commands(commands);
