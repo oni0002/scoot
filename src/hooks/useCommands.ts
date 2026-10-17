@@ -29,11 +29,17 @@ export function useCommands() {
         }
     }, []);
 
+    // The backend only adds an id and the source, so a success is applied to the list in place
+    // instead of fetching every command (bookmarks and applications included) again.
     const mutate = useCallback(
-        async (action: () => Promise<unknown>, what: string): Promise<CommandResult> => {
+        async <T>(
+            action: () => Promise<T>,
+            apply: (list: Command[], result: T) => Command[],
+            what: string,
+        ): Promise<CommandResult> => {
             try {
-                await action();
-                await loadCommands();
+                const result = await action();
+                setCommands((list) => apply(list, result));
                 return { ok: true };
             } catch (err) {
                 const message = getErrorMessage(err);
@@ -41,22 +47,42 @@ export function useCommands() {
                 return { ok: false, message };
             }
         },
-        [loadCommands],
+        [],
     );
 
     const addCommand = useCallback(
-        (command: Command) => mutate(() => TauriAPI.addCommand(command), 'add command'),
+        (command: Command) =>
+            mutate(
+                () => TauriAPI.addCommand(command),
+                (list, id) => {
+                    const added: Command = { ...command, id, source: 'user' };
+                    // User commands come first in the list, as the backend returns them: add after the last one
+                    const at = list.filter((c) => c.source === 'user').length;
+                    return [...list.slice(0, at), added, ...list.slice(at)];
+                },
+                'add command',
+            ),
         [mutate],
     );
 
     const updateCommand = useCallback(
-        (command: Command) => mutate(() => TauriAPI.updateCommand(command), 'update command'),
+        (command: Command) =>
+            mutate(
+                () => TauriAPI.updateCommand(command),
+                (list) =>
+                    list.map((c) => (c.id === command.id ? { ...command, source: 'user' } : c)),
+                'update command',
+            ),
         [mutate],
     );
 
     const deleteCommand = useCallback(
         (id: string, name: string) =>
-            mutate(() => TauriAPI.deleteCommand(id), `delete command "${name}"`),
+            mutate(
+                () => TauriAPI.deleteCommand(id),
+                (list) => list.filter((c) => c.id !== id),
+                `delete command "${name}"`,
+            ),
         [mutate],
     );
 

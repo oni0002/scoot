@@ -19,18 +19,71 @@ beforeEach(() => {
 });
 
 describe('useCommands mutations', () => {
-    it('reloads the list and reports success', async () => {
-        mockInvoke.mockResolvedValueOnce('u2').mockResolvedValueOnce([command]);
-        const { result } = renderHook(() => useCommands());
+    const bookmark: Command = {
+        id: 'ext-1',
+        name: 'Tauri',
+        category: 'url',
+        source: 'bookmark',
+        command: 'https://tauri.app',
+        description: '',
+    };
+
+    const loaded = async (...list: Command[]) => {
+        mockInvoke.mockResolvedValueOnce(list);
+        const hook = renderHook(() => useCommands());
+        await act(async () => {
+            await hook.result.current.loadCommands();
+        });
+        mockInvoke.mockClear();
+        return hook;
+    };
+
+    it('adds the command to the list without fetching everything again', async () => {
+        const { result } = await loaded({ ...command, source: 'user' }, bookmark);
+        mockInvoke.mockResolvedValueOnce('u2');
 
         let outcome: unknown;
         await act(async () => {
-            outcome = await result.current.addCommand(command);
+            outcome = await result.current.addCommand({ ...command, id: '', name: 'New' });
         });
 
         expect(outcome).toEqual({ ok: true });
-        expect(mockInvoke).toHaveBeenLastCalledWith('get_all_commands');
-        expect(result.current.commands).toEqual([command]);
+        expect(mockInvoke).toHaveBeenCalledTimes(1);
+        expect(result.current.commands.map((c) => c.id)).toEqual(['u1', 'u2', 'ext-1']);
+        expect(result.current.commands[1]).toMatchObject({ name: 'New', source: 'user' });
+    });
+
+    it('replaces the edited command in place', async () => {
+        const { result } = await loaded({ ...command, source: 'user' }, bookmark);
+        mockInvoke.mockResolvedValueOnce(undefined);
+
+        await act(async () => {
+            await result.current.updateCommand({ ...command, name: 'Renamed' });
+        });
+
+        expect(result.current.commands.map((c) => c.name)).toEqual(['Renamed', 'Tauri']);
+    });
+
+    it('removes a deleted command', async () => {
+        const { result } = await loaded({ ...command, source: 'user' }, bookmark);
+        mockInvoke.mockResolvedValueOnce(undefined);
+
+        await act(async () => {
+            await result.current.deleteCommand('u1', 'Docs');
+        });
+
+        expect(result.current.commands.map((c) => c.id)).toEqual(['ext-1']);
+    });
+
+    it('leaves the list alone when the backend rejects the change', async () => {
+        const { result } = await loaded({ ...command, source: 'user' });
+        mockInvoke.mockRejectedValueOnce('Validation error: nope');
+
+        await act(async () => {
+            await result.current.addCommand({ ...command, id: '', name: 'Dup' });
+        });
+
+        expect(result.current.commands).toHaveLength(1);
     });
 
     it('returns the backend reason without its category prefix on failure', async () => {
