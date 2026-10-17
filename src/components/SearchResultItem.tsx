@@ -13,10 +13,7 @@ interface SearchResultItemProps {
     onClick: (index: number, event: React.MouseEvent) => void;
     onMouseEnter: (index: number) => void;
     onMouseLeave: () => void;
-    onCopy?: (command: Command, event: React.MouseEvent) => void;
-    onEdit?: (command: Command, event: React.MouseEvent) => void;
-    onDelete?: (command: Command, event: React.MouseEvent) => void;
-    onIgnore?: (command: Command, event: React.MouseEvent) => void;
+    onAction?: (action: RowAction, command: Command, event: React.MouseEvent) => void;
     totalCount: number;
     /** Hands focus back to the search field (after Esc or an action in the row menu). */
     focusSearch?: () => void;
@@ -52,26 +49,17 @@ export const SearchResultItem = React.memo(
         onClick,
         onMouseEnter,
         onMouseLeave,
-        onCopy,
-        onEdit,
-        onDelete,
-        onIgnore,
+        onAction,
         totalCount,
         focusSearch,
     }: SearchResultItemProps) => {
         const { command } = result;
         const actions = rowActionsFor(command);
 
-        const runAction = (action: RowAction, event: React.MouseEvent) => {
-            const handlers: Record<RowAction, typeof onCopy> = {
-                copy: onCopy,
-                edit: onEdit,
-                delete: onDelete,
-                ignore: onIgnore,
-            };
+        const runMenuAction = (action: RowAction, event: React.MouseEvent) => {
             // Closes the row menu (it stays open while it has focus); focus then returns to the search
             (document.activeElement as HTMLElement | null)?.blur();
-            handlers[action]?.(command, event);
+            onAction?.(action, command, event);
         };
 
         // role="none" wrapper: buttons cannot live inside an option, so the actions sit beside it
@@ -130,7 +118,7 @@ export const SearchResultItem = React.memo(
                             type="button"
                             tabIndex={-1}
                             className="btn btn-ghost btn-xs btn-square p-1"
-                            onClick={(e) => onCopy?.(command, e)}
+                            onClick={(e) => onAction?.('copy', command, e)}
                             title="Copy"
                             aria-label={`Copy ${command.name}`}
                         >
@@ -168,7 +156,7 @@ export const SearchResultItem = React.memo(
                                                 className={
                                                     ROW_ACTIONS[action].danger ? 'text-error' : ''
                                                 }
-                                                onClick={(e) => runAction(action, e)}
+                                                onClick={(e) => runMenuAction(action, e)}
                                             >
                                                 {ROW_ACTIONS[action].label}
                                                 <kbd className="kbd kbd-xs ml-auto">

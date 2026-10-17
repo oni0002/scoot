@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Command } from '../types';
 import { TauriAPI } from '../tauri';
 import { NOTIFICATION_DURATION, resultOptionId } from '../constants';
 import { RowAction, rowActionsFor } from '../rowActions';
 import { getErrorMessage } from '../error';
-import { hasPlaceholders, substituteArgs } from '../command';
+import { hasPlaceholders, parseArgs, substituteArgs } from '../command';
 import { SearchBar } from './SearchBar';
 import { SearchResultList } from './SearchResultList';
 import { SearchHints } from './SearchHints';
@@ -78,8 +78,11 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     } = searchState;
 
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const clearHover = useCallback(() => setHoveredIndex(null), []);
+    const focusSearch = useCallback(() => inputRef.current?.focus(), [inputRef]);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    useWindowEvents(isDialogOpen, resetState, inputRef);
+    useWindowEvents(isDialogOpen, resetState, inputRef, containerRef);
 
     // A row menu that closes because the pointer left takes its focus with it; give it back so the
     // next keystroke still lands in the search field.
@@ -96,17 +99,13 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         executeCommand: executeContextCommand,
     });
 
-    const aliasExample = commands.find((c) => c.alias && hasPlaceholders(c.command))?.alias;
+    const aliasExample = useMemo(
+        () => commands.find((c) => c.alias && hasPlaceholders(c.command))?.alias,
+        [commands],
+    );
 
     const args = useMemo(
-        () =>
-            argumentMode && query.startsWith(argumentMode.alias + ' ')
-                ? query
-                      .slice(argumentMode.alias.length + 1)
-                      .trim()
-                      .split(/\s+/)
-                      .filter((a) => a)
-                : [],
+        () => (argumentMode ? parseArgs(query, argumentMode.alias) : []),
         [argumentMode, query],
     );
 
@@ -139,15 +138,33 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         [onIgnoreCommand, resetState],
     );
 
-    const handleRowAction = useCallback(
-        (action: Exclude<RowAction, 'copy'>) => {
-            const command = results[selectedIndex]?.command;
-            if (!command || !rowActionsFor(command).includes(action)) return;
-            if (action === 'edit') onEditCommand?.(command);
+    // One path for every row action, whether picked from the row or by its shortcut
+    const runRowAction = useCallback(
+        (action: RowAction, command: Command) => {
+            if (!rowActionsFor(command).includes(action)) return;
+            if (action === 'copy') onCopyCommand?.(command);
+            else if (action === 'edit') onEditCommand?.(command);
             else if (action === 'delete') onDeleteCommand?.(command);
             else handleIgnore(command);
         },
-        [results, selectedIndex, onEditCommand, onDeleteCommand, handleIgnore],
+        [onCopyCommand, onEditCommand, onDeleteCommand, handleIgnore],
+    );
+
+    const handleRowAction = useCallback(
+        (action: Exclude<RowAction, 'copy'>) => {
+            const command = results[selectedIndex]?.command;
+            if (command) runRowAction(action, command);
+        },
+        [results, selectedIndex, runRowAction],
+    );
+
+    const handleRowClickAction = useCallback(
+        (action: RowAction, command: Command, event: React.MouseEvent) => {
+            event.stopPropagation();
+            runRowAction(action, command);
+            if (action === 'copy') focusSearch();
+        },
+        [runRowAction, focusSearch],
     );
 
     const { handleKeyDown } = useKeyboardNavigation({
@@ -182,31 +199,6 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
             onAddCommand?.();
         },
         [onAddCommand],
-    );
-
-    const handleEditCommand = useCallback(
-        (command: Command, event: React.MouseEvent) => {
-            event.stopPropagation();
-            onEditCommand?.(command);
-        },
-        [onEditCommand],
-    );
-
-    const handleDeleteCommand = useCallback(
-        (command: Command, event: React.MouseEvent) => {
-            event.stopPropagation();
-            onDeleteCommand?.(command);
-        },
-        [onDeleteCommand],
-    );
-
-    const handleCopyCommand = useCallback(
-        (command: Command, event: React.MouseEvent) => {
-            event.stopPropagation();
-            onCopyCommand?.(command);
-            inputRef.current?.focus();
-        },
-        [onCopyCommand, inputRef],
     );
 
     // Menu actions run from the ⋮ menu; a failure must reach the user, not just the console.
@@ -245,7 +237,7 @@ A fast and efficient command launcher for your desktop.`,
     );
 
     return (
-        <div className="h-full flex flex-col p-4">
+        <div ref={containerRef} className="h-full flex flex-col p-4">
             <SearchBar
                 query={query}
                 onQueryChange={searchState.handleQueryChange}
@@ -278,14 +270,11 @@ A fast and efficient command launcher for your desktop.`,
                 query={query}
                 onResultClick={handleResultClick}
                 onMouseEnter={setHoveredIndex}
-                onMouseLeave={() => setHoveredIndex(null)}
-                onCopy={handleCopyCommand}
-                onEdit={handleEditCommand}
-                onDelete={handleDeleteCommand}
-                onIgnore={handleIgnore}
+                onMouseLeave={clearHover}
+                onAction={handleRowClickAction}
                 aliasExample={aliasExample}
                 onCopyExpanded={copyExpanded}
-                focusSearch={() => inputRef.current?.focus()}
+                focusSearch={focusSearch}
             />
 
             <SearchHints

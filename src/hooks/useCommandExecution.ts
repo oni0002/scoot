@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Command, SearchResult } from '../types';
 import { SearchMode } from './useSearchState';
 import { TauriAPI } from '../tauri';
+import { parseArgs } from '../command';
 
 interface UseCommandExecutionProps {
     query: string;
@@ -31,8 +32,7 @@ export const useCommandExecution = ({
 
             if (argumentMode) {
                 commandToExecute = argumentMode.command;
-                const rest = query.slice(argumentMode.alias.length + 1).trim();
-                argsToPass = rest ? rest.split(/\s+/) : [];
+                argsToPass = parseArgs(query, argumentMode.alias);
             } else {
                 const effectiveIndex = targetIndex !== undefined ? targetIndex : selectedIndex;
                 if (results.length === 0 || effectiveIndex >= results.length) return;

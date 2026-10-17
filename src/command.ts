@@ -47,6 +47,12 @@ export function substituteArgs(cmd: string, args: string[], urlEncode = false): 
         .join('');
 }
 
+/** The arguments typed after an alias ("d foo bar" -> ["foo", "bar"]); none if the query is not for it. */
+export function parseArgs(query: string, alias: string): string[] {
+    const [first, ...rest] = query.trim().split(/\s+/);
+    return first === alias ? rest : [];
+}
+
 /** The distinct placeholders a command takes, in order of appearance. */
 export function slotsOf(cmd: string): string[] {
     return [...new Set([...cmd.matchAll(PLACEHOLDER_GLOBAL)].map((m) => m[0]))];

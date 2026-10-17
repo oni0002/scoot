@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Command, SearchResult } from '../types';
+import { RowAction } from '../rowActions';
 import { SearchResultItem } from './SearchResultItem';
 import { ArgumentPanel } from './ArgumentPanel';
 import { NoResults, QuickGuide } from './EmptyState';
@@ -15,10 +16,7 @@ interface SearchResultListProps {
     onResultClick: (index: number, event?: React.MouseEvent) => void;
     onMouseEnter: (index: number) => void;
     onMouseLeave: () => void;
-    onCopy?: (command: Command, event: React.MouseEvent) => void;
-    onEdit?: (command: Command, event: React.MouseEvent) => void;
-    onDelete?: (command: Command, event: React.MouseEvent) => void;
-    onIgnore?: (command: Command, event: React.MouseEvent) => void;
+    onAction?: (action: RowAction, command: Command, event: React.MouseEvent) => void;
     /** An alias that takes arguments, for the first-run guide to use as its example. */
     aliasExample?: string;
     /** Copies the expanded command while in argument mode. */
@@ -36,14 +34,20 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     onResultClick,
     onMouseEnter,
     onMouseLeave,
-    onCopy,
-    onEdit,
-    onDelete,
-    onIgnore,
+    onAction,
     aliasExample,
     onCopyExpanded,
     focusSearch,
 }) => {
+    const listRef = useRef<HTMLDivElement>(null);
+
+    // Keep the selected row in view as the selection moves
+    useEffect(() => {
+        listRef.current
+            ?.querySelector(`[data-result-index="${selectedIndex}"]`)
+            ?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+    }, [selectedIndex]);
+
     const renderEmptyState = () => {
         if (argumentMode) {
             return (
@@ -57,7 +61,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     };
 
     return (
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div ref={listRef} className="flex-1 overflow-y-auto min-h-0">
             {results.length === 0 ? (
                 <div key="empty" className="h-full">
                     {renderEmptyState()}
@@ -79,10 +83,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                             onClick={onResultClick}
                             onMouseEnter={onMouseEnter}
                             onMouseLeave={onMouseLeave}
-                            onCopy={onCopy}
-                            onEdit={onEdit}
-                            onDelete={onDelete}
-                            onIgnore={onIgnore}
+                            onAction={onAction}
                             totalCount={results.length}
                             focusSearch={focusSearch}
                         />

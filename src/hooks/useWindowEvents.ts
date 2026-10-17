@@ -5,6 +5,7 @@ export const useWindowEvents = (
     isDialogOpen: boolean,
     resetState: () => void,
     inputRef: React.RefObject<HTMLInputElement | null>,
+    containerRef: React.RefObject<HTMLElement | null>,
 ) => {
     useEffect(() => {
         inputRef.current?.focus();
@@ -22,7 +23,7 @@ export const useWindowEvents = (
                 inputRef.current?.focus();
             }
 
-            const searchWindow = document.querySelector('.h-full');
+            const searchWindow = containerRef.current;
             if (searchWindow) {
                 const rect = searchWindow.getBoundingClientRect();
                 const isOutside =
@@ -39,7 +40,7 @@ export const useWindowEvents = (
 
         document.addEventListener('click', handleDocumentClick, true);
         return () => document.removeEventListener('click', handleDocumentClick, true);
-    }, [isDialogOpen, inputRef]);
+    }, [isDialogOpen, inputRef, containerRef]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

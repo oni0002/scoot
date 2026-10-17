@@ -1,4 +1,5 @@
 import {
+    parseArgs,
     expandTemplate,
     hasPlaceholders,
     missingSlots,
@@ -112,5 +113,20 @@ describe('placeholder bookkeeping', () => {
 
     it('never calls arguments unused when {$*} takes them all', () => {
         expect(unusedArgs('cmd {$*}', ['a', 'b', 'c'])).toEqual([]);
+    });
+});
+
+describe('parseArgs', () => {
+    it('returns the words after the alias', () => {
+        expect(parseArgs('d  foo bar ', 'd')).toEqual(['foo', 'bar']);
+        expect(parseArgs(' d foo', 'd')).toEqual(['foo']);
+    });
+
+    it('returns nothing until an argument is typed', () => {
+        expect(parseArgs('d ', 'd')).toEqual([]);
+    });
+
+    it('returns nothing for a query that is not for the alias', () => {
+        expect(parseArgs('dd foo', 'd')).toEqual([]);
     });
 });

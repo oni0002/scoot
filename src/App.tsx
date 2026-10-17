@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { SearchWindow } from './components/SearchWindow';
 import { CommandForm } from './components/CommandForm';
 import { ConfigScreen } from './components/ConfigScreen';
@@ -9,6 +9,7 @@ import { TauriAPI } from './tauri';
 import { NOTIFICATION_DURATION } from './constants';
 import { getErrorMessage } from './error';
 import { useAppEvents } from './hooks/useAppEvents';
+import { usePreventHide } from './hooks/usePreventHide';
 import { CommandProvider, useCommandContext } from './context/CommandContext';
 import { ConfigProvider, useConfigContext } from './context/ConfigContext';
 import { daisyTheme } from './theme';
@@ -37,14 +38,7 @@ const AppContent = () => {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [deletingCommand, setDeletingCommand] = useState<Command | undefined>(undefined);
 
-    useEffect(() => {
-        if (currentView !== 'search') {
-            TauriAPI.enterModal();
-            return () => {
-                TauriAPI.leaveModal();
-            };
-        }
-    }, [currentView]);
+    usePreventHide(currentView !== 'search');
 
     const handleAddCommand = useCallback(() => {
         setEditingCommand(undefined);

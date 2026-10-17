@@ -14,6 +14,14 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
     const inputRef = useRef<HTMLInputElement>(null);
 
     const fuse = useMemo(() => createFuse(commands, fuzzyThreshold), [commands, fuzzyThreshold]);
+    // Looked up on every keystroke, so index it once per command list
+    const commandByAlias = useMemo(() => {
+        const map = new Map<string, Command>();
+        for (const cmd of commands) {
+            if (cmd.alias && !map.has(cmd.alias)) map.set(cmd.alias, cmd);
+        }
+        return map;
+    }, [commands]);
 
     const resetState = useCallback(() => {
         setQuery('');
@@ -31,7 +39,7 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
 
             const parts = trimmed.split(/\s+/);
             const potentialAlias = parts[0];
-            const matchingCommand = commands.find((cmd) => cmd.alias === potentialAlias);
+            const matchingCommand = commandByAlias.get(potentialAlias);
 
             if (matchingCommand) {
                 const shouldEnter = parts.length > 1 || newQuery.endsWith(' ');
@@ -54,7 +62,7 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
             }
             return { mode: 'search', results: searchResults, selectedIndex: 0 };
         },
-        [commands, maxResults, fuse],
+        [commands, commandByAlias, maxResults, fuse],
     );
 
     const handleQueryChange = useCallback(
@@ -81,9 +89,6 @@ export const useSearchState = (commands: Command[], fuzzyThreshold: number, maxR
                 direction === 'down'
                     ? (prev.selectedIndex + 1) % count
                     : (prev.selectedIndex - 1 + count) % count;
-            document
-                .querySelector(`[data-result-index="${newIndex}"]`)
-                ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             return { ...prev, selectedIndex: newIndex };
         });
     }, []);
