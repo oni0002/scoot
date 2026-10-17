@@ -1,9 +1,9 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useNotifications } from '../hooks/useNotifications';
-import { NotificationToast } from '../components/NotificationToast';
+import { Notification, NotificationToast } from '../components/NotificationToast';
 
 interface NotificationContextType {
-    showSuccess: (message: string, duration?: number) => void;
+    showSuccess: (message: string, duration?: number, action?: Notification['action']) => void;
     showError: (message: string, duration?: number) => void;
     showWarning: (message: string, duration?: number) => void;
     showInfo: (message: string, duration?: number) => void;

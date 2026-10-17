@@ -33,10 +33,17 @@ export function fuseSearch(
     if (!query.trim()) {
         return commands.slice(0, maxResults).map((command) => ({ command, score: 0, matches: [] }));
     }
+    // Fuse reports scattered one-letter hits ("d" and "C" in "Add Command" for `doc`). They rank
+    // fine but read as noise when highlighted, so only runs of 2+ characters are shown.
+    const minRun = Math.min(2, query.trim().length);
     return fuse.search(query, { limit: maxResults }).map((r) => ({
         command: r.item,
         score: r.score ?? 0,
-        matches: r.matches?.map((m) => ({ indices: m.indices, key: m.key ?? '' })) ?? [],
+        matches:
+            r.matches?.map((m) => ({
+                indices: m.indices.filter(([start, end]) => end - start + 1 >= minRun),
+                key: m.key ?? '',
+            })) ?? [],
     }));
 }
 

@@ -102,3 +102,30 @@ describe('fuseSearch', () => {
         expect(results).toHaveLength(4);
     });
 });
+
+describe('fuseSearch highlights', () => {
+    const cmd = (name: string): Command => ({
+        id: name,
+        name,
+        category: 'url',
+        source: 'user',
+        command: 'https://example.com',
+        description: '',
+    });
+
+    it('drops one-letter scattered hits but keeps runs of two or more', () => {
+        const commands = [cmd('daisyUI Documentation')];
+        const fuse = createFuse(commands, 0.5);
+        const [hit] = fuseSearch(fuse, 'doc', commands, 10);
+        const runs = hit.matches.flatMap((m) => m.indices);
+        expect(runs.length).toBeGreaterThan(0);
+        expect(runs.every(([s, e]) => e - s + 1 >= 2)).toBe(true);
+    });
+
+    it('still highlights when the query itself is one letter', () => {
+        const commands = [cmd('GitHub')];
+        const fuse = createFuse(commands, 0.5);
+        const [hit] = fuseSearch(fuse, 'g', commands, 10);
+        expect(hit.matches.flatMap((m) => m.indices).length).toBeGreaterThan(0);
+    });
+});

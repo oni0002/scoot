@@ -68,7 +68,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 </label>
 
                 {/* Dropdown menu */}
-                <div className="dropdown dropdown-end">
+                <div
+                    className="dropdown dropdown-end"
+                    onKeyDown={(e) => {
+                        // Esc closes the menu: handing focus back to the search field collapses it
+                        if (e.key === 'Escape') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            inputRef.current?.focus();
+                        }
+                    }}
+                >
                     <div
                         tabIndex={0}
                         role="button"
@@ -79,37 +89,33 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         <LuEllipsisVertical />
                     </div>
                     <ul
+                        role="menu"
                         tabIndex={0}
                         // Picking an item hands focus back to the search field, which also closes the menu
                         onClickCapture={() => inputRef.current?.focus()}
                         className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-20 w-48 p-2 shadow-sm"
                     >
                         <li>
-                            <a onClick={onAddCommand}>Add Command</a>
+                            <button type="button" role="menuitem" onClick={onAddCommand}>
+                                Add Command
+                            </button>
                         </li>
                         <li>
-                            <a
+                            <button
+                                type="button"
+                                role="menuitem"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onOpenConfig?.();
                                 }}
                             >
                                 Settings
-                            </a>
+                            </button>
                         </li>
                         <li>
-                            <a onClick={onReloadCommands}>Reload</a>
-                        </li>
-                        <li
-                            role="separator"
-                            aria-hidden="true"
-                            className="my-1 h-px bg-base-content/10 p-0"
-                        ></li>
-                        <li>
-                            <a onClick={onOpenCommandsJson}>Open commands.json</a>
-                        </li>
-                        <li>
-                            <a onClick={onOpenConfigJson}>Open config.json</a>
+                            <button type="button" role="menuitem" onClick={onReloadCommands}>
+                                Reload
+                            </button>
                         </li>
                         <li
                             role="separator"
@@ -117,10 +123,29 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                             className="my-1 h-px bg-base-content/10 p-0"
                         ></li>
                         <li>
-                            <a onClick={onShowReadme}>Show README</a>
+                            <button type="button" role="menuitem" onClick={onOpenCommandsJson}>
+                                Open commands.json
+                            </button>
                         </li>
                         <li>
-                            <a onClick={onShowAbout}>About</a>
+                            <button type="button" role="menuitem" onClick={onOpenConfigJson}>
+                                Open config.json
+                            </button>
+                        </li>
+                        <li
+                            role="separator"
+                            aria-hidden="true"
+                            className="my-1 h-px bg-base-content/10 p-0"
+                        ></li>
+                        <li>
+                            <button type="button" role="menuitem" onClick={onShowReadme}>
+                                Show README
+                            </button>
+                        </li>
+                        <li>
+                            <button type="button" role="menuitem" onClick={onShowAbout}>
+                                About
+                            </button>
                         </li>
                     </ul>
                 </div>

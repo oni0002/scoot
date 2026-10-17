@@ -13,6 +13,18 @@ describe('QuickGuide', () => {
     });
 });
 
+describe('QuickGuide alias example', () => {
+    it('shows a real alias when one takes arguments', () => {
+        render(<QuickGuide aliasExample="d" />);
+        expect(screen.getByText('d text')).toBeInTheDocument();
+    });
+
+    it('does not mention aliases when none exist', () => {
+        render(<QuickGuide />);
+        expect(screen.queryByText(/alias/)).not.toBeInTheDocument();
+    });
+});
+
 describe('NoResults', () => {
     it('names the query and a way out', () => {
         render(<NoResults query="zzz" />);

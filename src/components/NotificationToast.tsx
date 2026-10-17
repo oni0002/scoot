@@ -6,6 +6,8 @@ export interface Notification {
     type: 'success' | 'error' | 'warning' | 'info';
     message: string;
     duration?: number;
+    /** A single follow-up the user can take from the toast, e.g. Undo. */
+    action?: { label: string; onClick: () => void };
 }
 
 interface NotificationToastProps {
@@ -18,7 +20,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
     onRemove,
 }) => {
     return (
-        <div className="toast toast-bottom toast-end z-50">
+        <div className="toast toast-bottom toast-end z-50" aria-live="polite">
             {notifications.map((notification) => (
                 <NotificationItem
                     key={notification.id}
@@ -93,6 +95,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
 
     return (
         <div
+            role={notification.type === 'error' ? 'alert' : 'status'}
             className={`alert ${getAlertClass()} rounded-lg transition-all duration-300 max-w-sm py-2 px-3 gap-2 shadow-lg flex items-center text-left ${
                 isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
             }`}
@@ -103,6 +106,18 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
                     {notification.message}
                 </div>
             </div>
+            {notification.action && (
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-inherit underline"
+                    onClick={() => {
+                        notification.action?.onClick();
+                        handleRemove();
+                    }}
+                >
+                    {notification.action.label}
+                </button>
+            )}
         </div>
     );
 };

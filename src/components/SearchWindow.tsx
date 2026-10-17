@@ -4,6 +4,7 @@ import { TauriAPI } from '../tauri';
 import { NOTIFICATION_DURATION, resultOptionId } from '../constants';
 import { RowAction, rowActionsFor } from '../rowActions';
 import { getErrorMessage } from '../error';
+import { hasPlaceholders } from '../command';
 import { SearchBar } from './SearchBar';
 import { SearchResultList } from './SearchResultList';
 import { SearchHints } from './SearchHints';
@@ -87,11 +88,22 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         executeCommand: executeContextCommand,
     });
 
+    const aliasExample = commands.find((c) => c.alias && hasPlaceholders(c.command))?.alias;
+
     const handleCopySelectedCommand = useCallback(() => {
         if (selectedIndex < 0 || selectedIndex >= results.length) return;
         const command = results[selectedIndex].command;
         if (command) onCopyCommand?.(command);
     }, [selectedIndex, results, onCopyCommand]);
+
+    // The ignored row is gone afterwards, so go back to a clean search instead of an empty result
+    const handleIgnore = useCallback(
+        (command: Command) => {
+            onIgnoreCommand?.(command);
+            resetState();
+        },
+        [onIgnoreCommand, resetState],
+    );
 
     const handleRowAction = useCallback(
         (action: Exclude<RowAction, 'copy'>) => {
@@ -99,9 +111,9 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
             if (!command || !rowActionsFor(command).includes(action)) return;
             if (action === 'edit') onEditCommand?.(command);
             else if (action === 'delete') onDeleteCommand?.(command);
-            else onIgnoreCommand?.(command);
+            else handleIgnore(command);
         },
-        [results, selectedIndex, onEditCommand, onDeleteCommand, onIgnoreCommand],
+        [results, selectedIndex, onEditCommand, onDeleteCommand, handleIgnore],
     );
 
     const { handleKeyDown } = useKeyboardNavigation({
@@ -245,7 +257,8 @@ A fast and efficient command launcher for your desktop.`,
                 onCopy={handleCopyCommand}
                 onEdit={handleEditCommand}
                 onDelete={handleDeleteCommand}
-                onIgnore={onIgnoreCommand}
+                onIgnore={handleIgnore}
+                aliasExample={aliasExample}
             />
 
             <SearchHints

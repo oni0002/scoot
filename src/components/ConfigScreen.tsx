@@ -385,7 +385,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         <span className="text-sm">Ignored</span>
                     </p>
                     <p className="text-xs text-muted mb-1">
-                        Commands hidden from search results. Add via the ⋯ menu on a search result.
+                        Commands hidden from search results. Add via the ⋮ menu on a search result.
                     </p>
                     {local.ignored.length === 0 ? (
                         <p className="text-xs text-muted px-1">No ignored commands.</p>

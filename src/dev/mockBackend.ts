@@ -146,6 +146,9 @@ export function createMockHandlers(): Record<string, Handler> {
         ignore_command: ({ commandStr }) => {
             config = { ...config, ignored: [...config.ignored, String(commandStr)] };
         },
+        unignore_command: ({ commandStr }) => {
+            config = { ...config, ignored: config.ignored.filter((c) => c !== commandStr) };
+        },
         'plugin:app|version': () => '0.2.10',
         'plugin:dialog|message': () => undefined,
         'plugin:dialog|open': () => null,

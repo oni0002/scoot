@@ -1,14 +1,15 @@
 import React from 'react';
 import { LuEllipsisVertical, LuCopy } from 'react-icons/lu';
 import { Command, SearchResult } from '../types';
-import { resultOptionId } from '../constants';
+import { DIRECT_OPEN_ID, resultOptionId } from '../constants';
 import { ROW_ACTIONS, RowAction, rowActionsFor } from '../rowActions';
 
 interface SearchResultItemProps {
     result: SearchResult;
     index: number;
     isSelected: boolean;
-    isHovered: boolean;
+    /** Row actions are shown for the hovered row, or for the selected one when nothing is hovered. */
+    showActions: boolean;
     onClick: (index: number, event: React.MouseEvent) => void;
     onMouseEnter: (index: number) => void;
     onMouseLeave: () => void;
@@ -45,7 +46,7 @@ export const SearchResultItem = React.memo(
         result,
         index,
         isSelected,
-        isHovered,
+        showActions,
         onClick,
         onMouseEnter,
         onMouseLeave,
@@ -57,8 +58,6 @@ export const SearchResultItem = React.memo(
     }: SearchResultItemProps) => {
         const { command } = result;
         const actions = rowActionsFor(command);
-        // The selected row shows its actions too, so keyboard users can see what Ctrl+E/D/I act on
-        const showActions = isHovered || isSelected;
 
         const runAction = (action: RowAction, event: React.MouseEvent) => {
             const handlers: Record<RowAction, typeof onCopy> = {
@@ -110,7 +109,9 @@ export const SearchResultItem = React.memo(
                             <div className="badge badge-sm badge-primary">{command.alias}</div>
                         )}
                         <div className="badge badge-sm badge-outline">
-                            {command.source || command.category}
+                            {command.id === DIRECT_OPEN_ID
+                                ? 'open'
+                                : command.source || command.category}
                         </div>
                     </div>
                 </div>
@@ -132,41 +133,43 @@ export const SearchResultItem = React.memo(
                         >
                             <LuCopy />
                         </button>
-                        <div
-                            className={`dropdown ${totalCount > 4 && index >= totalCount - 2 ? 'dropdown-top' : ''} dropdown-end`}
-                        >
+                        {actions.length > 1 && (
                             <div
-                                tabIndex={-1}
-                                role="button"
-                                aria-label={`More actions for ${command.name}`}
-                                aria-haspopup="menu"
-                                className="btn btn-ghost btn-xs btn-square p-1"
+                                className={`dropdown ${totalCount > 4 && index >= totalCount - 2 ? 'dropdown-top' : ''} dropdown-end`}
                             >
-                                <LuEllipsisVertical />
+                                <div
+                                    tabIndex={-1}
+                                    role="button"
+                                    aria-label={`More actions for ${command.name}`}
+                                    aria-haspopup="menu"
+                                    className="btn btn-ghost btn-xs btn-square p-1"
+                                >
+                                    <LuEllipsisVertical />
+                                </div>
+                                <ul
+                                    tabIndex={-1}
+                                    className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-48 p-2 shadow-sm"
+                                >
+                                    {actions.map((action) => (
+                                        <li key={action}>
+                                            <button
+                                                type="button"
+                                                tabIndex={-1}
+                                                className={
+                                                    ROW_ACTIONS[action].danger ? 'text-error' : ''
+                                                }
+                                                onClick={(e) => runAction(action, e)}
+                                            >
+                                                {ROW_ACTIONS[action].label}
+                                                <kbd className="kbd kbd-xs ml-auto">
+                                                    {ROW_ACTIONS[action].shortcut}
+                                                </kbd>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
-                            <ul
-                                tabIndex={-1}
-                                className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-48 p-2 shadow-sm"
-                            >
-                                {actions.map((action) => (
-                                    <li key={action}>
-                                        <button
-                                            type="button"
-                                            tabIndex={-1}
-                                            className={
-                                                ROW_ACTIONS[action].danger ? 'text-error' : ''
-                                            }
-                                            onClick={(e) => runAction(action, e)}
-                                        >
-                                            {ROW_ACTIONS[action].label}
-                                            <kbd className="kbd kbd-xs ml-auto">
-                                                {ROW_ACTIONS[action].shortcut}
-                                            </kbd>
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        )}
                     </div>
                 )}
             </div>

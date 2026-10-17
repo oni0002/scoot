@@ -118,7 +118,20 @@ const AppContent = () => {
             try {
                 await TauriAPI.ignoreCommand(command.command);
                 await loadCommands();
-                showSuccess(`"${command.name}" ignored successfully.`);
+                showSuccess(`Ignored "${command.name}"`, NOTIFICATION_DURATION.UNDO, {
+                    label: 'Undo',
+                    onClick: async () => {
+                        try {
+                            await TauriAPI.unignoreCommand(command.command);
+                            await loadCommands();
+                        } catch (err) {
+                            showError(
+                                `Could not undo ignoring "${command.name}": ${getErrorMessage(err)}`,
+                                NOTIFICATION_DURATION.LONG,
+                            );
+                        }
+                    },
+                });
             } catch (err) {
                 console.error('Failed to ignore command:', err);
                 showError(

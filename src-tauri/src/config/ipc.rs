@@ -66,6 +66,33 @@ pub async fn ignore_command(
     Ok(())
 }
 
+/// Undo `ignore_command`: drop it from the ignored list and reload so the command comes back
+#[tauri::command]
+pub async fn unignore_command(
+    command_str: String,
+    config_state: State<'_, ConfigState>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), AppError> {
+    use tauri::Emitter;
+
+    let config_snapshot = {
+        let mut config = config_state.config.lock().map_err(AppError::lock)?;
+        if !config.ignored.contains(&command_str) {
+            return Ok(());
+        }
+        config.ignored.retain(|c| c != &command_str);
+        config.clone()
+    };
+
+    config_state.config_store.save(&config_snapshot).await?;
+
+    if let Err(e) = app_handle.emit("request-reload", ()) {
+        log::error!("Failed to emit request-reload after unignore: {}", e);
+    }
+
+    Ok(())
+}
+
 /// Open config.json
 #[tauri::command]
 pub async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {

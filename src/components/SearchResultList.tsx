@@ -19,6 +19,8 @@ interface SearchResultListProps {
     onEdit?: (command: Command, event: React.MouseEvent) => void;
     onDelete?: (command: Command, event: React.MouseEvent) => void;
     onIgnore?: (command: Command, event: React.MouseEvent) => void;
+    /** An alias that takes arguments, for the first-run guide to use as its example. */
+    aliasExample?: string;
 }
 
 export const SearchResultList: React.FC<SearchResultListProps> = ({
@@ -35,6 +37,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     onEdit,
     onDelete,
     onIgnore,
+    aliasExample,
 }) => {
     const renderEmptyState = () => {
         if (argumentMode) {
@@ -43,7 +46,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
 
         if (query) return <NoResults query={query} />;
 
-        return <QuickGuide />;
+        return <QuickGuide aliasExample={aliasExample} />;
     };
 
     return (
@@ -61,7 +64,11 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                             index={index}
                             result={result}
                             isSelected={index === selectedIndex}
-                            isHovered={hoveredIndex === index}
+                            showActions={
+                                hoveredIndex !== null
+                                    ? hoveredIndex === index
+                                    : index === selectedIndex
+                            }
                             onClick={onResultClick}
                             onMouseEnter={onMouseEnter}
                             onMouseLeave={onMouseLeave}

@@ -131,6 +131,7 @@ pub fn run() {
             crate::config::ipc::get_config,
             crate::config::ipc::save_config,
             crate::config::ipc::ignore_command,
+            crate::config::ipc::unignore_command,
             crate::config::ipc::open_config_json,
             // Lifecycle
             crate::lifecycle::reload_all,

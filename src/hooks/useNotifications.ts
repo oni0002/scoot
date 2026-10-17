@@ -7,13 +7,19 @@ export const useNotifications = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const addNotification = useCallback(
-        (type: Notification['type'], message: string, duration?: number) => {
+        (
+            type: Notification['type'],
+            message: string,
+            duration?: number,
+            action?: Notification['action'],
+        ) => {
             const id = `notification-${++notificationId}`;
             const notification: Notification = {
                 id,
                 type,
                 message,
                 duration,
+                action,
             };
 
             setNotifications((prev) => [...prev, notification]);
@@ -32,8 +38,8 @@ export const useNotifications = () => {
 
     // Convenience methods
     const showSuccess = useCallback(
-        (message: string, duration?: number) => {
-            return addNotification('success', message, duration);
+        (message: string, duration?: number, action?: Notification['action']) => {
+            return addNotification('success', message, duration, action);
         },
         [addNotification],
     );

@@ -61,6 +61,8 @@ export const useCommandExecution = ({
             }
 
             const keepWindowOpen = await executeCommand(commandToExecute, argsToPass);
+            // null means the run failed: keep what was typed so it can be corrected and retried
+            if (keepWindowOpen === null) return;
             resetState();
 
             if (keepWindowOpen === false) {
