@@ -33,7 +33,7 @@ export const SearchHints: React.FC<SearchHintsProps> = (props) => {
     if (hints.length === 0) return null;
 
     return (
-        <div className="shrink-0 pt-2 flex items-center gap-4 text-xs text-muted select-none">
+        <div className="shrink-0 pt-4 flex items-center gap-4 text-xs text-muted select-none">
             {hints.map(([keys, label]) => (
                 <span key={label} className="flex items-center gap-1.5">
                     <kbd className="kbd kbd-xs">{keys}</kbd>

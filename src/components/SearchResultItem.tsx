@@ -31,7 +31,7 @@ const highlightMatches = (text: string, matches: SearchResult['matches']): React
         nodes.push(
             <span
                 key={i}
-                className="font-semibold underline decoration-accent decoration-2 underline-offset-[3px]"
+                className="font-bold underline decoration-accent decoration-2 underline-offset-[3px]"
             >
                 {text.slice(start, end + 1)}
             </span>,
@@ -95,7 +95,7 @@ export const SearchResultItem = React.memo(
                 >
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 text-sm min-w-0">
-                            <div className="font-medium truncate">
+                            <div className="truncate">
                                 {highlightMatches(command.name, result.matches)}
                             </div>
                             <div

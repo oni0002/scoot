@@ -68,7 +68,7 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args }) =
                         part.filled ? (
                             <span
                                 key={i}
-                                className="font-semibold underline decoration-accent decoration-2 underline-offset-[3px]"
+                                className="font-bold underline decoration-accent decoration-2 underline-offset-[3px]"
                             >
                                 {part.text}
                             </span>

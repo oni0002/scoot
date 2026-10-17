@@ -80,7 +80,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     </div>
                     <ul
                         tabIndex={0}
-                        className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-48 p-2 shadow-sm"
+                        className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-20 w-48 p-2 shadow-sm"
                     >
                         <li>
                             <a onClick={onAddCommand}>Add Command</a>
