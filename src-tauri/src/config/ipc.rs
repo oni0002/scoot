@@ -21,6 +21,9 @@ pub async fn save_config(
     config: Config,
     state: State<'_, ConfigState>,
 ) -> Result<(), crate::error::AppError> {
+    // Refuse values config.json could not load back, before they reach the state or the file
+    config.validate()?;
+
     // state
     {
         let mut locked_config = state.config.lock().map_err(AppError::lock)?;
