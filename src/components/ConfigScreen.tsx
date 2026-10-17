@@ -223,7 +223,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
 
     return (
         <div
-            className="h-screen w-screen flex flex-col bg-base-100 text-base-content scrollbar-gutter-auto"
+            className="h-screen w-screen flex flex-col pb-4 bg-base-100 text-base-content scrollbar-gutter-auto"
             data-theme={daisyTheme(local.theme)}
         >
             {/* Header */}
@@ -254,7 +254,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
             )}
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-gutter-auto">
+            <div className="flex-1 overflow-y-auto px-4 pb-2 scrollbar-gutter-auto">
                 <Section title="General">
                     <Row label="Theme" htmlFor="cfg-theme">
                         <select

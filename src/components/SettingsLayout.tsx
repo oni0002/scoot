@@ -120,7 +120,7 @@ export const ListRow: React.FC<ListRowProps> = ({
             {addLabel && (
                 <button
                     type="button"
-                    className="btn btn-soft btn-sm mt-2"
+                    className="btn btn-sm mt-2 border-base-content/50 bg-base-100"
                     onClick={onAdd}
                     disabled={addDisabled}
                 >
