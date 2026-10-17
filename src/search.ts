@@ -33,7 +33,7 @@ export function fuseSearch(
     if (!query.trim()) {
         return commands.slice(0, maxResults).map((command) => ({ command, score: 0, matches: [] }));
     }
-    // Scattered one-letter hits are kept: the row shows them lighter than runs of 2+, so a result
+    // Scattered one-letter hits are kept and highlighted like longer runs, so a result
     // never looks unexplained.
     return fuse.search(query, { limit: maxResults }).map((r) => ({
         command: r.item,
