@@ -1,5 +1,4 @@
 use crate::config::domain::DEFAULT_SHORTCUT;
-use crate::state::WindowState;
 use tauri::{App, AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
@@ -100,20 +99,17 @@ pub fn unregister(app_handle: &AppHandle) {
         let _ = app_handle.global_shortcut().unregister_all();
     }
 }
+/// The hotkey from the loaded config, or the default when it cannot be read
+pub fn configured_hotkey(app_handle: &AppHandle) -> String {
+    app_handle
+        .try_state::<crate::state::ConfigState>()
+        .and_then(|state| state.config.lock().ok().map(|c| c.hotkey.clone()))
+        .unwrap_or_else(|| DEFAULT_SHORTCUT.to_string())
+}
+
 pub fn setup_shortcuts(app: &App) -> Result<(), crate::error::AppError> {
     let handle = app.handle();
-    // Get hotkey from state
-    let hotkey = if let Some(state) = handle.try_state::<crate::state::ConfigState>() {
-        if let Ok(config) = state.config.lock() {
-            config.hotkey.clone()
-        } else {
-            DEFAULT_SHORTCUT.to_string()
-        }
-    } else {
-        DEFAULT_SHORTCUT.to_string()
-    };
-
-    setup_global_shortcuts(handle, &hotkey)
+    setup_global_shortcuts(handle, &configured_hotkey(handle))
 }
 
 /// Register global shortcuts
@@ -122,17 +118,10 @@ pub fn setup_global_shortcuts(
     hotkey: &str,
 ) -> Result<(), crate::error::AppError> {
     register(app_handle, hotkey, move |h| {
-        if let Some(window) = h.get_webview_window("main") {
-            if window.is_visible().unwrap_or(false) {
-                if let Some(state) = h.try_state::<WindowState>() {
-                    if state.prevent_hide.load(std::sync::atomic::Ordering::SeqCst) > 0 {
-                        return;
-                    }
-                }
-                let _ = window.hide();
-            } else {
-                crate::window::show_main_window(h);
-            }
+        // The hotkey must not hide the window from under an open dialog
+        if crate::window::is_main_window_visible(h) && crate::window::is_modal_open(h) {
+            return;
         }
+        crate::window::toggle_main_window(h);
     })
 }

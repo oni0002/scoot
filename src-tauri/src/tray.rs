@@ -98,13 +98,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
 
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    if window.is_visible().unwrap_or(false) {
-                        let _ = window.hide();
-                    } else {
-                        crate::window::show_main_window(app_handle);
-                    }
-                }
+                crate::window::toggle_main_window(app_handle);
             }
         });
 

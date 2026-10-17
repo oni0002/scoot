@@ -9,16 +9,7 @@ pub fn start_hotkey_capture(app: AppHandle) {
 #[tauri::command]
 pub async fn stop_hotkey_capture(app: AppHandle) {
     imp::stop();
-    use tauri::Manager;
-    let hotkey = if let Some(state) = app.try_state::<crate::state::ConfigState>() {
-        if let Ok(config) = state.config.lock() {
-            config.hotkey.clone()
-        } else {
-            crate::config::domain::DEFAULT_SHORTCUT.to_string()
-        }
-    } else {
-        crate::config::domain::DEFAULT_SHORTCUT.to_string()
-    };
+    let hotkey = crate::shortcut::configured_hotkey(&app);
     if let Err(e) = crate::shortcut::setup_global_shortcuts(&app, &hotkey) {
         log::error!("Failed to re-register shortcut after hotkey capture: {}", e);
     }

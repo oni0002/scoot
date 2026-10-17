@@ -14,14 +14,11 @@ impl Default for CommandStore {
 
 impl CommandStore {
     pub fn new() -> Self {
-        let target_dir = std::env::current_exe()
-            .ok()
-            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or_else(|| ".".to_string());
-
         Self {
-            commands_path: format!("{}/commands.json", target_dir),
+            commands_path: crate::os::app_dir()
+                .join("commands.json")
+                .to_string_lossy()
+                .into_owned(),
         }
     }
 

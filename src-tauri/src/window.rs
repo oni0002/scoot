@@ -15,6 +15,29 @@ pub fn show_main_window(app: &AppHandle) {
     }
 }
 
+pub fn is_main_window_visible(app: &AppHandle) -> bool {
+    app.get_webview_window("main")
+        .is_some_and(|w| w.is_visible().unwrap_or(false))
+}
+
+/// True while a dialog or secondary screen holds the window open
+pub fn is_modal_open(app: &AppHandle) -> bool {
+    app.try_state::<WindowState>()
+        .is_some_and(|s| s.prevent_hide.load(std::sync::atomic::Ordering::SeqCst) > 0)
+}
+
+/// Hide the main window if it is visible, show it otherwise
+pub fn toggle_main_window(app: &AppHandle) {
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    if window.is_visible().unwrap_or(false) {
+        let _ = window.hide();
+    } else {
+        show_main_window(app);
+    }
+}
+
 // --- Tauri Commands ---
 
 /// Hide window

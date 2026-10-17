@@ -59,7 +59,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
 
 /// Open log (or log directory)
 pub fn open_log(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
-    let log_dir = crate::os::get_log_dir(app_handle)?;
+    let log_dir = crate::os::log_dir();
     std::fs::create_dir_all(&log_dir)?;
 
     let log_file = log_dir.join("scoot.log");
@@ -72,28 +72,25 @@ pub fn open_log(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
 
 /// Open add command dialog
 pub fn open_add_command_dialog(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
-    use tauri::Emitter;
-    if let Some(window) = app_handle.get_webview_window("main") {
-        let _ = window.show();
-        let _ = window.set_focus();
-    }
-
-    app_handle.emit("open-add-command-dialog", ()).map_err(|e| {
-        crate::error::AppError::System(format!("Failed to emit add command event: {}", e))
-    })
+    show_and_emit(app_handle, "open-add-command-dialog")
 }
 
 /// Open settings screen
 pub fn open_settings_dialog(app_handle: &AppHandle) -> Result<(), crate::error::AppError> {
+    show_and_emit(app_handle, "open-settings-dialog")
+}
+
+/// Bring the main window forward and tell the webview which screen to open
+fn show_and_emit(app_handle: &AppHandle, event: &str) -> Result<(), crate::error::AppError> {
     use tauri::Emitter;
     if let Some(window) = app_handle.get_webview_window("main") {
         let _ = window.show();
         let _ = window.set_focus();
     }
 
-    app_handle.emit("open-settings-dialog", ()).map_err(|e| {
-        crate::error::AppError::System(format!("Failed to emit open settings event: {}", e))
-    })
+    app_handle
+        .emit(event, ())
+        .map_err(|e| crate::error::AppError::System(format!("Failed to emit {}: {}", event, e)))
 }
 
 /// Setup reload event listeners

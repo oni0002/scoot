@@ -38,11 +38,7 @@ pub fn run() {
                 .targets([
                     // Output to logs folder in the same directory as the exe
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Folder {
-                        path: std::env::current_exe()
-                            .ok()
-                            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-                            .unwrap_or_else(|| std::path::PathBuf::from("."))
-                            .join("logs"),
+                        path: crate::os::log_dir(),
                         file_name: None,
                     }),
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),

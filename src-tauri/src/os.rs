@@ -25,14 +25,18 @@ pub fn open_url(app_handle: &AppHandle, url: &str) -> Result<(), crate::error::A
         .map_err(|e| crate::error::AppError::System(format!("Failed to open URL '{}': {}", url, e)))
 }
 
-/// Get the path to the log directory
-pub fn get_log_dir(_app_handle: &AppHandle) -> Result<PathBuf, crate::error::AppError> {
+/// The directory holding the exe. Scoot is portable: config.json, commands.json and logs/ live
+/// next to it.
+pub fn app_dir() -> PathBuf {
     std::env::current_exe()
         .ok()
-        .and_then(|p| p.parent().map(|p| p.join("logs")))
-        .ok_or_else(|| {
-            crate::error::AppError::System("Failed to determine log directory".to_string())
-        })
+        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| PathBuf::from("."))
+}
+
+/// The log directory
+pub fn log_dir() -> PathBuf {
+    app_dir().join("logs")
 }
 
 /// Expand Windows environment variables like %APPDATA%

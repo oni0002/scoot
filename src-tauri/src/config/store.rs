@@ -17,17 +17,11 @@ impl Default for ConfigStore {
 
 impl ConfigStore {
     pub fn new() -> Self {
-        // Get the target directory
-        let target_dir = std::env::current_exe()
-            .ok()
-            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or_else(|| ".".to_string());
-
-        log::debug!("App path: {}", target_dir);
-
         Self {
-            config_path: format!("{}/config.json", target_dir),
+            config_path: crate::os::app_dir()
+                .join("config.json")
+                .to_string_lossy()
+                .into_owned(),
         }
     }
 
