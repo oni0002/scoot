@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, ReactNode } from 'react';
 import { useNotifications } from '../hooks/useNotifications';
 import { Notification, NotificationToast } from '../components/NotificationToast';
 import { useConfigTheme } from './ConfigContext';
@@ -16,8 +16,13 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     const { notifications, removeNotification, showSuccess, showError, showWarning } =
         useNotifications();
 
+    const value = useMemo(
+        () => ({ showSuccess, showError, showWarning }),
+        [showSuccess, showError, showWarning],
+    );
+
     return (
-        <NotificationContext.Provider value={{ showSuccess, showError, showWarning }}>
+        <NotificationContext.Provider value={value}>
             {children}
             <NotificationToast
                 notifications={notifications}

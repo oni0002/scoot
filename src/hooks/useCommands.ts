@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { TauriAPI } from '../tauri';
 import { Command } from '../types';
 import { getErrorMessage } from '../error';
@@ -72,15 +72,28 @@ export function useCommands() {
         [],
     );
 
-    return {
-        commands,
-        loading,
-        error,
-        setError,
-        loadCommands,
-        addCommand,
-        updateCommand,
-        deleteCommand,
-        executeCommand,
-    };
+    // Stable while nothing changes, so context consumers do not re-render with every provider render
+    return useMemo(
+        () => ({
+            commands,
+            loading,
+            error,
+            setError,
+            loadCommands,
+            addCommand,
+            updateCommand,
+            deleteCommand,
+            executeCommand,
+        }),
+        [
+            commands,
+            loading,
+            error,
+            loadCommands,
+            addCommand,
+            updateCommand,
+            deleteCommand,
+            executeCommand,
+        ],
+    );
 }

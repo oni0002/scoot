@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import { TauriAPI } from '../tauri';
 import { Config } from '../types';
 
@@ -19,17 +19,10 @@ interface ConfigProviderProps {
 
 export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
     const [config, setConfig] = useState<Config | null>(null);
-    const [theme, setTheme] = useState('');
-    const [fuzzyThreshold, setFuzzyThreshold] = useState(0);
-    const [maxResults, setMaxResults] = useState(0);
 
     const loadConfig = useCallback(async () => {
         try {
-            const loaded = await TauriAPI.getConfig();
-            setConfig(loaded);
-            setTheme(loaded.theme);
-            setFuzzyThreshold(loaded.fuzzyThreshold);
-            setMaxResults(loaded.maxResults);
+            setConfig(await TauriAPI.getConfig());
         } catch (err) {
             console.warn('Failed to load config:', err);
         }
@@ -39,13 +32,19 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
         await TauriAPI.saveConfig(updated);
     }, []);
 
-    return (
-        <ConfigContext.Provider
-            value={{ config, theme, fuzzyThreshold, maxResults, loadConfig, saveConfig }}
-        >
-            {children}
-        </ConfigContext.Provider>
+    const value = useMemo(
+        () => ({
+            config,
+            theme: config?.theme ?? '',
+            fuzzyThreshold: config?.fuzzyThreshold ?? 0,
+            maxResults: config?.maxResults ?? 0,
+            loadConfig,
+            saveConfig,
+        }),
+        [config, loadConfig, saveConfig],
     );
+
+    return <ConfigContext.Provider value={value}>{children}</ConfigContext.Provider>;
 };
 
 /** The configured theme, or undefined outside a ConfigProvider (for components that only decorate). */
