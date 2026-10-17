@@ -69,14 +69,14 @@ export const SearchResultItem = React.memo(
                         <div className="font-medium truncate">
                             {highlightMatches(result.command.name, result.matches)}
                         </div>
-                        <div className="text-xs opacity-70 truncate flex-1 min-w-0 flex-shrink">
+                        <div className="text-xs opacity-70 truncate flex-1 min-w-0 shrink">
                             {result.command.description || result.command.command}
                         </div>
                     </div>
                 </div>
 
                 <div
-                    className={`flex items-center gap-2 ml-2 flex-shrink-0 ${isHovered ? 'mr-14' : ''}`}
+                    className={`flex items-center gap-2 ml-2 shrink-0 ${isHovered ? 'mr-14' : ''}`}
                 >
                     {result.command.alias && (
                         <div className="badge badge-sm badge-primary">{result.command.alias}</div>
@@ -108,7 +108,7 @@ export const SearchResultItem = React.memo(
                             </div>
                             <ul
                                 tabIndex={0}
-                                className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-40 p-2 shadow"
+                                className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-40 p-2 shadow-sm"
                             >
                                 <li>
                                     <a onClick={(e) => onCopy?.(result.command, e)}>Copy</a>

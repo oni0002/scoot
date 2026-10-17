@@ -254,13 +254,13 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-gutter-auto space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 scrollbar-gutter-auto space-y-4">
                 {/* General */}
                 <div className="divider divider-start text-sm pb-4">General</div>
                 {/* Theme */}
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">Theme</span>
+                <div className="flex flex-col w-full">
+                    <label className="flex select-none items-center px-1 py-2 justify-between">
+                        <span className="text-sm">Theme</span>
                     </label>
                     <select
                         className="select select-bordered select-sm w-48"
@@ -275,16 +275,16 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     </select>
                 </div>
                 {/* Hotkey */}
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">Hotkey</span>
+                <div className="flex flex-col w-full">
+                    <label className="flex select-none items-center px-1 py-2 justify-between">
+                        <span className="text-sm">Hotkey</span>
                     </label>
                     <p className="text-xs text-base-content/50 mb-1">
                         Click to capture. Press a key combo (e.g. Alt+Space) to set.
                     </p>
                     <input
                         ref={hotkeyInputRef}
-                        className="input input-bordered input-sm w-48 text-center cursor-pointer"
+                        className="input input-sm w-48 text-center cursor-pointer"
                         value={capturingHotkey ? 'Press a key...' : local.hotkey}
                         readOnly
                         onFocus={() => setCapturingHotkey(true)}
@@ -293,9 +293,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     />
                 </div>
                 {/* Max Results */}
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">Max Results</span>
+                <div className="flex flex-col w-full">
+                    <label className="flex select-none items-center px-1 py-2 justify-between">
+                        <span className="text-sm">Max Results</span>
                     </label>
                     <p className="text-xs text-base-content/50 mb-1">
                         Maximum number of search results to show.
@@ -304,7 +304,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         type="number"
                         min={1}
                         max={100}
-                        className="input input-bordered input-sm w-24"
+                        className="input input-sm w-24"
                         value={local.maxResults}
                         onChange={(e) =>
                             save({
@@ -315,9 +315,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     />
                 </div>
                 {/* Fuzzy Threshold */}
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">Fuzzy Threshold</span>
+                <div className="flex flex-col w-full">
+                    <label className="flex select-none items-center px-1 py-2 justify-between">
+                        <span className="text-sm">Fuzzy Threshold</span>
                     </label>
                     <p className="text-xs text-base-content/50 mb-1">
                         How strictly queries must match. Higher = stricter. Lower = more permissive.
@@ -340,9 +340,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     </div>
                 </div>
                 {/* Reload Interval */}
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">Reload Interval (min)</span>
+                <div className="flex flex-col w-full">
+                    <label className="flex select-none items-center px-1 py-2 justify-between">
+                        <span className="text-sm">Reload Interval (min)</span>
                     </label>
                     <p className="text-xs text-base-content/50 mb-1">
                         How often bookmarks and applications are reloaded (in minutes).
@@ -350,7 +350,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     <input
                         type="number"
                         min={1}
-                        className="input input-bordered input-sm w-24"
+                        className="input input-sm w-24"
                         value={local.reloadIntervalMinutes}
                         onChange={(e) =>
                             save({
@@ -361,9 +361,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     />
                 </div>
                 {/* Ignored */}
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">Ignored</span>
+                <div className="flex flex-col w-full">
+                    <label className="flex select-none items-center px-1 py-2 justify-between">
+                        <span className="text-sm">Ignored</span>
                     </label>
                     <p className="text-xs text-base-content/50 mb-1">
                         Commands hidden from search results. Add via the ⋯ menu on a search result.
@@ -375,7 +375,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                             {local.ignored.map((cmd, i) => (
                                 <li
                                     key={i}
-                                    className="flex items-center gap-2 text-xs bg-base-200 rounded px-2 py-1"
+                                    className="flex items-center gap-2 text-xs bg-base-200 rounded-sm px-2 py-1"
                                 >
                                     <span className="flex-1 truncate">{cmd}</span>
                                     <button
@@ -393,9 +393,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 {/* Bookmarks */}
                 <div className="divider divider-start text-sm pt-6 pb-4">Bookmarks</div>
                 {/* Enable button */}
-                <div className="form-control">
-                    <label className="label cursor-pointer justify-start gap-4">
-                        <span className="label-text">Enabled</span>
+                <div className="flex flex-col">
+                    <label className="flex select-none items-center px-1 py-2 cursor-pointer justify-start gap-4">
+                        <span className="text-sm">Enabled</span>
                         <input
                             type="checkbox"
                             className="toggle toggle-sm"
@@ -410,9 +410,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     </label>
                 </div>
                 {/* Browser */}
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">Browser</span>
+                <div className="flex flex-col w-full">
+                    <label className="flex select-none items-center px-1 py-2 justify-between">
+                        <span className="text-sm">Browser</span>
                     </label>
                     <select
                         className="select select-bordered select-sm w-48"
@@ -438,9 +438,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 {/* Applications */}
                 <div className="divider divider-start text-sm pt-6 pb-4">Applications</div>
                 {/* Enable button */}
-                <div className="form-control">
-                    <label className="label cursor-pointer justify-start gap-4">
-                        <span className="label-text">Enabled</span>
+                <div className="flex flex-col">
+                    <label className="flex select-none items-center px-1 py-2 cursor-pointer justify-start gap-4">
+                        <span className="text-sm">Enabled</span>
                         <input
                             type="checkbox"
                             className="toggle toggle-sm"
@@ -458,9 +458,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     </label>
                 </div>
                 {/* Directories */}
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">Directories</span>
+                <div className="flex flex-col w-full">
+                    <label className="flex select-none items-center px-1 py-2 justify-between">
+                        <span className="text-sm">Directories</span>
                     </label>
                     <p className="text-xs text-base-content/50 mb-1">
                         Folders to scan for application shortcuts (.lnk files by default).
@@ -469,7 +469,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         {local.applications.directories.map((dir, i) => (
                             <li
                                 key={i}
-                                className="flex items-center gap-2 text-xs bg-base-200 rounded pl-2 pr-1 py-1"
+                                className="flex items-center gap-2 text-xs bg-base-200 rounded-sm pl-2 pr-1 py-1"
                             >
                                 <span className="flex-1 truncate">{dir}</span>
                                 <button
@@ -489,9 +489,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     </button>
                 </div>
                 {/* Extensions */}
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">Extensions</span>
+                <div className="flex flex-col w-full">
+                    <label className="flex select-none items-center px-1 py-2 justify-between">
+                        <span className="text-sm">Extensions</span>
                     </label>
                     <p className="text-xs text-base-content/50 mb-1">
                         File extensions treated as applications when scanning directories.
@@ -500,7 +500,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         {local.applications.extensions.map((ext, i) => (
                             <li
                                 key={i}
-                                className="flex items-center gap-2 text-xs bg-base-200 rounded pl-2 pr-1 py-1"
+                                className="flex items-center gap-2 text-xs bg-base-200 rounded-sm pl-2 pr-1 py-1"
                             >
                                 <span className="flex-1 truncate">.{ext}</span>
                                 <button
@@ -512,7 +512,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                             </li>
                         ))}
                         {addingExtension && (
-                            <li className="flex items-center gap-2 text-xs bg-base-200 rounded pl-2 pr-1 py-1">
+                            <li className="flex items-center gap-2 text-xs bg-base-200 rounded-sm pl-2 pr-1 py-1">
                                 <input
                                     autoFocus
                                     className="input input-xs flex-1 min-w-0 bg-transparent"
@@ -551,9 +551,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                 {/* Markdown */}
                 <div className="divider divider-start text-sm pt-6 pb-4">Markdown</div>
                 {/* Enable button */}
-                <div className="form-control">
-                    <label className="label cursor-pointer justify-start gap-4">
-                        <span className="label-text">Enabled</span>
+                <div className="flex flex-col">
+                    <label className="flex select-none items-center px-1 py-2 cursor-pointer justify-start gap-4">
+                        <span className="text-sm">Enabled</span>
                         <input
                             type="checkbox"
                             className="toggle toggle-sm"
@@ -568,9 +568,9 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                     </label>
                 </div>
                 {/* Files */}
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">Files</span>
+                <div className="flex flex-col w-full">
+                    <label className="flex select-none items-center px-1 py-2 justify-between">
+                        <span className="text-sm">Files</span>
                     </label>
                     <p className="text-xs text-base-content/50 mb-1">
                         Markdown files to extract URL and file-path links from.
@@ -579,7 +579,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         {local.markdown.paths.map((p, i) => (
                             <li
                                 key={i}
-                                className="flex items-center gap-2 text-xs bg-base-200 rounded px-2 py-1"
+                                className="flex items-center gap-2 text-xs bg-base-200 rounded-sm px-2 py-1"
                             >
                                 <span className="flex-1 truncate">{p}</span>
                                 <button

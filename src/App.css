@@ -1,6 +1,39 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@plugin "daisyui" {
+    themes:
+        light --default,
+        dark,
+        cupcake,
+        bumblebee,
+        emerald,
+        corporate,
+        synthwave,
+        retro,
+        cyberpunk,
+        valentine,
+        halloween,
+        garden,
+        forest,
+        aqua,
+        lofi,
+        pastel,
+        fantasy,
+        wireframe,
+        black,
+        luxury,
+        dracula --prefersdark,
+        cmyk,
+        autumn,
+        business,
+        acid,
+        lemonade,
+        night,
+        coffee,
+        winter,
+        dim,
+        nord,
+        sunset;
+}
 
 /* Fix for DaisyUI modal scrollbar-gutter issue */
 /* https://github.com/saadeghi/daisyui/issues/3726 */
@@ -25,8 +58,6 @@ dialog {
 }
 
 /* Override any DaisyUI scrollbar-gutter settings */
-@layer utilities {
-    .scrollbar-gutter-auto {
-        scrollbar-gutter: auto !important;
-    }
+@utility scrollbar-gutter-auto {
+    scrollbar-gutter: auto !important;
 }

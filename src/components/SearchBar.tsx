@@ -34,9 +34,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     onOpenConfig,
 }) => {
     return (
-        <div className="flex-shrink-0 mb-4 relative">
+        <div className="shrink-0 mb-4 relative">
             <div className="flex items-center gap-4">
-                <label className="input input-sm input-bordered flex items-center gap-2 flex-1">
+                <label className="input input-sm flex items-center gap-2 flex-1">
                     {argumentMode ? <LuChevronRight /> : <LuSearch />}
                     <input
                         ref={inputRef}
@@ -61,7 +61,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     </div>
                     <ul
                         tabIndex={0}
-                        className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-48 p-2 shadow"
+                        className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-[1] w-48 p-2 shadow-sm"
                     >
                         <li>
                             <a onClick={onAddCommand}>Add Command</a>

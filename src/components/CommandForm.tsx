@@ -177,29 +177,29 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                 <div className="flex-1 overflow-y-auto px-4 scrollbar-gutter-auto space-y-2">
                     <div className="flex gap-2">
                         {/* Name */}
-                        <div className="form-control flex-1">
-                            <label className="label">
-                                <span className="label-text">Name *</span>
+                        <div className="flex flex-col flex-1">
+                            <label className="flex select-none items-center px-1 py-2 justify-between">
+                                <span className="text-sm">Name *</span>
                             </label>
                             <input
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => handleInputChange('name', e.target.value)}
                                 placeholder="Enter command name"
-                                className={`input input-bordered input-sm w-full ${errors.name ? 'input-error' : ''}`}
+                                className={`input input-sm w-full ${errors.name ? 'input-error' : ''}`}
                                 autoFocus
                             />
                             {errors.name && (
-                                <label className="label">
-                                    <span className="label-text-alt text-error">{errors.name}</span>
+                                <label className="flex select-none items-center px-1 py-2 justify-between">
+                                    <span className="text-xs text-error">{errors.name}</span>
                                 </label>
                             )}
                         </div>
 
                         {/* Category */}
-                        <div className="form-control w-32">
-                            <label className="label">
-                                <span className="label-text">Category *</span>
+                        <div className="flex flex-col w-32">
+                            <label className="flex select-none items-center px-1 py-2 justify-between">
+                                <span className="text-sm">Category *</span>
                             </label>
                             <select
                                 value={formData.category}
@@ -211,19 +211,17 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                 <option value="file">File</option>
                             </select>
                             {errors.category && (
-                                <label className="label">
-                                    <span className="label-text-alt text-error">
-                                        {errors.category}
-                                    </span>
+                                <label className="flex select-none items-center px-1 py-2 justify-between">
+                                    <span className="text-xs text-error">{errors.category}</span>
                                 </label>
                             )}
                         </div>
                     </div>
 
                     <div className="flex gap-2 items-start">
-                        <div className="form-control flex-1">
-                            <label className="label">
-                                <span className="label-text">
+                        <div className="flex flex-col flex-1">
+                            <label className="flex select-none items-center px-1 py-2 justify-between">
+                                <span className="text-sm">
                                     {formData.category === 'url'
                                         ? 'URL *'
                                         : formData.category === 'file'
@@ -243,7 +241,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                               ? 'C:\\path\\to\\file.txt'
                                               : 'Command line'
                                     }
-                                    className={`input input-bordered input-sm flex-1 ${errors.command ? 'input-error' : ''}`}
+                                    className={`input input-sm flex-1 ${errors.command ? 'input-error' : ''}`}
                                 />
                                 {formData.category === 'file' && (
                                     <>
@@ -267,22 +265,20 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                 )}
                             </div>
                             {errors.command && (
-                                <label className="label">
-                                    <span className="label-text-alt text-error">
-                                        {errors.command}
-                                    </span>
+                                <label className="flex select-none items-center px-1 py-2 justify-between">
+                                    <span className="text-xs text-error">{errors.command}</span>
                                 </label>
                             )}
-                            <label className="label">
-                                <span className="label-text-alt">
+                            <label className="flex select-none items-center px-1 py-2 justify-between">
+                                <span className="text-xs">
                                     Use {'{$1}'}, {'{$2}'} or {'{$*}'} for arguments
                                 </span>
                             </label>
                         </div>
 
-                        <div className="form-control w-32">
-                            <label className="label">
-                                <span className="label-text">
+                        <div className="flex flex-col w-32">
+                            <label className="flex select-none items-center px-1 py-2 justify-between">
+                                <span className="text-sm">
                                     Alias {hasPlaceholders(formData.command) ? '*' : ''}
                                 </span>
                             </label>
@@ -292,14 +288,12 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                 onChange={(e) => handleInputChange('alias', e.target.value)}
                                 placeholder="e.g., g"
                                 maxLength={10}
-                                className={`input input-bordered input-sm w-full ${errors.alias ? 'input-error' : ''}`}
+                                className={`input input-sm w-full ${errors.alias ? 'input-error' : ''}`}
                                 disabled={!hasPlaceholders(formData.command)}
                             />
                             {errors.alias && (
-                                <label className="label">
-                                    <span className="label-text-alt text-error">
-                                        {errors.alias}
-                                    </span>
+                                <label className="flex select-none items-center px-1 py-2 justify-between">
+                                    <span className="text-xs text-error">{errors.alias}</span>
                                 </label>
                             )}
                         </div>
@@ -307,9 +301,9 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
 
                     {formData.category === 'command' && (
                         <>
-                            <div className="form-control w-full">
-                                <label className="label">
-                                    <span className="label-text">Working Dir</span>
+                            <div className="flex flex-col w-full">
+                                <label className="flex select-none items-center px-1 py-2 justify-between">
+                                    <span className="text-sm">Working Dir</span>
                                 </label>
                                 <input
                                     type="text"
@@ -318,13 +312,13 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                                         handleInputChange('workingDir', e.target.value)
                                     }
                                     placeholder="C:\path\to\working_dir"
-                                    className="input input-bordered input-sm w-full"
+                                    className="input input-sm w-full"
                                 />
                             </div>
 
-                            <div className="form-control w-full">
-                                <label className="label cursor-pointer justify-start gap-4">
-                                    <span className="label-text">Show Window</span>
+                            <div className="flex flex-col w-full">
+                                <label className="flex select-none items-center px-1 py-2 cursor-pointer justify-start gap-4">
+                                    <span className="text-sm">Show Window</span>
                                     <input
                                         type="checkbox"
                                         checked={formData.showWindow}
@@ -338,16 +332,16 @@ export const CommandForm: React.FC<CommandFormProps> = ({ command, onSave, onCan
                         </>
                     )}
 
-                    <div className="form-control w-full">
-                        <label className="label">
-                            <span className="label-text">Description</span>
+                    <div className="flex flex-col w-full">
+                        <label className="flex select-none items-center px-1 py-2 justify-between">
+                            <span className="text-sm">Description</span>
                         </label>
                         <input
                             type="text"
                             value={formData.description}
                             onChange={(e) => handleInputChange('description', e.target.value)}
                             placeholder="Brief description"
-                            className={`input input-bordered input-sm w-full ${errors.description ? 'input-error' : ''}`}
+                            className={`input input-sm w-full ${errors.description ? 'input-error' : ''}`}
                         />
                     </div>
                 </div>
