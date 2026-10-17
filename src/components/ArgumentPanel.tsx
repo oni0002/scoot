@@ -31,6 +31,7 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args }) =
     const urlEncode = command.category === 'url';
     const result = substituteArgs(command.command, args, urlEncode);
     const status = statusFor(command, args);
+    const missing = missingSlots(command.command, args).length > 0;
 
     const copyResult = () => {
         navigator.clipboard.writeText(result);
@@ -52,7 +53,7 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args }) =
 
                 <dl className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-x-3 px-2 pb-2 text-xs">
                     <dt className="text-muted">{VERB[command.category] ?? 'Runs'}</dt>
-                    <dd className="font-mono break-all">
+                    <dd className="rounded-md bg-base-100 px-2 py-1 font-mono break-all ring-1 ring-inset ring-base-content/20">
                         {expandTemplate(command.command, args, urlEncode).map((part, i) =>
                             part.filled ? (
                                 <span key={i} className="font-bold text-accent">
@@ -81,7 +82,9 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args }) =
                 </dl>
             </div>
 
-            <p role="status" className="px-2 text-xs min-h-4">
+            {/* A missing argument is already visible as the {$n} chip, so it is only announced; a dropped
+                argument has no visual cue, so that one is written out. */}
+            <p role="status" className={missing ? 'sr-only' : 'px-2 text-xs min-h-4'}>
                 {status}
             </p>
         </div>
