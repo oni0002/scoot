@@ -148,6 +148,13 @@ impl CommandRegistry {
         }
     }
 
+    pub fn get_command(&self, id: &str) -> Option<Command> {
+        self.user_commands
+            .get(id)
+            .or_else(|| self.external_commands.iter().find(|c| c.id == id))
+            .cloned()
+    }
+
     pub fn get_all_commands(&self) -> Vec<Command> {
         self.user_commands
             .values()
@@ -213,6 +220,18 @@ mod tests {
         let all = manager.get_all_commands();
         assert_eq!(all.len(), 1);
         assert!(!all[0].id.is_empty());
+    }
+
+    #[test]
+    fn test_get_command_finds_user_and_external() {
+        let mut manager = CommandRegistry::new();
+        let user_id = manager.add_user_command(create_dummy_command(Some("p1")));
+        manager.set_external_commands(vec![create_dummy_command(None)]);
+        let external_id = manager.external_commands[0].id.clone();
+
+        assert!(manager.get_command(&user_id).is_some());
+        assert!(manager.get_command(&external_id).is_some());
+        assert!(manager.get_command("missing").is_none());
     }
 
     #[test]

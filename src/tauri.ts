@@ -20,11 +20,12 @@ export const TauriAPI = {
         return await invoke('delete_command', { id });
     },
 
-    async executeCommand(
-        command: Command,
-        args: string[] = [],
-    ): Promise<{ keepWindowOpen: boolean }> {
-        return await invoke('execute_command', { command, args });
+    async executeCommand(id: string, args: string[] = []): Promise<{ keepWindowOpen: boolean }> {
+        return await invoke('execute_command', { id, args });
+    },
+
+    async openTarget(target: string): Promise<{ keepWindowOpen: boolean }> {
+        return await invoke('open_target', { target });
     },
 
     async getCommandsByAlias(alias: string): Promise<Command[]> {

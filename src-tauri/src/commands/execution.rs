@@ -20,12 +20,43 @@ impl ExecuteResult {
     }
 }
 
-/// Execute command (Tauri command)
+/// Execute a registered command by ID (Tauri command).
+/// The webview only names the command; what actually runs is always the registry's copy.
 #[tauri::command]
 pub async fn execute_command(
+    id: String,
+    args: Vec<String>,
+    state: tauri::State<'_, crate::state::CommandsState>,
+    app_handle: tauri::AppHandle,
+) -> Result<ExecuteResult, crate::error::AppError> {
+    let command = state
+        .commands
+        .lock()
+        .map_err(crate::error::AppError::lock)?
+        .get_command(&id)
+        .ok_or_else(|| crate::error::AppError::NotFound(format!("Command not found: {}", id)))?;
+    run_command(&app_handle, command, args).await
+}
+
+/// Open a URL or file path typed directly into the search box (Tauri command)
+#[tauri::command]
+pub async fn open_target(
+    target: String,
+    app_handle: tauri::AppHandle,
+) -> Result<ExecuteResult, crate::error::AppError> {
+    let target = target.trim();
+    if is_url_scheme_allowed(target) {
+        execute_url(&app_handle, target).await?;
+    } else {
+        execute_local_file(&app_handle, target).await?;
+    }
+    Ok(ExecuteResult::hide())
+}
+
+async fn run_command(
+    app_handle: &tauri::AppHandle,
     command: Command,
     args: Vec<String>,
-    app_handle: tauri::AppHandle,
 ) -> Result<ExecuteResult, crate::error::AppError> {
     // Build command
     let final_command = if command.has_placeholders() {
@@ -38,14 +69,14 @@ pub async fn execute_command(
     if command.source == crate::commands::domain::SOURCE_SCOOT
         || final_command.starts_with("scoot://")
     {
-        return execute_scoot_command(&app_handle, &final_command).await;
+        return execute_scoot_command(app_handle, &final_command).await;
     }
 
     // Other commands - dispatch by category
     let result = match command.category.as_str() {
-        crate::commands::domain::CATEGORY_URL => execute_url(&app_handle, &final_command).await,
+        crate::commands::domain::CATEGORY_URL => execute_url(app_handle, &final_command).await,
         crate::commands::domain::CATEGORY_FILE => {
-            execute_local_file(&app_handle, &final_command).await
+            execute_local_file(app_handle, &final_command).await
         }
         crate::commands::domain::CATEGORY_COMMAND => {
             execute_shell_command(

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { TauriAPI } from '../tauri';
 import { Command } from '../types';
 import { getErrorMessage } from '../error';
+import { DIRECT_OPEN_ID } from '../constants';
 
 export function useCommands() {
     const [commands, setCommands] = useState<Command[]>([]);
@@ -69,7 +70,10 @@ export function useCommands() {
     const executeCommand = useCallback(
         async (command: Command, args: string[] = []): Promise<boolean | null> => {
             try {
-                const result = await TauriAPI.executeCommand(command, args);
+                const result =
+                    command.id === DIRECT_OPEN_ID
+                        ? await TauriAPI.openTarget(command.command)
+                        : await TauriAPI.executeCommand(command.id, args);
                 return result.keepWindowOpen;
             } catch (err) {
                 console.error(`Failed to execute command "${command.name}":`, getErrorMessage(err));
