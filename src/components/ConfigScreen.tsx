@@ -485,7 +485,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         ))}
                     </ul>
                     <button
-                        className="btn btn-neutral btn-xs mt-1 self-start"
+                        className="btn btn-soft btn-xs mt-1 self-start"
                         onClick={addDirectory}
                         aria-label="Add directory"
                     >
@@ -549,7 +549,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         )}
                     </ul>
                     <button
-                        className="btn btn-neutral btn-xs mt-1 self-start"
+                        className="btn btn-soft btn-xs mt-1 self-start"
                         onClick={() => setAddingExtension(true)}
                         aria-label="Add extension"
                         disabled={addingExtension}
@@ -606,7 +606,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack }) => {
                         ))}
                     </ul>
                     <button
-                        className="btn btn-neutral btn-xs mt-1 self-start"
+                        className="btn btn-soft btn-xs mt-1 self-start"
                         onClick={addMarkdownPath}
                         aria-label="Add Markdown file"
                     >
