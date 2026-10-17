@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useCommands } from '../hooks/useCommands';
 import { Command } from '../types';
+import type { CommandResult } from '../hooks/useCommands';
 
 interface CommandContextType {
     commands: Command[];
@@ -8,10 +9,10 @@ interface CommandContextType {
     error: string | null;
     setError: (error: string | null) => void;
     loadCommands: () => Promise<void>;
-    addCommand: (command: Command) => Promise<boolean>;
-    updateCommand: (command: Command) => Promise<boolean>;
-    deleteCommand: (id: string, name: string) => Promise<boolean>;
-    executeCommand: (command: Command, args?: string[]) => Promise<boolean | null>; // null = error
+    addCommand: (command: Command) => Promise<CommandResult>;
+    updateCommand: (command: Command) => Promise<CommandResult>;
+    deleteCommand: (id: string, name: string) => Promise<CommandResult>;
+    executeCommand: (command: Command, args?: string[]) => Promise<boolean>; // rejects with the reason on failure
 }
 
 const CommandContext = createContext<CommandContextType | undefined>(undefined);

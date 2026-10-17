@@ -31,26 +31,33 @@ export class ErrorBoundary extends Component<Props, State> {
     render() {
         if (this.state.hasError) {
             return (
-                <div className="error-boundary">
-                    <div className="error-boundary-content">
-                        <h2>Something went wrong</h2>
-                        <p>
-                            An unexpected error occurred in the application. Please try restarting
-                            Scoot.
+                <div
+                    role="alert"
+                    className="h-screen w-screen flex items-center justify-center bg-base-100 text-base-content p-6"
+                >
+                    <div className="w-full max-w-md space-y-3">
+                        <h2 className="text-lg font-medium">Something went wrong</h2>
+                        <p className="text-sm text-muted">
+                            Scoot hit an unexpected error. Try again, and restart Scoot if it keeps
+                            happening.
                         </p>
                         {this.state.error && (
-                            <details className="error-details">
-                                <summary>Error Details</summary>
-                                <pre>{this.state.error.toString()}</pre>
+                            <details className="text-xs">
+                                <summary className="cursor-pointer text-muted">
+                                    Error details
+                                </summary>
+                                <pre className="mt-2 whitespace-pre-wrap break-words rounded-sm bg-base-200 p-2">
+                                    {this.state.error.toString()}
+                                </pre>
                             </details>
                         )}
                         <button
+                            className="btn btn-sm btn-primary"
                             onClick={() => {
                                 this.setState({ hasError: false, error: undefined });
                             }}
-                            className="retry-button"
                         >
-                            Try Again
+                            Try again
                         </button>
                     </div>
                 </div>

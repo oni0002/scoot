@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Command } from '../types';
 import { TauriAPI } from '../tauri';
 import { NOTIFICATION_DURATION } from '../constants';
+import { getErrorMessage } from '../error';
 import { SearchBar } from './SearchBar';
 import { SearchResultList } from './SearchResultList';
 import { useCommandContext } from '../context/CommandContext';
@@ -63,11 +64,17 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
 
     const executeContextCommand = useCallback(
         async (command: Command, args: string[]) => {
-            const result = await rawExecuteCommand(command, args);
-            if (result === null) {
-                showError(`Failed to execute "${command.name}".`, NOTIFICATION_DURATION.LONG);
+            try {
+                return await rawExecuteCommand(command, args);
+            } catch (err) {
+                const message = getErrorMessage(err);
+                console.error(`Failed to execute command "${command.name}":`, message);
+                showError(
+                    `Could not run "${command.name}": ${message}`,
+                    NOTIFICATION_DURATION.LONG,
+                );
+                return null;
             }
-            return result;
         },
         [rawExecuteCommand, showError],
     );

@@ -99,7 +99,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
         >
             {getIcon()}
             <div className="min-w-0 flex-1">
-                <div className="text-sm leading-snug whitespace-normal break-all sm:break-words">
+                <div className="text-sm leading-snug whitespace-normal break-words">
                     {notification.message}
                 </div>
             </div>

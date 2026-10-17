@@ -7,6 +7,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Command } from './types';
 import { TauriAPI } from './tauri';
 import { NOTIFICATION_DURATION } from './constants';
+import { getErrorMessage } from './error';
 import { useAppEvents } from './hooks/useAppEvents';
 import { CommandProvider, useCommandContext } from './context/CommandContext';
 import { ConfigProvider, useConfigContext } from './context/ConfigContext';
@@ -55,21 +56,18 @@ const AppContent = () => {
 
     const handleSaveCommand = useCallback(
         async (command: Command) => {
-            let success: boolean;
-            if (editingCommand) {
-                success = await updateCommand(command);
-                if (success) showSuccess(`"${command.name}" updated successfully.`);
-                else showError(`Failed to update "${command.name}".`, NOTIFICATION_DURATION.LONG);
-            } else {
-                success = await addCommand(command);
-                if (success) showSuccess(`"${command.name}" added successfully.`);
-                else showError(`Failed to add "${command.name}".`, NOTIFICATION_DURATION.LONG);
+            const editing = Boolean(editingCommand);
+            const result = editing ? await updateCommand(command) : await addCommand(command);
+            if (!result.ok) {
+                showError(
+                    `Could not ${editing ? 'update' : 'add'} "${command.name}": ${result.message}`,
+                    NOTIFICATION_DURATION.LONG,
+                );
+                return;
             }
-
-            if (success) {
-                setCurrentView('search');
-                setEditingCommand(undefined);
-            }
+            showSuccess(`"${command.name}" ${editing ? 'updated' : 'added'} successfully.`);
+            setCurrentView('search');
+            setEditingCommand(undefined);
         },
         [editingCommand, updateCommand, addCommand, showSuccess, showError],
     );
@@ -79,14 +77,17 @@ const AppContent = () => {
             const targetCommand = command || deletingCommand;
             if (!targetCommand) return;
 
-            const success = await deleteCommand(targetCommand.id, targetCommand.name);
-            if (success) {
-                showSuccess(`"${targetCommand.name}" deleted successfully.`);
-                setShowDeleteDialog(false);
-                setDeletingCommand(undefined);
-            } else {
-                showError(`Could not delete "${targetCommand.name}".`, NOTIFICATION_DURATION.LONG);
+            const result = await deleteCommand(targetCommand.id, targetCommand.name);
+            if (!result.ok) {
+                showError(
+                    `Could not delete "${targetCommand.name}": ${result.message}`,
+                    NOTIFICATION_DURATION.LONG,
+                );
+                return;
             }
+            showSuccess(`"${targetCommand.name}" deleted successfully.`);
+            setShowDeleteDialog(false);
+            setDeletingCommand(undefined);
         },
         [deletingCommand, deleteCommand, showSuccess, showError],
     );
@@ -119,7 +120,10 @@ const AppContent = () => {
                 showSuccess(`"${command.name}" ignored successfully.`);
             } catch (err) {
                 console.error('Failed to ignore command:', err);
-                showError(`Could not ignore "${command.name}".`, NOTIFICATION_DURATION.LONG);
+                showError(
+                    `Could not ignore "${command.name}": ${getErrorMessage(err)}`,
+                    NOTIFICATION_DURATION.LONG,
+                );
             }
         },
         [loadCommands, showSuccess, showError],
@@ -146,7 +150,7 @@ const AppContent = () => {
             showSuccess('Commands and config reloaded', 2000);
         } catch (err) {
             console.error('Failed to reload:', err);
-            showError('Could not reload configuration');
+            showError(`Could not reload configuration: ${getErrorMessage(err)}`);
         }
     }, [loadCommands, showSuccess, showError]);
 
@@ -164,17 +168,22 @@ const AppContent = () => {
 
     if (loading) {
         return (
-            <div className="app-loading">
-                <p>Loading Scoot...</p>
+            <div className="h-screen w-screen flex items-center justify-center bg-base-100 text-base-content">
+                <p className="text-sm text-muted">Loading Scoot...</p>
             </div>
         );
     }
 
     if (commandsError) {
         return (
-            <div className="app-error">
-                <p>Error: {commandsError}</p>
-                <button onClick={loadCommands}>Retry</button>
+            <div
+                role="alert"
+                className="h-screen w-screen flex flex-col items-center justify-center gap-3 bg-base-100 text-base-content p-6 text-center"
+            >
+                <p className="text-sm">{commandsError}</p>
+                <button className="btn btn-sm btn-primary" onClick={loadCommands}>
+                    Retry
+                </button>
             </div>
         );
     }
@@ -221,12 +230,7 @@ const AppContent = () => {
 
 function App() {
     return (
-        <ErrorBoundary
-            onError={(error, errorInfo) => {
-                console.error('React Error Boundary caught error:', error, errorInfo);
-                alert('An unexpected error occurred. Please try restarting the application.');
-            }}
-        >
+        <ErrorBoundary>
             <NotificationProvider>
                 <ConfigProvider>
                     <CommandProvider>

@@ -4,6 +4,9 @@ import { Command } from '../types';
 import { getErrorMessage } from '../error';
 import { DIRECT_OPEN_ID } from '../constants';
 
+/** Outcome of a command mutation; failures carry the backend's reason so the UI can show it. */
+export type CommandResult = { ok: true } | { ok: false; message: string };
+
 export function useCommands() {
     const [commands, setCommands] = useState<Command[]>([]);
     const [loading, setLoading] = useState(true);
@@ -17,68 +20,54 @@ export function useCommands() {
             setCommands(loadedCommands);
             setError(null);
         } catch (err) {
-            console.error('Failed to load commands:', getErrorMessage(err));
-            setError('Failed to load commands');
+            const message = getErrorMessage(err);
+            console.error('Failed to load commands:', message);
+            setError(`Could not load commands: ${message}`);
         } finally {
             isInitialLoad.current = false;
             setLoading(false);
         }
     }, []);
 
-    const addCommand = useCallback(
-        async (command: Command) => {
+    const mutate = useCallback(
+        async (action: () => Promise<unknown>, what: string): Promise<CommandResult> => {
             try {
-                await TauriAPI.addCommand(command);
+                await action();
                 await loadCommands();
-                return true;
+                return { ok: true };
             } catch (err) {
-                console.error('Failed to add command:', getErrorMessage(err));
-                return false;
+                const message = getErrorMessage(err);
+                console.error(`Failed to ${what}:`, message);
+                return { ok: false, message };
             }
         },
         [loadCommands],
+    );
+
+    const addCommand = useCallback(
+        (command: Command) => mutate(() => TauriAPI.addCommand(command), 'add command'),
+        [mutate],
     );
 
     const updateCommand = useCallback(
-        async (command: Command) => {
-            try {
-                await TauriAPI.updateCommand(command);
-                await loadCommands();
-                return true;
-            } catch (err) {
-                console.error('Failed to update command:', getErrorMessage(err));
-                return false;
-            }
-        },
-        [loadCommands],
+        (command: Command) => mutate(() => TauriAPI.updateCommand(command), 'update command'),
+        [mutate],
     );
 
     const deleteCommand = useCallback(
-        async (id: string, name: string) => {
-            try {
-                await TauriAPI.deleteCommand(id);
-                await loadCommands();
-                return true;
-            } catch (err) {
-                console.error(`Failed to delete command "${name}":`, getErrorMessage(err));
-                return false;
-            }
-        },
-        [loadCommands],
+        (id: string, name: string) =>
+            mutate(() => TauriAPI.deleteCommand(id), `delete command "${name}"`),
+        [mutate],
     );
 
+    /** Resolves with keepWindowOpen; rejects with the backend's error when the command fails. */
     const executeCommand = useCallback(
-        async (command: Command, args: string[] = []): Promise<boolean | null> => {
-            try {
-                const result =
-                    command.id === DIRECT_OPEN_ID
-                        ? await TauriAPI.openTarget(command.command)
-                        : await TauriAPI.executeCommand(command.id, args);
-                return result.keepWindowOpen;
-            } catch (err) {
-                console.error(`Failed to execute command "${command.name}":`, getErrorMessage(err));
-                return null;
-            }
+        async (command: Command, args: string[] = []): Promise<boolean> => {
+            const result =
+                command.id === DIRECT_OPEN_ID
+                    ? await TauriAPI.openTarget(command.command)
+                    : await TauriAPI.executeCommand(command.id, args);
+            return result.keepWindowOpen;
         },
         [],
     );
