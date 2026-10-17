@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Command } from '../types';
 import { TauriAPI } from '../tauri';
 import { NOTIFICATION_DURATION, resultOptionId } from '../constants';
 import { RowAction, rowActionsFor } from '../rowActions';
 import { getErrorMessage } from '../error';
-import { hasPlaceholders } from '../command';
+import { hasPlaceholders, substituteArgs } from '../command';
 import { SearchBar } from './SearchBar';
 import { SearchResultList } from './SearchResultList';
 import { SearchHints } from './SearchHints';
@@ -90,11 +90,37 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
 
     const aliasExample = commands.find((c) => c.alias && hasPlaceholders(c.command))?.alias;
 
+    const args = useMemo(
+        () =>
+            argumentMode && query.startsWith(argumentMode.alias + ' ')
+                ? query
+                      .slice(argumentMode.alias.length + 1)
+                      .trim()
+                      .split(/\s+/)
+                      .filter((a) => a)
+                : [],
+        [argumentMode, query],
+    );
+
+    // In argument mode the thing worth copying is the command as it will run, not its template
+    const copyExpanded = useCallback(() => {
+        if (!argumentMode) return;
+        const { command } = argumentMode;
+        onCopyCommand?.({
+            ...command,
+            command: substituteArgs(command.command, args, command.category === 'url'),
+        });
+    }, [argumentMode, args, onCopyCommand]);
+
     const handleCopySelectedCommand = useCallback(() => {
+        if (argumentMode) {
+            copyExpanded();
+            return;
+        }
         if (selectedIndex < 0 || selectedIndex >= results.length) return;
         const command = results[selectedIndex].command;
         if (command) onCopyCommand?.(command);
-    }, [selectedIndex, results, onCopyCommand]);
+    }, [argumentMode, copyExpanded, selectedIndex, results, onCopyCommand]);
 
     // The ignored row is gone afterwards, so go back to a clean search instead of an empty result
     const handleIgnore = useCallback(
@@ -239,17 +265,7 @@ A fast and efficient command launcher for your desktop.`,
                 selectedIndex={selectedIndex}
                 hoveredIndex={hoveredIndex}
                 argumentMode={argumentMode}
-                args={
-                    argumentMode
-                        ? query.startsWith(argumentMode.alias + ' ')
-                            ? query
-                                  .slice(argumentMode.alias.length + 1)
-                                  .trim()
-                                  .split(/\s+/)
-                                  .filter((a) => a)
-                            : []
-                        : []
-                }
+                args={args}
                 query={query}
                 onResultClick={handleResultClick}
                 onMouseEnter={setHoveredIndex}
@@ -259,6 +275,7 @@ A fast and efficient command launcher for your desktop.`,
                 onDelete={handleDeleteCommand}
                 onIgnore={handleIgnore}
                 aliasExample={aliasExample}
+                onCopyExpanded={copyExpanded}
             />
 
             <SearchHints

@@ -21,6 +21,8 @@ interface SearchResultListProps {
     onIgnore?: (command: Command, event: React.MouseEvent) => void;
     /** An alias that takes arguments, for the first-run guide to use as its example. */
     aliasExample?: string;
+    /** Copies the expanded command while in argument mode. */
+    onCopyExpanded?: () => void;
 }
 
 export const SearchResultList: React.FC<SearchResultListProps> = ({
@@ -38,10 +40,13 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     onDelete,
     onIgnore,
     aliasExample,
+    onCopyExpanded,
 }) => {
     const renderEmptyState = () => {
         if (argumentMode) {
-            return <ArgumentPanel command={argumentMode.command} args={args} />;
+            return (
+                <ArgumentPanel command={argumentMode.command} args={args} onCopy={onCopyExpanded} />
+            );
         }
 
         if (query) return <NoResults query={query} />;

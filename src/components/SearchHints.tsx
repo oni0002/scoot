@@ -12,6 +12,7 @@ const hintsFor = ({ mode, command }: SearchHintsProps): Array<[keys: string, lab
     if (mode === 'argument') {
         return [
             ['Enter', 'Run'],
+            [ROW_ACTIONS.copy.shortcut, ROW_ACTIONS.copy.label],
             ['Esc', 'Cancel'],
         ];
     }

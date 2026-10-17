@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { ArgumentPanel } from '../ArgumentPanel';
 import { Command } from '../../types';
@@ -48,5 +49,13 @@ describe('ArgumentPanel', () => {
         const shell: Command = { ...search, category: 'command', command: 'echo {$1}' };
         render(<ArgumentPanel command={shell} args={['hi']} />);
         expect(screen.getByText('Runs')).toBeInTheDocument();
+    });
+
+    it('offers a mouse copy button that calls onCopy', async () => {
+        const onCopy = jest.fn();
+        render(<ArgumentPanel command={search} args={['react']} onCopy={onCopy} />);
+        // aria-hidden like the row buttons: the keyboard path is Ctrl+C
+        await userEvent.click(screen.getByRole('button', { name: 'Copy result', hidden: true }));
+        expect(onCopy).toHaveBeenCalledTimes(1);
     });
 });
