@@ -80,6 +80,12 @@
     color: color-mix(in oklab, var(--color-base-content) 85%, transparent);
 }
 
+/* A step below text-muted, for descriptions that sit next to a name in the same row. AA with margin
+   (5.4:1 or better) on the base, hover and selected backgrounds of both themes. */
+@utility text-subtle {
+    color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
+}
+
 input::placeholder,
 textarea::placeholder {
     color: color-mix(in oklab, var(--color-base-content) 85%, transparent);

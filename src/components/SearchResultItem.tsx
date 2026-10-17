@@ -96,9 +96,7 @@ export const SearchResultItem = React.memo(
                             <div className="truncate">
                                 {highlightMatches(command.name, result.matches)}
                             </div>
-                            <div
-                                className={`text-xs truncate flex-1 min-w-0 shrink ${isSelected ? '' : 'text-muted'}`}
-                            >
+                            <div className="text-xs truncate flex-1 min-w-0 shrink text-subtle">
                                 {command.description || command.command}
                             </div>
                         </div>

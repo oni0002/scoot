@@ -55,7 +55,7 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args, onC
                         <div className="badge badge-sm badge-primary">{command.alias}</div>
                     )}
                     <div className="font-medium text-sm truncate">{command.name}</div>
-                    <div className="text-xs truncate flex-1 min-w-0 mr-8">
+                    <div className="text-xs truncate flex-1 min-w-0 mr-8 text-subtle">
                         {command.description}
                     </div>
                 </div>
