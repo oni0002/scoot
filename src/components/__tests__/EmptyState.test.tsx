@@ -11,6 +11,11 @@ describe('QuickGuide', () => {
         expect(screen.queryByText('Copy')).not.toBeInTheDocument();
         expect(screen.queryByText('Arguments')).not.toBeInTheDocument();
     });
+
+    it('shows the logo as decoration only', () => {
+        const { container } = render(<QuickGuide />);
+        expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    });
 });
 
 describe('QuickGuide alias example', () => {

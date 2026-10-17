@@ -1,4 +1,5 @@
 import React from 'react';
+import { LOGO_PATHS, LOGO_VIEWBOX } from '../logo';
 
 const Keys: React.FC<{ keys: string[] }> = ({ keys }) => (
     <span className="flex items-center gap-1">
@@ -43,6 +44,15 @@ export const QuickGuide: React.FC<{ aliasExample?: string }> = ({ aliasExample }
 
     return (
         <div className="flex flex-col items-center justify-center py-8 text-muted h-full select-none">
+            <svg
+                viewBox={LOGO_VIEWBOX}
+                className="mb-6 size-11 text-base-content/20"
+                aria-hidden="true"
+            >
+                {LOGO_PATHS.map((d) => (
+                    <path key={d} d={d} fill="currentColor" />
+                ))}
+            </svg>
             <dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1.5 text-sm">
                 {rows.map(([label, body]) => (
                     <React.Fragment key={label}>
