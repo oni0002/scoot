@@ -13,9 +13,10 @@ const Keys: React.FC<{ keys: string[] }> = ({ keys }) => (
 
 const Or: React.FC = () => <span aria-hidden="true">/</span>;
 
-/** What the launcher can do, shown while the search field is empty. */
-export const QuickGuide: React.FC<{ hotkey: string }> = ({ hotkey }) => {
+/** The three things a first-time user needs; the hint bar covers the rest once something is selected. */
+export const QuickGuide: React.FC = () => {
     const rows: Array<[label: string, body: React.ReactNode]> = [
+        ['Search', <span key="s">Type any keyword</span>],
         [
             'Move',
             <span key="m" className="flex items-center gap-1">
@@ -24,14 +25,7 @@ export const QuickGuide: React.FC<{ hotkey: string }> = ({ hotkey }) => {
                 <Keys keys={['Shift', 'Tab']} />
             </span>,
         ],
-        [
-            'Arguments',
-            <span key="a">
-                Alias, space, then text: <span className="font-mono">g react</span>
-            </span>,
-        ],
-        ['Open', <span key="o">Type a URL or a file path</span>],
-        ['Show / hide', <Keys key="h" keys={hotkey.split('+')} />],
+        ['Run', <Keys key="r" keys={['Enter']} />],
     ];
 
     return (

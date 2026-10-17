@@ -3,19 +3,13 @@ import '@testing-library/jest-dom';
 import { NoResults, QuickGuide } from '../EmptyState';
 
 describe('QuickGuide', () => {
-    it('shows the configured hotkey, not a fixed one', () => {
-        render(<QuickGuide hotkey="Ctrl+Shift+K" />);
-        const row = screen.getByText('Show / hide').nextElementSibling as HTMLElement;
-        expect(row).toHaveTextContent('Ctrl+Shift+K');
-        expect(screen.queryByText('Alt')).not.toBeInTheDocument();
-    });
-
-    it('lists only what the hint bar does not show', () => {
-        render(<QuickGuide hotkey="Alt+Space" />);
-        expect(screen.getByText('Arguments')).toBeInTheDocument();
-        expect(screen.getByText('Open')).toBeInTheDocument();
-        expect(screen.queryByText('Run')).not.toBeInTheDocument();
+    it('covers search, move and run, and nothing the hint bar already shows', () => {
+        render(<QuickGuide />);
+        for (const label of ['Search', 'Move', 'Run']) {
+            expect(screen.getByText(label)).toBeInTheDocument();
+        }
         expect(screen.queryByText('Copy')).not.toBeInTheDocument();
+        expect(screen.queryByText('Arguments')).not.toBeInTheDocument();
     });
 });
 

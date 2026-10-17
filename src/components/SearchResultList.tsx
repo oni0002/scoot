@@ -3,7 +3,6 @@ import { Command, SearchResult } from '../types';
 import { SearchResultItem } from './SearchResultItem';
 import { ArgumentPanel } from './ArgumentPanel';
 import { NoResults, QuickGuide } from './EmptyState';
-import { useConfigContext } from '../context/ConfigContext';
 import { RESULT_LIST_ID } from '../constants';
 
 interface SearchResultListProps {
@@ -37,7 +36,6 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     onDelete,
     onIgnore,
 }) => {
-    const { config } = useConfigContext();
     const renderEmptyState = () => {
         if (argumentMode) {
             return <ArgumentPanel command={argumentMode.command} args={args} />;
@@ -45,7 +43,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
 
         if (query) return <NoResults query={query} />;
 
-        return <QuickGuide hotkey={config?.hotkey ?? 'Alt+Space'} />;
+        return <QuickGuide />;
     };
 
     return (
