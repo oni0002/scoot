@@ -15,7 +15,7 @@ Command の実行方法を決める4種類の区分。`url`（ブラウザで開
 _Avoid_: Type, kind
 
 **Source**:
-Command がどこから読み込まれたかの出所区分。`user`（手動登録）、`bookmark`（ブラウザブックマーク）、`application`（OSのショートカットファイル）、`scoot`（組み込みコマンド）。実行時のみ保持され、永続化されない。
+Command がどこから読み込まれたかの出所区分。`user`（手動登録）、`bookmark`（ブラウザブックマーク）、`application`（OSのショートカットファイル）、`scoot`（組み込みコマンド）、Markdown Link では抽出元のファイル名。実行時のみ保持され、永続化されない。
 _Avoid_: Origin, provider
 
 **Scoot Command**:
@@ -61,7 +61,7 @@ OS のスタートメニュー等の指定ディレクトリから収集した�
 _Avoid_: App, shortcut
 
 **Markdown Link**:
-指定した Markdown ファイルから抽出した URL または ファイルパスの Command。Source は `application`（実装上）。
+指定した Markdown ファイルから抽出した URL または ファイルパスの Command。Source は抽出元の Markdown のファイル名（行のバッジに表示される）。
 _Avoid_: Link, md link
 
 ### 設定・ライフサイクル
