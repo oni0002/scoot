@@ -110,6 +110,20 @@ pub fn get_scoot_commands() -> Vec<Command> {
     ]
 }
 
+/// Percent-encode everything except RFC 3986 unreserved characters
+fn percent_encode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for b in s.bytes() {
+        match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(b as char)
+            }
+            _ => out.push_str(&format!("%{:02X}", b)),
+        }
+    }
+    out
+}
+
 /// Command methods
 impl Command {
     pub fn new(
@@ -137,13 +151,21 @@ impl Command {
         self.command.contains('{') && self.command.contains('}')
     }
 
-    /// Substitute placeholders with arguments
+    /// Substitute placeholders with arguments.
+    /// URL commands get percent-encoded arguments so that characters like `&` or `#`
+    /// cannot alter the structure of the URL.
     pub fn substitute_args(&self, args: &[String]) -> String {
+        let is_url = self.category == CATEGORY_URL;
+        let args: Vec<String> = if is_url {
+            args.iter().map(|a| percent_encode(a)).collect()
+        } else {
+            args.to_vec()
+        };
         let mut result = self.command.clone();
 
         // {$*} - Substitute all arguments with a space-separated string
         if result.contains("{$*}") {
-            let all_args = args.join(" ");
+            let all_args = args.join(if is_url { "%20" } else { " " });
             result = result.replace("{$*}", &all_args);
         }
 
@@ -300,6 +322,24 @@ mod tests {
         let cmd = create_dummy_command("mv {$1} {$2}");
         let args = vec!["src.txt".to_string(), "dest.txt".to_string()];
         assert_eq!(cmd.substitute_args(&args), "mv src.txt dest.txt");
+    }
+
+    #[test]
+    fn test_substitute_args_url_is_percent_encoded() {
+        let mut cmd = create_dummy_command("https://example.com/search?q={$*}&lang=en");
+        cmd.category = CATEGORY_URL.to_string();
+        let args = vec!["c++".to_string(), "a&b#c".to_string(), "日本".to_string()];
+        assert_eq!(
+            cmd.substitute_args(&args),
+            "https://example.com/search?q=c%2B%2B%20a%26b%23c%20%E6%97%A5%E6%9C%AC&lang=en"
+        );
+
+        let mut positional = create_dummy_command("https://example.com/{$1}");
+        positional.category = CATEGORY_URL.to_string();
+        assert_eq!(
+            positional.substitute_args(&["a/b".to_string()]),
+            "https://example.com/a%2Fb"
+        );
     }
 
     #[test]

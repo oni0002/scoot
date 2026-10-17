@@ -44,7 +44,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     };
     const getPreviewCommand = (command: Command, args: string[]) => {
         if (!command.command) return '';
-        return substituteArgs(command.command, args);
+        return substituteArgs(command.command, args, command.category === 'url');
     };
 
     const renderEmptyState = () => {

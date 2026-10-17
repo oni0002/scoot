@@ -27,9 +27,8 @@ describe('substituteArgs', () => {
         expect(substituteArgs('search {$*}', ['a', 'b', 'c'])).toBe('search a b c');
     });
 
-    it('{$*} takes priority: {$1} remains when {$*} is present', () => {
-        // {$*} branch exits early — {$1} is not replaced
-        expect(substituteArgs('{$*} and {$1}', ['a', 'b'])).toBe('a b and {$1}');
+    it('replaces both {$*} and positional placeholders (same as the backend)', () => {
+        expect(substituteArgs('{$*} and {$1}', ['a', 'b'])).toBe('a b and a');
     });
 
     it('leaves unreplaced placeholder when args are insufficient (regression)', () => {
@@ -43,5 +42,18 @@ describe('substituteArgs', () => {
 
     it('handles arg containing spaces in {$1}', () => {
         expect(substituteArgs('echo {$1}', ['hello world'])).toBe('echo hello world');
+    });
+    it('replaces every occurrence of a placeholder', () => {
+        expect(substituteArgs('{$1}-{$1}', ['x'])).toBe('x-x');
+    });
+
+    it('does not interpret $ patterns in args', () => {
+        expect(substituteArgs('echo {$1}', ['$&'])).toBe('echo $&');
+    });
+
+    it('percent-encodes args when urlEncode is set', () => {
+        expect(substituteArgs('https://x.com/?q={$*}', ['c++', 'a&b'], true)).toBe(
+            'https://x.com/?q=c%2B%2B%20a%26b',
+        );
     });
 });

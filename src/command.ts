@@ -4,16 +4,21 @@ export function hasPlaceholders(cmd: string): boolean {
     return PLACEHOLDER_RE.test(cmd);
 }
 
-export function substituteArgs(cmd: string, args: string[]): string {
+// Mirrors Command::substitute_args in src-tauri/src/commands/domain.rs (used for the preview only)
+function percentEncode(s: string): string {
+    return encodeURIComponent(s).replace(
+        /[!'()*]/g,
+        (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+    );
+}
+
+export function substituteArgs(cmd: string, args: string[], urlEncode = false): string {
     if (args.length === 0) return cmd;
 
-    if (cmd.includes('{$*}')) {
-        return cmd.replace('{$*}', args.join(' '));
-    }
-
-    let result = cmd;
-    args.forEach((arg, index) => {
-        result = result.replace(`{$${index + 1}}`, arg);
+    const values = urlEncode ? args.map(percentEncode) : args;
+    let result = cmd.split('{$*}').join(values.join(urlEncode ? '%20' : ' '));
+    values.forEach((arg, index) => {
+        result = result.split(`{$${index + 1}}`).join(arg);
     });
     return result;
 }
