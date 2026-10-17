@@ -1,9 +1,13 @@
 use crate::state::WindowState;
 use tauri::{
+    image::Image,
+    include_image,
     menu::{MenuBuilder, MenuItem},
     tray::{TrayIconBuilder, TrayIconEvent},
-    App, Manager,
+    App, AppHandle, Manager,
 };
+
+const TRAY_ID: &str = "scoot-main";
 
 /// Setup system tray
 pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
@@ -33,7 +37,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         .item(&quit_item)
         .build()?;
 
-    let mut builder = TrayIconBuilder::with_id("scoot-main")
+    let builder = TrayIconBuilder::with_id(TRAY_ID)
         .menu(&menu)
         .show_menu_on_left_click(false)
         .tooltip("Scoot - Command Launcher")
@@ -102,11 +106,53 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
             }
         });
 
-    if let Some(icon) = app.default_window_icon() {
-        builder = builder.icon(icon.clone());
-    }
+    let _tray = builder
+        .icon(tray_icon(
+            app.handle(),
+            crate::system_theme::taskbar_is_light(),
+        ))
+        .build(app)?;
 
-    let _tray = builder.build(app)?;
+    let handle = app.handle().clone();
+    crate::system_theme::watch_taskbar_theme(move |light| {
+        if let Some(tray) = handle.tray_by_id(TRAY_ID) {
+            if let Err(e) = tray.set_icon(Some(tray_icon(&handle, light))) {
+                log::error!("Failed to update the tray icon: {}", e);
+            }
+        }
+    });
 
     Ok(())
+}
+
+/// The single-colour tray icon for the taskbar theme, sized for the display scale
+/// (the tray draws icons at 16px x scale).
+fn tray_icon(app: &AppHandle, light: bool) -> Image<'static> {
+    let scale = app
+        .primary_monitor()
+        .ok()
+        .flatten()
+        .map_or(1.0, |m| m.scale_factor());
+    let icons = if light {
+        [
+            include_image!("icons/tray/light-16.png"),
+            include_image!("icons/tray/light-20.png"),
+            include_image!("icons/tray/light-24.png"),
+            include_image!("icons/tray/light-32.png"),
+        ]
+    } else {
+        [
+            include_image!("icons/tray/dark-16.png"),
+            include_image!("icons/tray/dark-20.png"),
+            include_image!("icons/tray/dark-24.png"),
+            include_image!("icons/tray/dark-32.png"),
+        ]
+    };
+    let index = match scale {
+        s if s <= 1.0 => 0,
+        s if s <= 1.25 => 1,
+        s if s <= 1.5 => 2,
+        _ => 3,
+    };
+    icons[index].clone()
 }
