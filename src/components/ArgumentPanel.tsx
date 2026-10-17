@@ -36,12 +36,9 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args, onC
     return (
         <div className="space-y-4 pt-1">
             {/* One frame: the selected-row look, extended down to hold what the alias will do */}
-            <div className="group relative rounded-lg bg-base-content/10 ring-1 ring-inset ring-base-content/50">
+            <div className="relative rounded-lg bg-base-content/10 ring-1 ring-inset ring-base-content/50">
                 {/* Mouse convenience, like the row buttons: Ctrl+C is the keyboard path, named in the hint bar */}
-                <div
-                    aria-hidden="true"
-                    className="absolute right-2 top-1.5 z-[1] opacity-0 transition-opacity group-hover:opacity-100"
-                >
+                <div aria-hidden="true" className="absolute right-2 top-1.5 z-[1]">
                     <button
                         type="button"
                         tabIndex={-1}
@@ -58,7 +55,7 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args, onC
                         <div className="badge badge-sm badge-primary">{command.alias}</div>
                     )}
                     <div className="font-medium text-sm truncate">{command.name}</div>
-                    <div className="text-xs truncate flex-1 min-w-0 group-hover:mr-8">
+                    <div className="text-xs truncate flex-1 min-w-0 mr-8">
                         {command.description}
                     </div>
                 </div>
