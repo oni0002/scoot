@@ -1,4 +1,5 @@
 const PLACEHOLDER_RE = /\{\$(\d+|\*)\}/;
+const PLACEHOLDER_GLOBAL = /\{\$(\d+|\*)\}/g;
 
 export function hasPlaceholders(cmd: string): boolean {
     return PLACEHOLDER_RE.test(cmd);
@@ -12,13 +13,56 @@ function percentEncode(s: string): string {
     );
 }
 
-export function substituteArgs(cmd: string, args: string[], urlEncode = false): string {
-    if (args.length === 0) return cmd;
+/** One literal run or one placeholder of an expanded command template. */
+export interface TemplatePart {
+    text: string;
+    /** The placeholder this part came from, e.g. "{$1}"; undefined for literal text. */
+    slot?: string;
+    /** True when the placeholder received a value (so `text` is the value, not the slot). */
+    filled: boolean;
+}
 
+/** Splits a command into literal and placeholder parts, filling placeholders from args. */
+export function expandTemplate(cmd: string, args: string[], urlEncode = false): TemplatePart[] {
     const values = urlEncode ? args.map(percentEncode) : args;
-    let result = cmd.split('{$*}').join(values.join(urlEncode ? '%20' : ' '));
-    values.forEach((arg, index) => {
-        result = result.split(`{$${index + 1}}`).join(arg);
+    const all = values.join(urlEncode ? '%20' : ' ');
+    const parts: TemplatePart[] = [];
+    let last = 0;
+
+    for (const match of cmd.matchAll(PLACEHOLDER_GLOBAL)) {
+        if (match.index > last) parts.push({ text: cmd.slice(last, match.index), filled: false });
+        const slot = match[0];
+        const value =
+            match[1] === '*' ? (args.length > 0 ? all : undefined) : values[Number(match[1]) - 1];
+        parts.push({ text: value ?? slot, slot, filled: value !== undefined });
+        last = match.index + slot.length;
+    }
+    if (last < cmd.length) parts.push({ text: cmd.slice(last), filled: false });
+    return parts;
+}
+
+export function substituteArgs(cmd: string, args: string[], urlEncode = false): string {
+    return expandTemplate(cmd, args, urlEncode)
+        .map((part) => part.text)
+        .join('');
+}
+
+/** The distinct placeholders a command takes, in order of appearance. */
+export function slotsOf(cmd: string): string[] {
+    return [...new Set([...cmd.matchAll(PLACEHOLDER_GLOBAL)].map((m) => m[0]))];
+}
+
+/** Placeholders that still have no value. */
+export function missingSlots(cmd: string, args: string[]): string[] {
+    return slotsOf(cmd).filter((slot) => {
+        const key = slot.slice(2, -1);
+        return key === '*' ? args.length === 0 : Number(key) > args.length;
     });
-    return result;
+}
+
+/** Typed arguments the command has no placeholder for (they would be silently dropped). */
+export function unusedArgs(cmd: string, args: string[]): string[] {
+    if (cmd.includes('{$*}')) return [];
+    const highest = Math.max(0, ...slotsOf(cmd).map((slot) => Number(slot.slice(2, -1))));
+    return args.slice(highest);
 }

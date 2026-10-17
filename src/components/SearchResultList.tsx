@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { LuCopy, LuCheck } from 'react-icons/lu';
+import React from 'react';
 import { Command, SearchResult } from '../types';
 import { SearchResultItem } from './SearchResultItem';
-import { substituteArgs } from '../command';
+import { ArgumentPanel } from './ArgumentPanel';
 import { RESULT_LIST_ID } from '../constants';
 
 interface SearchResultListProps {
@@ -36,43 +35,9 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     onDelete,
     onIgnore,
 }) => {
-    const [copied, setCopied] = useState(false);
-
-    const handleCopyPreview = (text: string) => {
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 3000);
-    };
-    const getPreviewCommand = (command: Command, args: string[]) => {
-        if (!command.command) return '';
-        return substituteArgs(command.command, args, command.category === 'url');
-    };
-
     const renderEmptyState = () => {
         if (argumentMode) {
-            const preview = getPreviewCommand(argumentMode.command, args);
-            return (
-                <div className="text-center py-8">
-                    <div className="text-lg mb-1">{argumentMode.command.name}</div>
-                    <div className="text-xs text-muted mb-4">
-                        {argumentMode.command.description || 'Enter arguments'}
-                    </div>
-                    {preview && (
-                        <div className="flex items-center p-2 mx-8 gap-2 text-center bg-base-200 rounded-lg">
-                            <div className="flex-1 min-w-0 text-xs font-mono break-all">
-                                {preview}
-                            </div>
-                            <button
-                                onClick={() => handleCopyPreview(preview)}
-                                className="flex-none btn btn-square btn-xs btn-ghost text-muted hover:text-base-content transition-colors"
-                                title="Copy"
-                            >
-                                {copied ? <LuCheck /> : <LuCopy />}
-                            </button>
-                        </div>
-                    )}
-                </div>
-            );
+            return <ArgumentPanel command={argumentMode.command} args={args} />;
         }
 
         if (query) {

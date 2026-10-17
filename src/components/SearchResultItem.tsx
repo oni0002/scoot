@@ -29,7 +29,10 @@ const highlightMatches = (text: string, matches: SearchResult['matches']): React
     nameMatch.indices.forEach(([start, end], i) => {
         if (lastIndex < start) nodes.push(text.slice(lastIndex, start));
         nodes.push(
-            <span key={i} className="font-semibold text-accent">
+            <span
+                key={i}
+                className="font-semibold underline decoration-accent decoration-2 underline-offset-[3px]"
+            >
                 {text.slice(start, end + 1)}
             </span>,
         );

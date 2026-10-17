@@ -1,4 +1,11 @@
-import { hasPlaceholders, substituteArgs } from '../command';
+import {
+    expandTemplate,
+    hasPlaceholders,
+    missingSlots,
+    slotsOf,
+    substituteArgs,
+    unusedArgs,
+} from '../command';
 
 describe('hasPlaceholders', () => {
     it('detects {$1}', () => expect(hasPlaceholders('open {$1}')).toBe(true));
@@ -55,5 +62,55 @@ describe('substituteArgs', () => {
         expect(substituteArgs('https://x.com/?q={$*}', ['c++', 'a&b'], true)).toBe(
             'https://x.com/?q=c%2B%2B%20a%26b',
         );
+    });
+});
+
+describe('expandTemplate', () => {
+    it('keeps literal text and marks which placeholders were filled', () => {
+        expect(expandTemplate('https://x.dev/?q={$1}&l={$2}', ['react'])).toEqual([
+            { text: 'https://x.dev/?q=', filled: false },
+            { text: 'react', slot: '{$1}', filled: true },
+            { text: '&l=', filled: false },
+            { text: '{$2}', slot: '{$2}', filled: false },
+        ]);
+    });
+
+    it('fills {$*} with every argument and nothing when there are none', () => {
+        expect(expandTemplate('go {$*}', ['a', 'b'])[1]).toEqual({
+            text: 'a b',
+            slot: '{$*}',
+            filled: true,
+        });
+        expect(expandTemplate('go {$*}', [])[1]).toEqual({
+            text: '{$*}',
+            slot: '{$*}',
+            filled: false,
+        });
+    });
+
+    it('returns a single literal part for a command without placeholders', () => {
+        expect(expandTemplate('ls -la', ['x'])).toEqual([{ text: 'ls -la', filled: false }]);
+    });
+});
+
+describe('placeholder bookkeeping', () => {
+    it('lists the distinct placeholders in order', () => {
+        expect(slotsOf('{$2} {$1} {$2}')).toEqual(['{$2}', '{$1}']);
+    });
+
+    it('reports placeholders still waiting for a value', () => {
+        expect(missingSlots('cmd {$1} {$2}', ['a'])).toEqual(['{$2}']);
+        expect(missingSlots('cmd {$*}', [])).toEqual(['{$*}']);
+        expect(missingSlots('cmd {$1}', ['a'])).toEqual([]);
+    });
+
+    it('reports arguments the command would silently drop', () => {
+        expect(unusedArgs('https://x.dev/?q={$1}', ['react', 'hooks'])).toEqual(['hooks']);
+        expect(unusedArgs('cmd {$1} {$2}', ['a', 'b'])).toEqual([]);
+        expect(unusedArgs('no placeholders', ['a'])).toEqual(['a']);
+    });
+
+    it('never calls arguments unused when {$*} takes them all', () => {
+        expect(unusedArgs('cmd {$*}', ['a', 'b', 'c'])).toEqual([]);
     });
 });
