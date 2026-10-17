@@ -133,7 +133,9 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     return (
         <div className="flex-1 overflow-y-auto min-h-0">
             {results.length === 0 ? (
-                <div key="empty">{renderEmptyState()}</div>
+                <div key="empty" className="h-full">
+                    {renderEmptyState()}
+                </div>
             ) : (
                 // Distinct key forces a remount so orphaned rows can't linger into other modes
                 <div key="results">
