@@ -1,5 +1,6 @@
 use crate::config::domain::Config;
 use crate::error::AppError;
+use crate::json::FileText;
 
 // --- Infrastructure / Core Logic ---
 
@@ -25,46 +26,23 @@ impl ConfigStore {
         }
     }
 
-    /// Load the config
+    /// Load the config. A missing file is created with the defaults; a blank one just means the
+    /// defaults, and is left for the user to finish writing.
     pub async fn load(&self) -> Result<Config, crate::error::AppError> {
-        // If config.json does not exist, save the default value and return it
-        if !tokio::fs::try_exists(&self.config_path)
-            .await
-            .unwrap_or(false)
-        {
-            return self.save_default_config().await;
-        }
-
-        // Read config.json
-        let content = tokio::fs::read_to_string(&self.config_path)
-            .await
-            .map_err(|e| {
+        match crate::json::read_text(&self.config_path).await? {
+            FileText::Missing => {
+                let default_config = Config::default();
+                self.save(&default_config).await?;
+                Ok(default_config)
+            }
+            FileText::Blank => Ok(Config::default()),
+            FileText::Text(content) => Config::from_json_with_validation(&content).map_err(|e| {
                 crate::error::AppError::System(format!(
-                    "Failed to read app config file '{}': {}",
+                    "App config file '{}' validation failed: {}",
                     self.config_path, e
                 ))
-            })?;
-        // If config.json is empty, save the default value and return it
-        if content.trim().is_empty() {
-            return self.save_default_config().await;
+            }),
         }
-
-        // Parse config.json
-        let config: Config = Config::from_json_with_validation(&content).map_err(|e| {
-            crate::error::AppError::System(format!(
-                "App config file '{}' validation failed: {}",
-                self.config_path, e
-            ))
-        })?;
-
-        Ok(config)
-    }
-
-    /// Initialize default config
-    async fn save_default_config(&self) -> Result<Config, crate::error::AppError> {
-        let default_config = Config::default();
-        self.save(&default_config).await?;
-        Ok(default_config)
     }
 
     /// Save the config
@@ -72,13 +50,7 @@ impl ConfigStore {
         &self,
         config: &crate::config::domain::Config,
     ) -> Result<(), crate::error::AppError> {
-        let content = serde_json::to_string_pretty(config).map_err(|e| {
-            crate::error::AppError::System(format!("Failed to serialize config: {}", e))
-        })?;
-
-        tokio::fs::write(&self.config_path, content)
-            .await
-            .map_err(|e| crate::error::AppError::System(format!("Failed to write to file: {}", e)))
+        crate::json::write_pretty(&self.config_path, config).await
     }
 
     /// Get config file path

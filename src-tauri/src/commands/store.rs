@@ -1,4 +1,5 @@
 use crate::commands::domain::Command;
+use crate::json::FileText;
 
 // --- File Storage ---
 
@@ -22,40 +23,19 @@ impl CommandStore {
         }
     }
 
-    /// Load commands
+    /// Load commands. A missing file is created empty; a blank one just means no commands, and
+    /// is left for the user to finish writing.
     pub async fn load(&self) -> Result<Vec<Command>, crate::error::AppError> {
-        // If commands.json does not exist, save the default value and return it
-        if !tokio::fs::try_exists(&self.commands_path)
-            .await
-            .unwrap_or(false)
-        {
-            return self.save_default_commands().await;
-        }
+        let content = match crate::json::read_text(&self.commands_path).await? {
+            FileText::Missing => {
+                self.save(&[]).await?;
+                return Ok(Vec::new());
+            }
+            FileText::Blank => return Ok(Vec::new()),
+            FileText::Text(content) => content,
+        };
 
-        // Read commands.json
-        let content = tokio::fs::read_to_string(&self.commands_path)
-            .await
-            .map_err(|e| {
-                crate::error::AppError::System(format!(
-                    "Failed to read commands file '{}': {}",
-                    self.commands_path, e
-                ))
-            })?;
-
-        // If commands.json is empty, save the default value and return it
-        if content.trim().is_empty() {
-            return self.save_default_commands().await;
-        }
-
-        // Validate and parse commands.json
-        let mut commands = tokio::task::spawn_blocking(move || {
-            crate::commands::domain::deserialize_json(&content)
-        })
-        .await
-        .map_err(|e| {
-            crate::error::AppError::System(format!("Failed to spawn blocking task: {}", e))
-        })?
-        .map_err(|e| {
+        let mut commands = crate::commands::domain::deserialize_json(&content).map_err(|e| {
             crate::error::AppError::System(format!(
                 "Failed to parse commands.json: {}. The file may be corrupted.",
                 e
@@ -83,20 +63,7 @@ impl CommandStore {
             cmd.source = String::new();
         }
 
-        let content = serde_json::to_string_pretty(&commands_to_save).map_err(|e| {
-            crate::error::AppError::System(format!("Failed to serialize data: {}", e))
-        })?;
-
-        tokio::fs::write(&self.commands_path, content)
-            .await
-            .map_err(|e| crate::error::AppError::System(format!("Failed to write to file: {}", e)))
-    }
-
-    /// Initialize default commands
-    async fn save_default_commands(&self) -> Result<Vec<Command>, crate::error::AppError> {
-        let default_commands: Vec<Command> = Vec::new();
-        self.save(&default_commands).await?;
-        Ok(default_commands)
+        crate::json::write_pretty(&self.commands_path, &commands_to_save).await
     }
 
     /// Get commands file path

@@ -59,7 +59,7 @@ impl UsageTracker {
                 return;
             }
         };
-        if let Err(e) = tokio::fs::write(&self.path, json).await {
+        if let Err(e) = crate::json::write_atomic(&self.path, json).await {
             log::warn!("Failed to write '{}': {}", self.path, e);
         }
     }
@@ -70,9 +70,7 @@ impl UsageTracker {
             .lock()
             .map_err(crate::error::AppError::lock)?
             .clear();
-        tokio::fs::write(&self.path, "{}")
-            .await
-            .map_err(|e| crate::error::AppError::System(format!("Failed to write to file: {}", e)))
+        crate::json::write_atomic(&self.path, "{}").await
     }
 
     fn update(&self, id: &str, now: u64) -> Result<String, crate::error::AppError> {
