@@ -1,4 +1,5 @@
 use crate::commands::domain::{Command, CATEGORY_URL, SOURCE_BOOKMARK};
+use crate::commands::execution::is_url_scheme_allowed;
 use crate::config::domain::BookmarkConfig;
 
 use serde::Deserialize;
@@ -113,6 +114,10 @@ fn collect(
 ) {
     if bookmark.bookmark_type == BookmarkType::Url {
         if let Some(url) = &bookmark.url {
+            // Bookmarklets (javascript:) and browser pages (chrome://) cannot be opened from here
+            if !is_url_scheme_allowed(url) {
+                return;
+            }
             // Skip duplicate URLs
             if seen_urls.contains(url) {
                 return;
@@ -154,6 +159,43 @@ mod tests {
         ] {
             assert_eq!(bookmark_path_in(base, browser).unwrap(), base.join(tail));
         }
+    }
+
+    #[test]
+    fn only_links_that_can_be_opened_are_collected() {
+        let folder: ChromiumBookmark = serde_json::from_str(
+            r#"{
+                "name": "bar", "type": "folder",
+                "children": [
+                    {"name": "Docs", "type": "url", "url": "https://example.com/docs"},
+                    {"name": "Docs again", "type": "url", "url": "https://example.com/docs"},
+                    {"name": "Mail", "type": "url", "url": "mailto:someone@example.com"},
+                    {"name": "Bookmarklet", "type": "url", "url": "javascript:alert(1)"},
+                    {"name": "Settings", "type": "url", "url": "chrome://settings"},
+                    {"name": "Nested", "type": "folder", "children": [
+                        {"name": "Files", "type": "url", "url": "ftp://files.example.com"}
+                    ]}
+                ]
+            }"#,
+        )
+        .unwrap();
+
+        let mut commands = Vec::new();
+        collect(
+            &folder,
+            &mut commands,
+            &mut std::collections::HashSet::new(),
+        );
+
+        let urls: Vec<&str> = commands.iter().map(|c| c.command.as_str()).collect();
+        assert_eq!(
+            urls,
+            [
+                "https://example.com/docs",
+                "mailto:someone@example.com",
+                "ftp://files.example.com"
+            ]
+        );
     }
 
     #[test]
