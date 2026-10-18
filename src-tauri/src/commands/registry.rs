@@ -3,7 +3,10 @@ use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 
 pub struct CommandRegistry {
-    pub user_commands: HashMap<String, Command>,
+    user_commands: Vec<Command>, // in the order of commands.json
+    /// Commands from commands.json that failed validation. They are neither offered nor run, but a
+    /// save writes them back, so an unrelated edit never deletes what the user typed by hand.
+    rejected_commands: Vec<Command>,
     external_commands: Vec<Command>, // bookmark + app + markdown + scoot (reload-only)
     external_index: HashMap<String, usize>, // id → position in external_commands
     command_index: HashMap<String, String>, // command string → id
@@ -19,7 +22,8 @@ impl Default for CommandRegistry {
 impl CommandRegistry {
     pub fn new() -> Self {
         Self {
-            user_commands: HashMap::new(),
+            user_commands: Vec::new(),
+            rejected_commands: Vec::new(),
             external_commands: Vec::new(),
             external_index: HashMap::new(),
             command_index: HashMap::new(),
@@ -82,16 +86,18 @@ impl CommandRegistry {
         if let Some(ref a) = command.alias {
             self.alias_index.insert(a.clone(), id.clone());
         }
-        self.user_commands.insert(id.clone(), command);
+        self.user_commands.push(command);
         id
     }
 
     pub fn update_user_command(&mut self, command: Command) -> Result<(), crate::error::AppError> {
-        let old = self
+        let position = self
             .user_commands
-            .get(&command.id)
+            .iter()
+            .position(|c| c.id == command.id)
             .ok_or_else(|| crate::error::AppError::NotFound("Command not found".to_string()))?;
         // Remove old index entries
+        let old = &self.user_commands[position];
         self.command_index.remove(&old.command);
         if let Some(ref a) = old.alias {
             self.alias_index.remove(a);
@@ -102,32 +108,37 @@ impl CommandRegistry {
         if let Some(ref a) = command.alias {
             self.alias_index.insert(a.clone(), command.id.clone());
         }
-        self.user_commands.insert(command.id.clone(), command);
+        self.user_commands[position] = command;
         Ok(())
     }
 
     pub fn set_user_commands(&mut self, commands: Vec<Command>) {
         self.user_commands.clear();
+        self.rejected_commands.clear();
         self.command_index.clear();
         self.alias_index.clear();
         for command in commands {
-            if self.validate_command(&command).is_ok() {
-                self.add_user_command(command);
-            } else {
+            if let Err(e) = self.validate_command(&command) {
                 log::warn!(
-                    "Skipping command '{}' ({}): Validation failed",
+                    "Skipping command '{}' ({}): {}",
                     command.name,
-                    command.id
+                    command.id,
+                    e
                 );
+                self.rejected_commands.push(command);
+            } else {
+                self.add_user_command(command);
             }
         }
     }
 
     pub fn delete_user_command(&mut self, id: &str) -> Result<(), crate::error::AppError> {
-        let command = self
+        let position = self
             .user_commands
-            .remove(id)
+            .iter()
+            .position(|c| c.id == id)
             .ok_or_else(|| crate::error::AppError::NotFound("Command not found".to_string()))?;
+        let command = self.user_commands.remove(position);
         self.command_index.remove(&command.command);
         if let Some(ref a) = command.alias {
             self.alias_index.remove(a);
@@ -135,8 +146,13 @@ impl CommandRegistry {
         Ok(())
     }
 
+    /// What commands.json should hold: the valid commands, then the ones that failed validation
     pub fn get_user_commands(&self) -> Vec<Command> {
-        self.user_commands.values().cloned().collect()
+        self.user_commands
+            .iter()
+            .chain(&self.rejected_commands)
+            .cloned()
+            .collect()
     }
 
     pub fn validate_command(&self, command: &Command) -> Result<(), crate::error::AppError> {
@@ -146,7 +162,8 @@ impl CommandRegistry {
             if existing_id != &command.id {
                 let name = self
                     .user_commands
-                    .get(existing_id)
+                    .iter()
+                    .find(|c| &c.id == existing_id)
                     .map(|c| c.name.as_str())
                     .unwrap_or("unknown");
                 return Err(crate::error::AppError::Validation(format!(
@@ -221,7 +238,8 @@ impl CommandRegistry {
 
     pub fn get_command(&self, id: &str) -> Option<Command> {
         self.user_commands
-            .get(id)
+            .iter()
+            .find(|c| c.id == id)
             .or_else(|| {
                 self.external_index
                     .get(id)
@@ -232,7 +250,7 @@ impl CommandRegistry {
 
     pub fn get_all_commands(&self) -> Vec<Command> {
         self.user_commands
-            .values()
+            .iter()
             .chain(self.external_commands.iter())
             .cloned()
             .collect()
@@ -274,13 +292,13 @@ mod tests {
         let cmd_b = create_dummy_command(Some("p2"));
         assert!(manager.validate_command(&cmd_b).is_ok());
         let _id_b = manager.add_user_command(cmd_b);
-        let mut cmd_a_update = manager.user_commands.get(&id_a).unwrap().clone();
+        let mut cmd_a_update = manager.get_command(&id_a).unwrap();
         cmd_a_update.alias = Some("p2".to_string());
         let res = manager.validate_command(&cmd_a_update);
         assert!(res.is_err());
         assert!(res.unwrap_err().to_string().contains("already used"));
 
-        let mut cmd_a_same = manager.user_commands.get(&id_a).unwrap().clone();
+        let mut cmd_a_same = manager.get_command(&id_a).unwrap();
         cmd_a_same.description = "Updated".to_string();
         assert!(manager.validate_command(&cmd_a_same).is_ok());
     }
@@ -395,6 +413,63 @@ mod tests {
         let user = create_dummy_command(Some("code"));
         let res = manager.validate_command(&user);
         assert!(res.unwrap_err().to_string().contains("already used"));
+    }
+
+    #[test]
+    fn user_commands_keep_their_order_through_edits() {
+        let mut manager = CommandRegistry::new();
+        let names = ["a", "b", "c", "d"];
+        let ids: Vec<String> = names
+            .iter()
+            .map(|n| {
+                let mut cmd = create_dummy_command(None);
+                cmd.name = n.to_string();
+                cmd.command = format!("echo {}", n);
+                manager.add_user_command(cmd)
+            })
+            .collect();
+        let order = |m: &CommandRegistry| -> Vec<String> {
+            m.get_user_commands().into_iter().map(|c| c.name).collect()
+        };
+
+        let mut edited = manager.get_command(&ids[1]).unwrap();
+        edited.description = "edited".to_string();
+        manager.update_user_command(edited).unwrap();
+        assert_eq!(order(&manager), ["a", "b", "c", "d"]);
+
+        manager.delete_user_command(&ids[2]).unwrap();
+        assert_eq!(order(&manager), ["a", "b", "d"]);
+    }
+
+    #[test]
+    fn commands_that_fail_validation_survive_a_save() {
+        let mut manager = CommandRegistry::new();
+        let mut valid = create_dummy_command(None);
+        valid.name = "valid".to_string();
+        let mut invalid = create_dummy_command(None);
+        invalid.name = "invalid".to_string();
+        invalid.command = "echo other".to_string();
+        invalid.category = "nonsense".to_string();
+        manager.set_user_commands(vec![invalid, valid]);
+
+        // Not offered or run ...
+        let all: Vec<String> = manager
+            .get_all_commands()
+            .into_iter()
+            .map(|c| c.name)
+            .collect();
+        assert_eq!(all, ["valid"]);
+        // ... but still written back, after the valid ones
+        let saved: Vec<String> = manager
+            .get_user_commands()
+            .into_iter()
+            .map(|c| c.name)
+            .collect();
+        assert_eq!(saved, ["valid", "invalid"]);
+
+        // A reload that no longer finds it forgets it
+        manager.set_user_commands(Vec::new());
+        assert!(manager.get_user_commands().is_empty());
     }
 
     #[test]
