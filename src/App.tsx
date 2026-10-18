@@ -74,36 +74,31 @@ const AppContent = () => {
         [editingCommand, updateCommand, addCommand, showSuccess, showError],
     );
 
-    const handleConfirmDelete = useCallback(
-        async (command?: Command) => {
-            const targetCommand = command || deletingCommand;
-            if (!targetCommand) return;
+    const handleConfirmDelete = useCallback(async () => {
+        if (!deletingCommand) return;
 
-            const result = await deleteCommand(targetCommand.id, targetCommand.name);
-            if (!result.ok) {
-                showError(
-                    `Could not delete "${targetCommand.name}": ${result.message}`,
-                    NOTIFICATION_DURATION.LONG,
-                );
-                return;
-            }
-            showSuccess(`"${targetCommand.name}" deleted successfully.`);
-            setShowDeleteDialog(false);
-            setDeletingCommand(undefined);
-        },
-        [deletingCommand, deleteCommand, showSuccess, showError],
-    );
-
-    const handleCancelDialog = useCallback(() => {
-        if (showDeleteDialog) {
-            setShowDeleteDialog(false);
-            setDeletingCommand(undefined);
-        } else {
-            setCurrentView('search');
-            setEditingCommand(undefined);
-            setDuplicatingCommand(undefined);
+        const result = await deleteCommand(deletingCommand.id, deletingCommand.name);
+        if (!result.ok) {
+            showError(
+                `Could not delete "${deletingCommand.name}": ${result.message}`,
+                NOTIFICATION_DURATION.LONG,
+            );
+            return;
         }
-    }, [showDeleteDialog]);
+        showSuccess(`"${deletingCommand.name}" deleted successfully.`);
+    }, [deletingCommand, deleteCommand, showSuccess, showError]);
+
+    // The confirm dialog closes after either answer, and closing is what lands here
+    const handleCancelDelete = useCallback(() => {
+        setShowDeleteDialog(false);
+        setDeletingCommand(undefined);
+    }, []);
+
+    const handleCancelForm = useCallback(() => {
+        setCurrentView('search');
+        setEditingCommand(undefined);
+        setDuplicatingCommand(undefined);
+    }, []);
 
     const handleEditCommandFromSearch = useCallback((command: Command) => {
         setEditingCommand(command);
@@ -259,7 +254,7 @@ const AppContent = () => {
                     command={editingCommand}
                     template={duplicatingCommand}
                     onSave={handleSaveCommand}
-                    onCancel={handleCancelDialog}
+                    onCancel={handleCancelForm}
                 />
             )}
 
@@ -273,7 +268,7 @@ const AppContent = () => {
                 isOpen={showDeleteDialog}
                 command={deletingCommand}
                 onConfirm={handleConfirmDelete}
-                onCancel={handleCancelDialog}
+                onCancel={handleCancelDelete}
             />
         </div>
     );
