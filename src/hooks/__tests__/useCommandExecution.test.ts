@@ -31,6 +31,46 @@ const setup = (executeCommand: jest.Mock) => {
     return { result, resetState };
 };
 
+describe('useCommandExecution in argument mode', () => {
+    const search: Command = {
+        ...command,
+        id: 'u2',
+        name: 'Search',
+        category: 'url',
+        command: 'https://example.com/?q={$1}',
+        alias: 's',
+    };
+    const setupArguments = (query: string, executeCommand: jest.Mock) => {
+        const { result } = renderHook(() =>
+            useCommandExecution({
+                query,
+                results: [],
+                selectedIndex: 0,
+                argumentMode: { alias: 's', command: search },
+                setQuery: jest.fn(),
+                setSearchMode: jest.fn(),
+                resetState: jest.fn(),
+                executeCommand,
+            }),
+        );
+        return result;
+    };
+
+    it('does not run until every placeholder has a value', async () => {
+        const executeCommand = jest.fn().mockResolvedValue(true);
+        const result = setupArguments('s ', executeCommand);
+        await act(() => result.current.runSelectedCommand());
+        expect(executeCommand).not.toHaveBeenCalled();
+    });
+
+    it('runs with the typed arguments once they are all there', async () => {
+        const executeCommand = jest.fn().mockResolvedValue(true);
+        const result = setupArguments('s react', executeCommand);
+        await act(() => result.current.runSelectedCommand());
+        expect(executeCommand).toHaveBeenCalledWith(search, ['react']);
+    });
+});
+
 describe('useCommandExecution', () => {
     beforeEach(() => jest.mocked(TauriAPI.hideWindow).mockReset());
 

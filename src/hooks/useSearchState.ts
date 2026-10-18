@@ -77,7 +77,8 @@ export const useSearchState = (
             const searchResults = fuseSearch(fuse, newQuery, commands, maxResults, usage);
             const dynamicItem = detectDirectOpen(newQuery);
             if (dynamicItem) {
-                searchResults.push({ command: dynamicItem, score: -1, matches: [] });
+                // What was typed is what Enter opens, so it leads the list
+                searchResults.unshift({ command: dynamicItem, score: -1, matches: [] });
             }
             return { mode: 'search', results: searchResults, selectedIndex: 0 };
         },

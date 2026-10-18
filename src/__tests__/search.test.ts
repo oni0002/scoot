@@ -23,13 +23,15 @@ describe('detectDirectOpen', () => {
         expect(detectDirectOpen('ftp://files.example.com')?.category).toBe('url');
     });
 
-    it('detects file: URL as url category', () => {
-        expect(detectDirectOpen('file:///C:/foo')?.category).toBe('url');
+    it('detects mailto: as url category', () => {
+        expect(detectDirectOpen('mailto:someone@example.com')?.category).toBe('url');
     });
 
-    it('detects scoot:// as url category', () => {
-        expect(detectDirectOpen('scoot://foo')?.category).toBe('url');
-    });
+    // open_target refuses every scheme outside http, https, ftp and mailto
+    it.each(['file:///C:/foo', 'scoot://reload', 'javascript:alert(1)', 'data:text/html,x'])(
+        'does not offer to open %s',
+        (query) => expect(detectDirectOpen(query)).toBeNull(),
+    );
 
     it('detects Windows absolute path', () => {
         const result = detectDirectOpen('C:\\Users\\foo\\bar.txt');
@@ -58,12 +60,13 @@ describe('detectDirectOpen', () => {
     });
 });
 
+// Run history is keyed by `command`, so each test command gets its own (the name)
 const makeCommand = (name: string, id = name): Command => ({
     id,
     name,
     category: 'url',
     source: 'user',
-    command: 'https://example.com',
+    command: name,
     description: '',
 });
 

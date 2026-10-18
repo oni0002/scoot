@@ -136,8 +136,8 @@ export function createMockHandlers(): Record<string, Handler> {
                 );
             }
             if (config.usageHistory)
-                usage[found.id] = {
-                    count: (usage[found.id]?.count ?? 0) + 1,
+                usage[found.command] = {
+                    count: (usage[found.command]?.count ?? 0) + 1,
                     lastUsed: Date.now(),
                 };
             if (found.command === 'scoot://open-settings') {

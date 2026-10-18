@@ -39,6 +39,8 @@ pub async fn execute_command(
         .map_err(crate::error::AppError::lock)?
         .get_command(&id)
         .ok_or_else(|| crate::error::AppError::NotFound(format!("Command not found: {}", id)))?;
+    // History is keyed by the command string: ids of external commands are not stable
+    let usage_key = command.command.clone();
     let result = run_command(&app_handle, command, args).await?;
     let usage_history = config_state
         .config
@@ -46,7 +48,7 @@ pub async fn execute_command(
         .map_err(crate::error::AppError::lock)?
         .usage_history;
     if usage_history {
-        state.usage.record(&id).await;
+        state.usage.record(&usage_key).await;
     }
     Ok(result)
 }
@@ -73,6 +75,13 @@ async fn run_command(
 ) -> Result<ExecuteResult, crate::error::AppError> {
     // Build command
     let final_command = if command.has_placeholders() {
+        let missing = command.missing_slots(&args);
+        if !missing.is_empty() {
+            return Err(crate::error::AppError::Validation(format!(
+                "Missing argument for {}.",
+                missing.join(", ")
+            )));
+        }
         command.substitute_args(&args)
     } else {
         command.command.clone()

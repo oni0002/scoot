@@ -1,4 +1,10 @@
+use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
+
+/// `{$1}`, `{$2}`, ... or `{$*}`. Keep in sync with `PLACEHOLDER_RE` in src/command.ts.
+static PLACEHOLDER_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\{\$([1-9][0-9]*|\*)\}").expect("invalid regex"));
 
 // Category constants (execution type)
 pub const CATEGORY_URL: &str = "url";
@@ -119,10 +125,11 @@ pub fn validate_alias(alias: &str) -> Result<(), crate::error::AppError> {
                 .to_string(),
         );
     }
-    if alias.len() > 10 {
+    let length = alias.chars().count();
+    if length > 10 {
         return fail(format!(
             "Alias is too long ({} characters). Maximum allowed is 10 characters.",
-            alias.len()
+            length
         ));
     }
     if alias.contains(' ') || alias.contains('\t') || alias.contains('\n') {
@@ -178,34 +185,52 @@ impl Command {
 
     /// Check if the command has placeholders
     pub fn has_placeholders(&self) -> bool {
-        self.command.contains('{') && self.command.contains('}')
+        PLACEHOLDER_RE.is_match(&self.command)
     }
 
-    /// Substitute placeholders with arguments.
+    /// The placeholders that `args` leaves without a value, in order of appearance
+    pub fn missing_slots(&self, args: &[String]) -> Vec<String> {
+        let mut missing: Vec<String> = Vec::new();
+        for caps in PLACEHOLDER_RE.captures_iter(&self.command) {
+            let is_missing = match &caps[1] {
+                "*" => args.is_empty(),
+                n => n.parse::<usize>().map_or(true, |n| n > args.len()),
+            };
+            if is_missing && !missing.contains(&caps[0].to_string()) {
+                missing.push(caps[0].to_string());
+            }
+        }
+        missing
+    }
+
+    /// Substitute placeholders with arguments in a single pass, so a placeholder inside an
+    /// argument is never expanded again. A placeholder without a value is left as it is.
     /// URL commands get percent-encoded arguments so that characters like `&` or `#`
     /// cannot alter the structure of the URL.
+    /// Keep in sync with `expandTemplate` in src/command.ts; both run the cases in
+    /// src/__tests__/fixtures/substitute-cases.json.
     pub fn substitute_args(&self, args: &[String]) -> String {
         let is_url = self.category == CATEGORY_URL;
-        let args: Vec<String> = if is_url {
+        let values: Vec<String> = if is_url {
             args.iter().map(|a| percent_encode(a)).collect()
         } else {
             args.to_vec()
         };
-        let mut result = self.command.clone();
+        let all = values.join(if is_url { "%20" } else { " " });
 
-        // {$*} - Substitute all arguments with a space-separated string
-        if result.contains("{$*}") {
-            let all_args = args.join(if is_url { "%20" } else { " " });
-            result = result.replace("{$*}", &all_args);
-        }
-
-        // {$1}, {$2}, ... - Substitute arguments at specified positions (1-based)
-        for (i, arg) in args.iter().enumerate() {
-            let placeholder = format!("{{${}}}", i + 1);
-            result = result.replace(&placeholder, arg);
-        }
-
-        result
+        PLACEHOLDER_RE
+            .replace_all(&self.command, |caps: &Captures| {
+                let value = match &caps[1] {
+                    "*" => (!values.is_empty()).then(|| all.clone()),
+                    n => n
+                        .parse::<usize>()
+                        .ok()
+                        .and_then(|n| values.get(n - 1))
+                        .cloned(),
+                };
+                value.unwrap_or_else(|| caps[0].to_string())
+            })
+            .into_owned()
     }
 
     /// Validate command format
@@ -231,18 +256,20 @@ impl Command {
         }
 
         // Name length limit
-        if self.name.len() > 100 {
+        let name_length = self.name.chars().count();
+        if name_length > 100 {
             return Err(crate::error::AppError::Validation(format!(
                 "Command name is too long ({} characters). Maximum allowed is 100 characters.",
-                self.name.len()
+                name_length
             )));
         }
 
         // Category length limit
-        if self.category.len() > 50 {
+        let category_length = self.category.chars().count();
+        if category_length > 50 {
             return Err(crate::error::AppError::Validation(format!(
                 "Command category is too long ({} characters). Maximum allowed is 50 characters.",
-                self.category.len()
+                category_length
             )));
         }
 
@@ -258,20 +285,30 @@ impl Command {
         }
 
         // Command content length limit
-        if self.command.len() > 1000 {
+        let command_length = self.command.chars().count();
+        if command_length > 1000 {
             return Err(crate::error::AppError::Validation(format!(
                 "Command content is too long ({} characters). Maximum allowed is 1000 characters.",
-                self.command.len()
+                command_length
             )));
         }
 
         // Description length limit
-        if self.description.len() > 500 {
-            return Err(crate::error::AppError::Validation(format!("Command description is too long ({} characters). Maximum allowed is 500 characters.", self.description.len())));
+        let description_length = self.description.chars().count();
+        if description_length > 500 {
+            return Err(crate::error::AppError::Validation(format!("Command description is too long ({} characters). Maximum allowed is 500 characters.", description_length)));
         }
 
-        if let Some(ref alias) = self.alias {
-            validate_alias(alias)?;
+        match &self.alias {
+            Some(alias) => validate_alias(alias)?,
+            // Only an alias gets the arguments typed after it to the command
+            None if self.has_placeholders() => {
+                return Err(crate::error::AppError::Validation(
+                    "A command with placeholders such as {$1} needs an alias to receive its arguments."
+                        .to_string(),
+                ));
+            }
+            None => {}
         }
 
         // Scoot command validation
@@ -306,43 +343,68 @@ mod tests {
         }
     }
 
+    #[derive(Deserialize)]
+    struct SubstituteCase {
+        name: String,
+        category: String,
+        command: String,
+        args: Vec<String>,
+        expected: String,
+    }
+
+    // The same cases src/__tests__/command.test.ts runs against `substituteArgs`
     #[test]
-    fn test_substitute_args_all() {
-        let cmd = create_dummy_command("echo {$*}");
-        let args = vec!["hello".to_string(), "world".to_string()];
-        assert_eq!(cmd.substitute_args(&args), "echo hello world");
+    fn substitute_args_matches_the_shared_cases() {
+        let cases: Vec<SubstituteCase> = serde_json::from_str(include_str!(
+            "../../../src/__tests__/fixtures/substitute-cases.json"
+        ))
+        .unwrap();
+        assert!(!cases.is_empty());
+        for case in cases {
+            let mut cmd = create_dummy_command(&case.command);
+            cmd.category = case.category;
+            assert_eq!(
+                cmd.substitute_args(&case.args),
+                case.expected,
+                "{}",
+                case.name
+            );
+        }
     }
 
     #[test]
-    fn test_substitute_args_positional() {
-        let cmd = create_dummy_command("mv {$1} {$2}");
-        let args = vec!["src.txt".to_string(), "dest.txt".to_string()];
-        assert_eq!(cmd.substitute_args(&args), "mv src.txt dest.txt");
+    fn missing_slots_lists_placeholders_without_a_value() {
+        let args = |list: &[&str]| list.iter().map(|a| a.to_string()).collect::<Vec<_>>();
+        let cmd = create_dummy_command("cmd {$1} {$2} {$2}");
+        assert_eq!(cmd.missing_slots(&args(&["a"])), ["{$2}"]);
+        assert!(cmd.missing_slots(&args(&["a", "b"])).is_empty());
+        let all = create_dummy_command("cmd {$*}");
+        assert_eq!(all.missing_slots(&[]), ["{$*}"]);
+        assert!(all.missing_slots(&args(&["a"])).is_empty());
+        assert!(create_dummy_command("cmd {$0} {$01}")
+            .missing_slots(&[])
+            .is_empty());
     }
 
     #[test]
-    fn test_substitute_args_url_is_percent_encoded() {
-        let mut cmd = create_dummy_command("https://example.com/search?q={$*}&lang=en");
-        cmd.category = CATEGORY_URL.to_string();
-        let args = vec!["c++".to_string(), "a&b#c".to_string(), "日本".to_string()];
-        assert_eq!(
-            cmd.substitute_args(&args),
-            "https://example.com/search?q=c%2B%2B%20a%26b%23c%20%E6%97%A5%E6%9C%AC&lang=en"
-        );
-
-        let mut positional = create_dummy_command("https://example.com/{$1}");
-        positional.category = CATEGORY_URL.to_string();
-        assert_eq!(
-            positional.substitute_args(&["a/b".to_string()]),
-            "https://example.com/a%2Fb"
-        );
+    fn placeholders_need_an_alias() {
+        let mut cmd = create_dummy_command("echo {$1}");
+        assert!(cmd.validate().is_err());
+        cmd.alias = Some("e".to_string());
+        assert!(cmd.validate().is_ok());
+        assert!(create_dummy_command("echo hi").validate().is_ok());
     }
 
     #[test]
-    fn test_substitute_args_no_placeholder() {
-        let cmd = create_dummy_command("ls -la");
-        let args = vec!["ignore".to_string()];
-        assert_eq!(cmd.substitute_args(&args), "ls -la");
+    fn lengths_count_characters_not_bytes() {
+        let mut cmd = create_dummy_command("echo hi");
+        cmd.alias = Some("あいうえおかきくけこ".to_string()); // 10 characters, 30 bytes
+        assert!(cmd.validate().is_ok());
+        cmd.alias = Some("あいうえおかきくけこさ".to_string());
+        assert!(cmd.validate().is_err());
+        cmd.alias = None;
+        cmd.name = "あ".repeat(100);
+        assert!(cmd.validate().is_ok());
     }
 
     #[test]

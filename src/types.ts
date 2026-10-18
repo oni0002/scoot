@@ -10,7 +10,7 @@ export interface Command {
     showWindow?: boolean;
 }
 
-/** How often and how recently a command was run, keyed by command id. */
+/** How often and how recently a command was run, keyed by the `command` string (ids of external commands do not last). */
 export interface Usage {
     count: number;
     lastUsed: number; // Unix time in milliseconds

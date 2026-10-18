@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Command, SearchResult } from '../types';
 import { SearchMode } from './useSearchState';
 import { TauriAPI } from '../tauri';
-import { hasPlaceholders, parseArgs } from '../command';
+import { hasPlaceholders, missingSlots, parseArgs } from '../command';
 
 interface UseCommandExecutionProps {
     query: string;
@@ -33,6 +33,8 @@ export const useCommandExecution = ({
             if (argumentMode) {
                 commandToExecute = argumentMode.command;
                 argsToPass = parseArgs(query, argumentMode.alias);
+                // The panel shows what it is still waiting for; the backend would refuse too
+                if (missingSlots(commandToExecute.command, argsToPass).length > 0) return;
             } else {
                 const effectiveIndex = targetIndex !== undefined ? targetIndex : selectedIndex;
                 if (results.length === 0 || effectiveIndex >= results.length) return;

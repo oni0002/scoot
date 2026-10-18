@@ -2,12 +2,13 @@ import { renderHook, act } from '@testing-library/react';
 import { useSearchState } from '../useSearchState';
 import { Command } from '../../types';
 
-// A command with an alias takes arguments unless the test says otherwise
+// A command with an alias takes arguments unless the test says otherwise. Run history is keyed
+// by `command`, so each command without arguments gets its own.
 const makeCmd = (
     name: string,
     id = name,
     alias?: string,
-    command = alias ? 'https://example.com/?q={$1}' : 'https://example.com',
+    command = alias ? 'https://example.com/?q={$1}' : id,
 ): Command => ({
     id,
     name,
@@ -107,6 +108,16 @@ describe('useSearchState', () => {
                 result.current.handleQueryChange('open https://example.com');
             });
             expect(result.current.searchMode.mode).toBe('argument');
+        });
+
+        it('puts the typed URL first and selects it, ahead of the matches', () => {
+            const list = [makeCmd('Example site')];
+            const { result } = renderHook(() => useSearchState(list, THRESHOLD, MAX));
+            act(() => {
+                result.current.handleQueryChange('https://example.com');
+            });
+            expect(result.current.results[0].command.command).toBe('https://example.com');
+            expect(result.current.selectedIndex).toBe(0);
         });
 
         it('argumentMode is null outside argument mode', () => {

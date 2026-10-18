@@ -1,0 +1,93 @@
+[
+    {
+        "name": "{$*} joins every argument with a space",
+        "category": "command",
+        "command": "echo {$*}",
+        "args": ["hello", "world"],
+        "expected": "echo hello world"
+    },
+    {
+        "name": "positional placeholders take their own argument",
+        "category": "command",
+        "command": "mv {$1} {$2}",
+        "args": ["src.txt", "dest.txt"],
+        "expected": "mv src.txt dest.txt"
+    },
+    {
+        "name": "{$*} and a positional placeholder can be mixed",
+        "category": "command",
+        "command": "{$*} and {$1}",
+        "args": ["a", "b"],
+        "expected": "a b and a"
+    },
+    {
+        "name": "every occurrence of a placeholder is replaced",
+        "category": "command",
+        "command": "{$1}-{$1}",
+        "args": ["x"],
+        "expected": "x-x"
+    },
+    {
+        "name": "a command without placeholders is left alone",
+        "category": "command",
+        "command": "ls -la",
+        "args": ["ignored"],
+        "expected": "ls -la"
+    },
+    {
+        "name": "{$*} with no arguments stays as it is",
+        "category": "command",
+        "command": "echo {$*}",
+        "args": [],
+        "expected": "echo {$*}"
+    },
+    {
+        "name": "a positional placeholder without an argument stays as it is",
+        "category": "command",
+        "command": "echo {$1} {$2}",
+        "args": ["a"],
+        "expected": "echo a {$2}"
+    },
+    {
+        "name": "placeholders inside an argument are not expanded again",
+        "category": "command",
+        "command": "echo {$1} {$2}",
+        "args": ["{$2}", "x"],
+        "expected": "echo {$2} x"
+    },
+    {
+        "name": "$ patterns in an argument are inserted literally",
+        "category": "command",
+        "command": "echo {$1}",
+        "args": ["$&"],
+        "expected": "echo $&"
+    },
+    {
+        "name": "{$0} and {$01} are not placeholders",
+        "category": "command",
+        "command": "echo {$0} {$01} {$1}",
+        "args": ["a", "b"],
+        "expected": "echo {$0} {$01} a"
+    },
+    {
+        "name": "url arguments are percent-encoded and joined with %20",
+        "category": "url",
+        "command": "https://example.com/search?q={$*}&lang=en",
+        "args": ["c++", "a&b#c", "日本"],
+        "expected": "https://example.com/search?q=c%2B%2B%20a%26b%23c%20%E6%97%A5%E6%9C%AC&lang=en"
+    },
+    {
+        "name": "a url positional argument is percent-encoded",
+        "category": "url",
+        "command": "https://example.com/{$1}",
+        "args": ["a/b"],
+        "expected": "https://example.com/a%2Fb"
+    },
+    {
+        "name": "url encoding leaves unreserved characters alone and escapes the rest",
+        "category": "url",
+        "command": "https://example.com/?q={$1}",
+        "args": ["a-b_c.d~e!f'g(h)i*j"],
+        "expected": "https://example.com/?q=a-b_c.d~e%21f%27g%28h%29i%2Aj"
+    }
+]

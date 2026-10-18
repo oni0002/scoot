@@ -107,8 +107,8 @@ export function useCommands() {
                 // Mirrors what the backend recorded, so the next search is ranked without a refetch
                 setUsage((prev) => ({
                     ...prev,
-                    [command.id]: {
-                        count: (prev[command.id]?.count ?? 0) + 1,
+                    [command.command]: {
+                        count: (prev[command.command]?.count ?? 0) + 1,
                         lastUsed: Date.now(),
                     },
                 }));

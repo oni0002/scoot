@@ -56,8 +56,8 @@ export function frequentCommands(
     now: number = Date.now(),
 ): SearchResult[] {
     return commands
-        .filter((command) => usage[command.id])
-        .map((command) => ({ command, boost: usageBoost(usage[command.id], now) }))
+        .filter((command) => usage[command.command])
+        .map((command) => ({ command, boost: usageBoost(usage[command.command], now) }))
         .sort((a, b) => b.boost - a.boost)
         .slice(0, maxResults)
         .map(({ command }) => ({ command, score: 0, matches: [] }));
@@ -98,7 +98,7 @@ export function fuseSearch(
         });
     }
     return [...ranked.values()]
-        .map((r) => ({ r, rank: r.score - usageBoost(usage[r.command.id], now) }))
+        .map((r) => ({ r, rank: r.score - usageBoost(usage[r.command.command], now) }))
         .sort((a, b) => a.rank - b.rank)
         .slice(0, maxResults)
         .map(({ r }) => r);
@@ -111,7 +111,8 @@ function boundaryScore(hit: BoundaryMatch, query: string): number {
     return 0.02 + 0.03 * Math.min(1, hit.words / length);
 }
 
-const URL_PATTERN = /^(https?|ftp|file|mailto|scoot):\/\/?/i;
+// The schemes `open_target` accepts (is_url_scheme_allowed in src-tauri/src/commands/execution.rs)
+const URL_PATTERN = /^(https?:\/\/|ftp:\/\/|mailto:)/i;
 const UNC_PATH_PATTERN = /^\\\\/i;
 const WIN_ABS_PATH_PATTERN = /^[A-Za-z]:\\/i;
 const UNIX_ABS_PATH_PATTERN = /^(\/|~\/)/i;

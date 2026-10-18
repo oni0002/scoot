@@ -1,11 +1,13 @@
-const PLACEHOLDER_RE = /\{\$(\d+|\*)\}/;
-const PLACEHOLDER_GLOBAL = /\{\$(\d+|\*)\}/g;
+// {$1}, {$2}, ... or {$*}. Keep in sync with PLACEHOLDER_RE in src-tauri/src/commands/domain.rs.
+const PLACEHOLDER_RE = /\{\$([1-9]\d*|\*)\}/;
+const PLACEHOLDER_GLOBAL = /\{\$([1-9]\d*|\*)\}/g;
 
 export function hasPlaceholders(cmd: string): boolean {
     return PLACEHOLDER_RE.test(cmd);
 }
 
-// Mirrors Command::substitute_args in src-tauri/src/commands/domain.rs (used for the preview only)
+// Mirrors Command::substitute_args in src-tauri/src/commands/domain.rs (used for the preview only);
+// both run the cases in src/__tests__/fixtures/substitute-cases.json
 function percentEncode(s: string): string {
     return encodeURIComponent(s).replace(
         /[!'()*]/g,

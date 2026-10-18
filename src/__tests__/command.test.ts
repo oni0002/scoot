@@ -1,3 +1,4 @@
+import cases from './fixtures/substitute-cases.json';
 import {
     parseArgs,
     expandTemplate,
@@ -16,6 +17,17 @@ describe('hasPlaceholders', () => {
     it('returns false for empty string', () => expect(hasPlaceholders('')).toBe(false));
     it('returns false for {$} without digit or *', () =>
         expect(hasPlaceholders('{$}')).toBe(false));
+    it('returns false for {$0} and {$01}', () => {
+        expect(hasPlaceholders('{$0}')).toBe(false);
+        expect(hasPlaceholders('{$01}')).toBe(false);
+    });
+});
+
+// The same cases the backend runs against Command::substitute_args
+describe('substituteArgs shared cases', () => {
+    it.each(cases)('$name', ({ category, command, args, expected }) => {
+        expect(substituteArgs(command, args, category === 'url')).toBe(expected);
+    });
 });
 
 describe('substituteArgs', () => {
