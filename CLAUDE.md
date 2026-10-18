@@ -18,16 +18,16 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 
 - Frontend: React 19, TypeScript, Vite, Fuse.js
 - Backend: Rust (Tauri v2)
-- Style: Tailwind CSS 3 + DaisyUI v4
+- Style: Tailwind CSS 4 + daisyUI 5
 - Test: Jest(フロント)、`cargo test`(バックエンド)
 - パッケージマネージャ: pnpm
 
 ## 構成
 
-- `src/` — フロントエンド。`components/`(UI)、`hooks/`(状態とロジック)、`context/`、`search.ts`(Fuse.js と、略称を拾う `boundaryMatch.ts` の合成)、`tauri.ts`(IPC呼び出しはここに集約)
+- `src/` — フロントエンド。`components/`(UI)、`hooks/`(状態とロジック)、`context/`、`search.ts`(Fuse.js と、略称を拾う `boundaryMatch.ts` の合成)、`tauri.ts`(IPC呼び出しはここに集約)、`listen.ts`(バックエンドのイベント購読。解除が購読完了より先でも漏れない)
 - `src-tauri/src/commands/` — コマンドの `domain` / `registry`(メモリ上の一覧) / `store`(commands.json) / `loader`(各ソースの読み込み) / `execution` / `ipc`。`bookmark` / `application` / `markdown` が外部ソース
 - `src-tauri/src/config/` — 設定(config.json)
-- `src-tauri/src/` 直下 — `lifecycle`(reload・終了)、`window`、`shortcut`、`hotkey_capture`、`tray`、`system_theme`(タスクバーのテーマ。トレイアイコンの切り替え用)、`watcher` など
+- `src-tauri/src/` 直下 — `lifecycle`(reload・終了)、`window`、`shortcut`、`hotkey_capture`、`tray`、`system_theme`(タスクバーのテーマ。トレイアイコンの切り替え用)、`watcher`(ファイルの変更を `request-reload` にするだけ。まとめて1回の reload にするのは `lifecycle`)、`json`(JSON の読み込みと一時ファイル経由の書き込み。config / commands / usage の保存はここを通す) など
 - `design/logo/generate.mjs` — ロゴの SVG、`src-tauri/icons/` 一式(32px 以下は小サイズ用の形、トレイ用の単色アイコン)、UI が描くパス(`src/logo.ts`)を生成する。アイコンは手で編集せず、このスクリプトの寸法を変えて再生成する
 
 ## 守るべき不変条件
@@ -41,7 +41,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 
 ## UI
 
-- スタイルは Tailwind 4 + daisyUI 5。設定は `tailwind.config.js` ではなく `src/App.css`(`@plugin "daisyui"`)に書く。テーマは自前の `scoot-light` / `scoot-dark` の2つだけ(daisyUI 組み込みテーマは `themes: false` で無効)。設定値は `system` / `light` / `dark` で、`src/theme.ts` と `src-tauri/src/config/domain.rs` の `theme` の正規表現を揃える。色を変えたら、全画面のコントラスト(AA 4.5:1)を測り直す。文字を薄くするのは `text-muted`(85%)と `text-subtle`(70%、行の説明用)の2段だけ。未知のテーマ名は読み込み時に既定へ丸める
+- スタイルは Tailwind 4 + daisyUI 5。設定は `tailwind.config.js` ではなく `src/App.css`(`@plugin "daisyui"`)に書く。テーマは自前の `scoot-light` / `scoot-dark` の2つだけ(daisyUI 組み込みテーマは `themes: false` で無効)。設定値は `system` / `light` / `dark` で、`src/theme.ts` の `THEME_OPTIONS` と `src-tauri/src/config/domain.rs` の `THEMES` の値の一覧を揃える。色を変えたら、全画面のコントラスト(AA 4.5:1)を測り直す。文字を薄くするのは `text-muted`(85%)と `text-subtle`(70%、行の説明用)の2段だけ。未知のテーマ名は読み込み時に既定へ丸める
 - daisyUI 4 の `form-control` / `label-text` / `input-bordered` は v5 で廃止。フォームのラベルは Tailwind のユーティリティで組む
 - Tailwind 4 の `space-y-*` は、最初の要素の上余白(`margin-top`)を 0 にする。先頭に余白が要る要素(`.divider` など)を置くときは、コンテナに `pt-*` を持たせる
 - 新しいクラスを使うときは、v4 の記憶ではなく v5 のドキュメントで存在を確認する
