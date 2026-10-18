@@ -8,7 +8,7 @@ interface UseAppEventsProps {
     handleOpenConfig: () => void;
     loadCommands: () => void;
     loadConfig: () => void;
-    showWarning: (message: string) => void;
+    showWarning: (message: string, duration?: number) => void;
     showError: (message: string, duration?: number) => void;
     setError: (error: string | null) => void;
 }
@@ -25,6 +25,13 @@ export const useAppEvents = ({
     useEffect(() => {
         const unlistenFunctions: (() => void)[] = [];
         let isMounted = true;
+        // The last Hotkey warning the user was shown, so opening the window does not repeat it
+        let shownWarning: string | null = null;
+        const warnOnce = (warning: string | null) => {
+            if (!warning || warning === shownWarning) return;
+            shownWarning = warning;
+            showWarning(warning, NOTIFICATION_DURATION.LONG);
+        };
 
         const setupEventListeners = async () => {
             try {
@@ -42,7 +49,15 @@ export const useAppEvents = ({
                     },
                     // The Hotkey could not be taken (another app holds it); the message says which
                     'shortcut-warning': (event: { payload: string }) => {
-                        showWarning(event.payload);
+                        shownWarning = event.payload;
+                        showWarning(event.payload, NOTIFICATION_DURATION.LONG);
+                    },
+                    // The Hotkey is registered at startup, while the window is hidden and nobody
+                    // would see a notice. Whoever opens the window (tray, second launch) sees it.
+                    'window-shown': () => {
+                        TauriAPI.getShortcutWarning().then(warnOnce, (err) =>
+                            console.warn('Failed to read the hotkey status:', err),
+                        );
                     },
                 };
 
@@ -61,13 +76,6 @@ export const useAppEvents = ({
                 if (isMounted) {
                     loadCommands();
                     loadConfig();
-                    // The Hotkey is registered in setup, before this page can hear anything
-                    TauriAPI.getShortcutWarning().then(
-                        (warning) => {
-                            if (isMounted && warning) showWarning(warning);
-                        },
-                        (err) => console.warn('Failed to read the hotkey status:', err),
-                    );
                 }
             } catch (err) {
                 if (isMounted) {
