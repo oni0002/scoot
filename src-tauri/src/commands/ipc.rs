@@ -33,7 +33,7 @@ pub async fn add_command(
         (id, commands)
     };
 
-    // Save to config file
+    // Save to settings file
     state.command_store.save(&commands).await?;
 
     Ok(id)
@@ -56,7 +56,7 @@ pub async fn update_command(
         manager.get_user_commands()
     };
 
-    // Save to config file
+    // Save to settings file
     state.command_store.save(&commands).await?;
 
     Ok(())
@@ -75,7 +75,7 @@ pub async fn delete_command(
         manager.get_user_commands()
     };
 
-    // Save to config file
+    // Save to settings file
     state.command_store.save(&commands).await?;
 
     Ok(())

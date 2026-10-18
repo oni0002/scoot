@@ -21,7 +21,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         true,
         None::<&str>,
     )?;
-    let open_config_item =
+    let open_settings_item =
         MenuItem::with_id(app, "open_config", "Open settings.json", true, None::<&str>)?;
     let open_log_item = MenuItem::with_id(app, "open_log", "Open log", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
@@ -31,7 +31,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         .separator()
         .item(&add_command_item)
         .item(&open_commands_item)
-        .item(&open_config_item)
+        .item(&open_settings_item)
         .item(&open_log_item)
         .separator()
         .item(&quit_item)
@@ -57,7 +57,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
             "open_config" => {
                 let h = app_handle.clone();
                 tauri::async_runtime::spawn(async move {
-                    let _ = crate::config::ipc::open_config_json(h).await;
+                    let _ = crate::settings::ipc::open_config_json(h).await;
                 });
             }
             "open_log" => {

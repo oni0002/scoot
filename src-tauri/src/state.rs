@@ -1,8 +1,8 @@
 use crate::commands::registry::CommandRegistry;
 use crate::commands::store::CommandStore;
 use crate::commands::usage::UsageTracker;
-use crate::config::domain::Config;
-use crate::config::store::ConfigStore;
+use crate::settings::domain::Settings;
+use crate::settings::store::SettingsStore;
 use crate::watcher::FileWatcher;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Mutex;
@@ -14,9 +14,9 @@ pub struct CommandsState {
     pub usage: UsageTracker,
 }
 
-pub struct ConfigState {
-    pub config: Mutex<Config>,
-    pub config_store: ConfigStore,
+pub struct SettingsState {
+    pub settings: Mutex<Settings>,
+    pub settings_store: SettingsStore,
     pub _file_watcher_keep_alive: Option<FileWatcher>,
 }
 
@@ -67,11 +67,11 @@ impl CommandsState {
     }
 }
 
-impl ConfigState {
-    pub fn new(config: Config, store: ConfigStore, watcher: Option<FileWatcher>) -> Self {
+impl SettingsState {
+    pub fn new(settings: Settings, store: SettingsStore, watcher: Option<FileWatcher>) -> Self {
         Self {
-            config: Mutex::new(config),
-            config_store: store,
+            settings: Mutex::new(settings),
+            settings_store: store,
             _file_watcher_keep_alive: watcher,
         }
     }

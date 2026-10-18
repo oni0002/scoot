@@ -1,6 +1,6 @@
 use crate::commands::domain::{Command, CATEGORY_FILE, CATEGORY_URL};
 use crate::commands::execution::is_url_scheme_allowed;
-use crate::config::domain::MarkdownConfig;
+use crate::settings::domain::MarkdownSettings;
 use regex::Regex;
 use std::collections::HashSet;
 use std::path::Path;
@@ -14,8 +14,8 @@ static SCHEME_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[A-Za-z][A-Za-z0-9+.\-]+:").expect("invalid regex"));
 
 /// Load commands from markdown files
-pub async fn load(config: &MarkdownConfig) -> Result<Vec<Command>, crate::error::AppError> {
-    let paths = config.paths.clone();
+pub async fn load(settings: &MarkdownSettings) -> Result<Vec<Command>, crate::error::AppError> {
+    let paths = settings.paths.clone();
 
     let commands = tokio::task::spawn_blocking(move || {
         let mut commands = Vec::new();

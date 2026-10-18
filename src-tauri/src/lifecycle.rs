@@ -1,7 +1,7 @@
-use crate::state::{CommandsState, ConfigState};
+use crate::state::{CommandsState, SettingsState};
 use tauri::{AppHandle, Manager};
 
-/// Reload config and commands (IPC)
+/// Reload settings and commands (IPC)
 #[tauri::command]
 pub async fn reload_all(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     reload(&app_handle).await
@@ -22,36 +22,37 @@ pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::
     Ok(())
 }
 
-/// Reload config and commands. A settings.json that fails to load does not stop the commands from
-/// loading: the last good config stays in force, the webview is told, and the error is returned
+/// Reload settings and commands. A settings.json that fails to load does not stop the commands from
+/// loading: the last good settings stays in force, the webview is told, and the error is returned
 /// once everything else is done.
 pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::AppError> {
     use tauri::Emitter;
 
-    let Some(config_state) = app_handle.try_state::<ConfigState>() else {
+    let Some(settings_state) = app_handle.try_state::<SettingsState>() else {
         return Err(crate::error::AppError::System(
-            "Failed to get ConfigState".to_string(),
+            "Failed to get SettingsState".to_string(),
         ));
     };
-    let (config, config_error) = match crate::config::store::reload(
-        &config_state.config_store,
-        &config_state.config,
+    let (settings, settings_error) = match crate::settings::store::reload(
+        &settings_state.settings_store,
+        &settings_state.settings,
     )
     .await
     {
-        Ok(new_config) => {
-            crate::notices::clear(app_handle, "config");
-            if let Err(e) = crate::shortcut::setup_global_shortcuts(app_handle, &new_config.hotkey)
+        Ok(new_settings) => {
+            crate::notices::clear(app_handle, "settings");
+            if let Err(e) =
+                crate::shortcut::setup_global_shortcuts(app_handle, &new_settings.hotkey)
             {
                 log::warn!("Failed to re-register hotkey: {}", e);
             }
-            (new_config, None)
+            (new_settings, None)
         }
         Err(e) => {
-            log::error!("Failed to load config: {}", e);
-            crate::notices::raise(app_handle, "config", crate::notices::ERROR, e.to_string());
-            let current = config_state
-                .config
+            log::error!("Failed to load settings: {}", e);
+            crate::notices::raise(app_handle, "settings", crate::notices::ERROR, e.to_string());
+            let current = settings_state
+                .settings
                 .lock()
                 .map_err(crate::error::AppError::lock)?
                 .clone();
@@ -60,8 +61,13 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
     };
 
     if let Some(state) = app_handle.try_state::<CommandsState>() {
-        crate::commands::loader::reload(app_handle, &state.command_store, &state.commands, &config)
-            .await?;
+        crate::commands::loader::reload(
+            app_handle,
+            &state.command_store,
+            &state.commands,
+            &settings,
+        )
+        .await?;
     } else {
         return Err(crate::error::AppError::System(
             "Failed to get CommandsState".to_string(),
@@ -71,10 +77,10 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
     if let Err(e) = app_handle.emit("config-reloaded", ()) {
         log::error!("Failed to emit config-reloaded: {}", e);
     } else {
-        log::info!("Reloaded config and commands");
+        log::info!("Reloaded settings and commands");
     }
 
-    config_error.map_or(Ok(()), Err)
+    settings_error.map_or(Ok(()), Err)
 }
 
 /// Open log (or log directory)
@@ -151,9 +157,9 @@ pub fn setup_reload_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error
 pub fn start_periodic_reload(app_handle: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
         loop {
-            let interval_minutes = if let Some(state) = app_handle.try_state::<ConfigState>() {
-                if let Ok(config) = state.config.lock() {
-                    config.reload_interval_minutes
+            let interval_minutes = if let Some(state) = app_handle.try_state::<SettingsState>() {
+                if let Ok(settings) = state.settings.lock() {
+                    settings.reload_interval_minutes
                 } else {
                     30
                 }

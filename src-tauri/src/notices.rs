@@ -89,19 +89,19 @@ mod tests {
     #[test]
     fn a_source_holds_one_notice_the_latest() {
         let state = NoticeState::default();
-        state.raise(notice("config", "broken"));
-        state.raise(notice("config", "still broken"));
-        assert_eq!(state.all(), vec![notice("config", "still broken")]);
+        state.raise(notice("settings", "broken"));
+        state.raise(notice("settings", "still broken"));
+        assert_eq!(state.all(), vec![notice("settings", "still broken")]);
     }
 
     #[test]
     fn sources_are_independent_and_cleared_one_at_a_time() {
         let state = NoticeState::default();
-        state.raise(notice("config", "a"));
+        state.raise(notice("settings", "a"));
         state.raise(notice("hotkey", "b"));
-        state.clear("config");
+        state.clear("settings");
         assert_eq!(state.all(), vec![notice("hotkey", "b")]);
-        state.clear("config"); // nothing to clear is fine
+        state.clear("settings"); // nothing to clear is fine
         state.clear("hotkey");
         assert!(state.all().is_empty());
     }

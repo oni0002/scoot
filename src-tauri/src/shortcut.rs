@@ -1,4 +1,4 @@
-use crate::config::domain::DEFAULT_SHORTCUT;
+use crate::settings::domain::DEFAULT_SHORTCUT;
 use tauri::{App, AppHandle, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
@@ -113,11 +113,11 @@ pub fn resume(app_handle: &AppHandle) {
     }
 }
 
-/// The hotkey from the loaded config, or the default when it cannot be read
+/// The hotkey from the loaded settings, or the default when it cannot be read
 pub fn configured_hotkey(app_handle: &AppHandle) -> String {
     app_handle
-        .try_state::<crate::state::ConfigState>()
-        .and_then(|state| state.config.lock().ok().map(|c| c.hotkey.clone()))
+        .try_state::<crate::state::SettingsState>()
+        .and_then(|state| state.settings.lock().ok().map(|c| c.hotkey.clone()))
         .unwrap_or_else(|| DEFAULT_SHORTCUT.to_string())
 }
 

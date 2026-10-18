@@ -16,15 +16,15 @@ pub const DEFAULT_SHORTCUT: &str = "Alt+Space";
 /// One day. Keep in sync with the input's `max` in src/components/settings/GeneralSection.tsx.
 const MAX_RELOAD_INTERVAL_MINUTES: u64 = 24 * 60;
 
-/// Config struct
+/// Settings struct
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct Config {
+pub struct Settings {
     pub max_results: usize,
     pub fuzzy_threshold: f64,
-    pub bookmarks: BookmarkConfig,
-    pub applications: ApplicationConfig,
-    pub markdown: MarkdownConfig,
+    pub bookmarks: BookmarkSettings,
+    pub applications: ApplicationSettings,
+    pub markdown: MarkdownSettings,
     pub ignored: Vec<String>,
     /// Aliases for external commands, keyed by their `command` string (like `ignored`). Their IDs
     /// are hashes that std does not promise to keep stable, so they cannot be persisted.
@@ -38,25 +38,25 @@ pub struct Config {
     pub frequent_first: bool,
 }
 
-/// Bookmark config struct
+/// Bookmark settings struct
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct BookmarkConfig {
+pub struct BookmarkSettings {
     pub enabled: bool,
     pub browser: String,
 }
 
-/// Application config struct
+/// Application settings struct
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct ApplicationConfig {
+pub struct ApplicationSettings {
     pub enabled: bool,
     pub directories: Vec<String>,
     pub extensions: Vec<String>,
 }
 
-/// ApplicationConfig default values
-impl Default for ApplicationConfig {
+/// ApplicationSettings default values
+impl Default for ApplicationSettings {
     fn default() -> Self {
         Self {
             enabled: true,
@@ -69,16 +69,16 @@ impl Default for ApplicationConfig {
     }
 }
 
-/// Markdown config struct
+/// Markdown settings struct
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct MarkdownConfig {
+pub struct MarkdownSettings {
     pub enabled: bool,
     pub paths: Vec<String>,
 }
 
-/// MarkdownConfig default values
-impl Default for MarkdownConfig {
+/// MarkdownSettings default values
+impl Default for MarkdownSettings {
     fn default() -> Self {
         Self {
             enabled: false,
@@ -87,8 +87,8 @@ impl Default for MarkdownConfig {
     }
 }
 
-/// BookmarkConfig default values
-impl Default for BookmarkConfig {
+/// BookmarkSettings default values
+impl Default for BookmarkSettings {
     fn default() -> Self {
         Self {
             enabled: true,
@@ -97,15 +97,15 @@ impl Default for BookmarkConfig {
     }
 }
 
-/// Config default values
-impl Default for Config {
+/// Settings default values
+impl Default for Settings {
     fn default() -> Self {
         Self {
             max_results: 10,
             fuzzy_threshold: 0.5,
-            bookmarks: BookmarkConfig::default(),
-            applications: ApplicationConfig::default(),
-            markdown: MarkdownConfig::default(),
+            bookmarks: BookmarkSettings::default(),
+            applications: ApplicationSettings::default(),
+            markdown: MarkdownSettings::default(),
             ignored: Vec::new(),
             aliases: BTreeMap::new(),
             theme: DEFAULT_THEME.to_string(),
@@ -117,9 +117,9 @@ impl Default for Config {
     }
 }
 
-impl Config {
+impl Settings {
     /// An unknown `theme` (one of the old daisyUI names, say) falls back to the default instead of
-    /// failing the whole config: the theme is cosmetic, and the next save writes a valid value.
+    /// failing the whole settings: the theme is cosmetic, and the next save writes a valid value.
     pub fn from_json_with_validation(json_str: &str) -> Result<Self, crate::error::AppError> {
         let mut value: serde_json::Value = crate::json::parse(json_str)?;
         if let Some(theme) = value.get_mut("theme") {
@@ -128,11 +128,11 @@ impl Config {
                 *theme = serde_json::Value::from(DEFAULT_THEME);
             }
         }
-        let config: Self = serde_json::from_value(value).map_err(|e| {
+        let settings: Self = serde_json::from_value(value).map_err(|e| {
             crate::error::AppError::Validation(format!("Failed to parse JSON: {}", e))
         })?;
-        config.validate()?;
-        Ok(config)
+        settings.validate()?;
+        Ok(settings)
     }
 
     /// Range and format rules for the values serde cannot check by type alone
@@ -180,38 +180,38 @@ impl Config {
 mod tests {
     use super::*;
 
-    fn parse(json: &str) -> Result<Config, crate::error::AppError> {
-        Config::from_json_with_validation(json)
+    fn parse(json: &str) -> Result<Settings, crate::error::AppError> {
+        Settings::from_json_with_validation(json)
     }
 
     #[test]
     fn default_config_is_valid() {
-        let json = serde_json::to_string(&Config::default()).unwrap();
+        let json = serde_json::to_string(&Settings::default()).unwrap();
         assert!(parse(&json).is_ok());
     }
 
     #[test]
     fn default_application_directories_use_environment_variables() {
         // settings.json travels with the exe, so a drive letter or user name must not be baked in
-        let dirs = ApplicationConfig::default().directories;
+        let dirs = ApplicationSettings::default().directories;
         assert!(!dirs.is_empty());
         assert!(dirs.iter().all(|d| d.starts_with('%')));
     }
 
     #[test]
     fn empty_object_falls_back_to_defaults() {
-        let config = parse("{}").unwrap();
-        assert_eq!(config.max_results, Config::default().max_results);
+        let settings = parse("{}").unwrap();
+        assert_eq!(settings.max_results, Settings::default().max_results);
     }
 
     #[test]
     fn nested_sections_may_leave_fields_out() {
-        let config =
+        let settings =
             parse(r#"{"bookmarks": {"enabled": false}, "markdown": {"enabled": true}}"#).unwrap();
-        assert!(!config.bookmarks.enabled);
-        assert_eq!(config.bookmarks.browser, "brave");
-        assert!(config.markdown.enabled);
-        assert!(config.markdown.paths.is_empty());
+        assert!(!settings.bookmarks.enabled);
+        assert_eq!(settings.bookmarks.browser, "brave");
+        assert!(settings.markdown.enabled);
+        assert!(settings.markdown.paths.is_empty());
         assert!(parse(r#"{"applications": {"enabled": false}}"#)
             .unwrap()
             .applications
@@ -261,24 +261,24 @@ mod tests {
     #[test]
     fn theme_accepts_system_light_and_dark() {
         for theme in ["system", "light", "dark"] {
-            let config = parse(&format!(r#"{{"theme": "{theme}"}}"#)).unwrap();
-            assert_eq!(config.theme, theme);
+            let settings = parse(&format!(r#"{{"theme": "{theme}"}}"#)).unwrap();
+            assert_eq!(settings.theme, theme);
         }
     }
 
     #[test]
     fn unknown_theme_falls_back_to_the_default() {
         for theme in ["nord", "dim", "not-a-theme", "darkness"] {
-            let config = parse(&format!(r#"{{"theme": "{theme}"}}"#)).unwrap();
-            assert_eq!(config.theme, DEFAULT_THEME);
+            let settings = parse(&format!(r#"{{"theme": "{theme}"}}"#)).unwrap();
+            assert_eq!(settings.theme, DEFAULT_THEME);
         }
     }
 
     #[test]
     fn aliases_default_to_none_and_must_be_valid() {
         assert!(parse("{}").unwrap().aliases.is_empty());
-        let config = parse(r#"{"aliases": {"C:\\Apps\\Code.lnk": "vscode"}}"#).unwrap();
-        assert_eq!(config.aliases["C:\\Apps\\Code.lnk"], "vscode");
+        let settings = parse(r#"{"aliases": {"C:\\Apps\\Code.lnk": "vscode"}}"#).unwrap();
+        assert_eq!(settings.aliases["C:\\Apps\\Code.lnk"], "vscode");
         assert!(parse(r#"{"aliases": {"x": "has space"}}"#).is_err());
         assert!(parse(r#"{"aliases": {"x": ""}}"#).is_err());
     }

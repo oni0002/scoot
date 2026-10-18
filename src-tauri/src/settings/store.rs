@@ -1,6 +1,6 @@
-use crate::config::domain::Config;
 use crate::error::AppError;
 use crate::json::FileText;
+use crate::settings::domain::Settings;
 
 // --- Infrastructure / Core Logic ---
 
@@ -8,14 +8,14 @@ const SETTINGS_FILE: &str = "settings.json";
 /// The name before 0.3.0. Still read, and renamed to `SETTINGS_FILE`, until 0.4.0 (ADR 0005).
 const LEGACY_FILE: &str = "config.json";
 
-pub struct ConfigStore {
+pub struct SettingsStore {
     settings_path: String,
     legacy_path: String,
 }
 
-/// Config store
+/// Settings store
 /// Load, save, and validate settings.json
-impl ConfigStore {
+impl SettingsStore {
     pub(crate) fn new() -> Self {
         Self::in_dir(&crate::os::app_dir())
     }
@@ -28,20 +28,20 @@ impl ConfigStore {
         }
     }
 
-    /// Load the config. A missing file is created with the defaults; a blank one just means the
+    /// Load the settings. A missing file is created with the defaults; a blank one just means the
     /// defaults, and is left for the user to finish writing.
-    pub async fn load(&self) -> Result<Config, crate::error::AppError> {
+    pub async fn load(&self) -> Result<Settings, crate::error::AppError> {
         let path = self.settle_file().await;
         match crate::json::read_text(&path).await? {
             FileText::Missing => {
-                let default_config = Config::default();
-                self.save(&default_config).await?;
-                Ok(default_config)
+                let default_settings = Settings::default();
+                self.save(&default_settings).await?;
+                Ok(default_settings)
             }
-            FileText::Blank => Ok(Config::default()),
-            FileText::Text(content) => Config::from_json_with_validation(&content).map_err(|e| {
+            FileText::Blank => Ok(Settings::default()),
+            FileText::Text(content) => Settings::from_json_with_validation(&content).map_err(|e| {
                 crate::error::AppError::System(format!(
-                    "App config file '{}' validation failed: {}",
+                    "App settings file '{}' validation failed: {}",
                     path, e
                 ))
             }),
@@ -84,12 +84,12 @@ impl ConfigStore {
         }
     }
 
-    /// Save the config
+    /// Save the settings
     pub async fn save(
         &self,
-        config: &crate::config::domain::Config,
+        settings: &crate::settings::domain::Settings,
     ) -> Result<(), crate::error::AppError> {
-        crate::json::write_pretty(&self.settings_path, config).await
+        crate::json::write_pretty(&self.settings_path, settings).await
     }
 
     /// The files a change must be picked up from: settings.json, and config.json while it may
@@ -110,22 +110,22 @@ impl ConfigStore {
     }
 }
 
-/// Reload config
+/// Reload settings
 pub async fn reload(
-    config_store: &ConfigStore,
-    state_config: &std::sync::Mutex<Config>,
-) -> Result<Config, crate::error::AppError> {
-    // Load config
+    settings_store: &SettingsStore,
+    state_settings: &std::sync::Mutex<Settings>,
+) -> Result<Settings, crate::error::AppError> {
+    // Load settings
     log::debug!("Loading configuration.");
-    let new_config = config_store.load().await?;
+    let new_settings = settings_store.load().await?;
 
-    // Update state config
+    // Update state settings
     {
-        let mut locked_config = state_config.lock().map_err(AppError::lock)?;
-        *locked_config = new_config.clone();
+        let mut locked_settings = state_settings.lock().map_err(AppError::lock)?;
+        *locked_settings = new_settings.clone();
     }
 
-    Ok(new_config)
+    Ok(new_settings)
 }
 
 #[cfg(test)]
@@ -145,8 +145,8 @@ mod tests {
     #[tokio::test]
     async fn a_fresh_start_creates_settings_json_with_the_defaults() {
         let dir = temp_dir();
-        let config = ConfigStore::in_dir(&dir).load().await.unwrap();
-        assert_eq!(config.hotkey, Config::default().hotkey);
+        let settings = SettingsStore::in_dir(&dir).load().await.unwrap();
+        assert_eq!(settings.hotkey, Settings::default().hotkey);
         assert!(dir.join("settings.json").exists());
         assert!(!dir.join("config.json").exists());
     }
@@ -155,8 +155,8 @@ mod tests {
     async fn config_json_is_renamed_on_the_first_load_and_its_values_kept() {
         let dir = temp_dir();
         std::fs::write(dir.join("config.json"), hotkey_json("Ctrl+Alt+K")).unwrap();
-        let config = ConfigStore::in_dir(&dir).load().await.unwrap();
-        assert_eq!(config.hotkey, "Ctrl+Alt+K");
+        let settings = SettingsStore::in_dir(&dir).load().await.unwrap();
+        assert_eq!(settings.hotkey, "Ctrl+Alt+K");
         assert!(dir.join("settings.json").exists());
         assert!(!dir.join("config.json").exists());
     }
@@ -166,9 +166,9 @@ mod tests {
         let dir = temp_dir();
         std::fs::write(dir.join("settings.json"), hotkey_json("Ctrl+Alt+S")).unwrap();
         std::fs::write(dir.join("config.json"), hotkey_json("Ctrl+Alt+C")).unwrap();
-        let store = ConfigStore::in_dir(&dir);
+        let store = SettingsStore::in_dir(&dir);
         assert_eq!(store.load().await.unwrap().hotkey, "Ctrl+Alt+S");
-        store.save(&Config::default()).await.unwrap();
+        store.save(&Settings::default()).await.unwrap();
         assert_eq!(
             std::fs::read_to_string(dir.join("config.json")).unwrap(),
             hotkey_json("Ctrl+Alt+C")
@@ -180,7 +180,7 @@ mod tests {
         let dir = temp_dir();
         std::fs::write(dir.join("config.json"), hotkey_json("Ctrl+Alt+K")).unwrap();
         // The target's folder does not exist, so the rename fails
-        let store = ConfigStore {
+        let store = SettingsStore {
             settings_path: dir
                 .join("nowhere")
                 .join("settings.json")
@@ -195,7 +195,7 @@ mod tests {
     #[test]
     fn open_settings_json_opens_the_file_in_use() {
         let dir = temp_dir();
-        let store = ConfigStore::in_dir(&dir);
+        let store = SettingsStore::in_dir(&dir);
         assert_eq!(store.file_in_use(), store.settings_path);
         std::fs::write(dir.join("config.json"), "{}").unwrap();
         assert_eq!(store.file_in_use(), store.legacy_path);

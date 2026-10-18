@@ -1,6 +1,6 @@
 use crate::commands::domain::{
-    Command, CMD_SCOOT_ADD_COMMAND, CMD_SCOOT_KILL, CMD_SCOOT_OPEN_COMMANDS, CMD_SCOOT_OPEN_CONFIG,
-    CMD_SCOOT_OPEN_LOG, CMD_SCOOT_OPEN_SETTINGS, CMD_SCOOT_RELOAD,
+    Command, CMD_SCOOT_ADD_COMMAND, CMD_SCOOT_KILL, CMD_SCOOT_OPEN_COMMANDS, CMD_SCOOT_OPEN_LOG,
+    CMD_SCOOT_OPEN_SETTINGS, CMD_SCOOT_OPEN_SETTINGS_JSON, CMD_SCOOT_RELOAD,
 };
 use serde::Serialize;
 
@@ -30,7 +30,7 @@ pub async fn execute_command(
     id: String,
     args: Vec<String>,
     state: tauri::State<'_, crate::state::CommandsState>,
-    config_state: tauri::State<'_, crate::state::ConfigState>,
+    settings_state: tauri::State<'_, crate::state::SettingsState>,
     app_handle: tauri::AppHandle,
 ) -> Result<ExecuteResult, crate::error::AppError> {
     let command = state
@@ -42,8 +42,8 @@ pub async fn execute_command(
     // History is keyed by the command string: ids of external commands are not stable
     let usage_key = command.command.clone();
     let result = run_command(&app_handle, command, args).await?;
-    let usage_history = config_state
-        .config
+    let usage_history = settings_state
+        .settings
         .lock()
         .map_err(crate::error::AppError::lock)?
         .usage_history;
@@ -132,8 +132,8 @@ async fn execute_scoot_command(
             crate::commands::ipc::open_commands_json(app_handle.clone()).await?;
             Ok(ExecuteResult::hide())
         }
-        CMD_SCOOT_OPEN_CONFIG => {
-            crate::config::ipc::open_config_json(app_handle.clone()).await?;
+        CMD_SCOOT_OPEN_SETTINGS_JSON => {
+            crate::settings::ipc::open_config_json(app_handle.clone()).await?;
             Ok(ExecuteResult::hide())
         }
         CMD_SCOOT_OPEN_SETTINGS => {

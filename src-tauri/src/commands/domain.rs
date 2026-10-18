@@ -21,7 +21,7 @@ pub const SOURCE_SCOOT: &str = "scoot";
 // Scoot command constants
 pub const CMD_SCOOT_ADD_COMMAND: &str = "scoot://add-command";
 pub const CMD_SCOOT_OPEN_COMMANDS: &str = "scoot://open-commands";
-pub const CMD_SCOOT_OPEN_CONFIG: &str = "scoot://open-config";
+pub const CMD_SCOOT_OPEN_SETTINGS_JSON: &str = "scoot://open-config";
 pub const CMD_SCOOT_OPEN_SETTINGS: &str = "scoot://open-settings";
 pub const CMD_SCOOT_OPEN_LOG: &str = "scoot://open-log";
 pub const CMD_SCOOT_RELOAD: &str = "scoot://reload";
@@ -29,8 +29,8 @@ pub const CMD_SCOOT_KILL: &str = "scoot://kill";
 pub const SCOOT_COMMANDS: [&str; 7] = [
     CMD_SCOOT_ADD_COMMAND,
     CMD_SCOOT_OPEN_COMMANDS,
-    CMD_SCOOT_OPEN_CONFIG,
     CMD_SCOOT_OPEN_SETTINGS,
+    CMD_SCOOT_OPEN_SETTINGS_JSON,
     CMD_SCOOT_OPEN_LOG,
     CMD_SCOOT_RELOAD,
     CMD_SCOOT_KILL,
@@ -81,10 +81,10 @@ pub fn get_scoot_commands() -> Vec<Command> {
             "Open commands.json configuration file",
         ),
         Command::new(
-            "Open Config.json",
+            "Open Settings.json",
             CATEGORY_SCOOT,
             SOURCE_SCOOT,
-            CMD_SCOOT_OPEN_CONFIG,
+            CMD_SCOOT_OPEN_SETTINGS_JSON,
             "Open settings.json configuration file",
         ),
         Command::new(

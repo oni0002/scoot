@@ -1,11 +1,11 @@
 pub mod commands;
-pub mod config;
 pub mod error;
 pub mod hotkey_capture;
 pub mod json;
 pub mod lifecycle;
 pub mod notices;
 pub mod os;
+pub mod settings;
 pub mod shortcut;
 pub mod startup;
 pub mod state;
@@ -16,8 +16,8 @@ pub mod window;
 
 use crate::commands::registry::CommandRegistry;
 use crate::commands::store::CommandStore;
-use crate::config::store::ConfigStore;
-use crate::state::{CommandsState, ConfigState, ShortcutState, WindowState};
+use crate::settings::store::SettingsStore;
+use crate::state::{CommandsState, SettingsState, ShortcutState, WindowState};
 use crate::watcher::FileWatcher;
 use tauri::Manager;
 
@@ -52,20 +52,20 @@ pub fn run() {
         .setup(|app| {
             log::info!("Initializing Scoot");
             // Initialize application state
-            let config_store = ConfigStore::new();
+            let settings_store = SettingsStore::new();
             let command_registry = CommandRegistry::default();
             let command_store = CommandStore::new();
 
-            // Load Config
-            let config = tauri::async_runtime::block_on(async { config_store.load().await })
+            // Load Settings
+            let settings = tauri::async_runtime::block_on(async { settings_store.load().await })
                 .unwrap_or_else(|e| {
-                    log::error!("Failed to load initial config: {}", e);
-                    crate::config::domain::Config::default()
+                    log::error!("Failed to load initial settings: {}", e);
+                    crate::settings::domain::Settings::default()
                 });
 
             // settings.json watcher
-            let config_file_watcher =
-                FileWatcher::new(&config_store.watched_paths(), app.handle().clone())
+            let settings_file_watcher =
+                FileWatcher::new(&settings_store.watched_paths(), app.handle().clone())
                     .map_err(|e| {
                         log::warn!(
                             "Edits to settings.json will only be picked up by the next Reload: {}",
@@ -76,14 +76,15 @@ pub fn run() {
 
             // State construction
             let commands_state = CommandsState::new(command_registry, command_store);
-            let config_state = ConfigState::new(config, config_store, config_file_watcher);
+            let settings_state =
+                SettingsState::new(settings, settings_store, settings_file_watcher);
             let shortcut_state = ShortcutState::default();
             let notice_state = crate::notices::NoticeState::default();
             let window_state = WindowState::default();
 
             // State registration
             app.manage(commands_state);
-            app.manage(config_state);
+            app.manage(settings_state);
             app.manage(shortcut_state);
             app.manage(notice_state);
             app.manage(window_state);
@@ -131,13 +132,13 @@ pub fn run() {
             crate::commands::usage::get_usage,
             crate::commands::usage::clear_usage,
             crate::commands::ipc::open_commands_json,
-            // Config
-            crate::config::ipc::get_config,
-            crate::config::ipc::save_config,
-            crate::config::ipc::ignore_command,
-            crate::config::ipc::unignore_command,
-            crate::config::ipc::set_external_alias,
-            crate::config::ipc::open_config_json,
+            // Settings
+            crate::settings::ipc::get_config,
+            crate::settings::ipc::save_config,
+            crate::settings::ipc::ignore_command,
+            crate::settings::ipc::unignore_command,
+            crate::settings::ipc::set_external_alias,
+            crate::settings::ipc::open_config_json,
             // Lifecycle
             crate::lifecycle::reload_all,
             // Window

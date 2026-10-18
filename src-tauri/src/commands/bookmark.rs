@@ -1,6 +1,6 @@
 use crate::commands::domain::{Command, CATEGORY_URL, SOURCE_BOOKMARK};
 use crate::commands::execution::is_url_scheme_allowed;
-use crate::config::domain::BookmarkConfig;
+use crate::settings::domain::BookmarkSettings;
 
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
@@ -35,8 +35,8 @@ struct ChromiumBookmarkRoots {
 }
 
 /// Load bookmarks
-pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::error::AppError> {
-    let bookmark_path = get_bookmark_path(&config.browser)?;
+pub async fn load(settings: &BookmarkSettings) -> Result<Vec<Command>, crate::error::AppError> {
+    let bookmark_path = get_bookmark_path(&settings.browser)?;
 
     // If the bookmark file doesn't exist, return an error
     if !bookmark_path.exists() {

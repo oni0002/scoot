@@ -1,59 +1,64 @@
-use crate::config::domain::Config;
 use crate::error::AppError;
-use crate::state::{CommandsState, ConfigState};
+use crate::settings::domain::Settings;
+use crate::state::{CommandsState, SettingsState};
 use tauri::{Manager, State};
 
 // --- Tauri Commands ---
 
-/// Get config
+/// Get settings
 #[tauri::command]
-pub async fn get_config(state: State<'_, ConfigState>) -> Result<Config, crate::error::AppError> {
+pub async fn get_config(
+    state: State<'_, SettingsState>,
+) -> Result<Settings, crate::error::AppError> {
     state
-        .config
+        .settings
         .lock()
         .map(|c| c.clone())
         .map_err(AppError::lock)
 }
 
-/// Save config
+/// Save settings
 #[tauri::command]
 pub async fn save_config(
-    config: Config,
-    state: State<'_, ConfigState>,
+    settings: Settings,
+    state: State<'_, SettingsState>,
 ) -> Result<(), crate::error::AppError> {
     // Refuse values settings.json could not load back, before they reach the state or the file
-    config.validate()?;
+    settings.validate()?;
 
     // state
     {
-        let mut locked_config = state.config.lock().map_err(AppError::lock)?;
-        *locked_config = config.clone();
+        let mut locked_settings = state.settings.lock().map_err(AppError::lock)?;
+        *locked_settings = settings.clone();
     }
 
     // settings.json
-    state.config_store.save(&config).await
+    state.settings_store.save(&settings).await
 }
 
-/// Ignore a command: persist to config and remove from registry immediately
+/// Ignore a command: persist to settings and remove from registry immediately
 #[tauri::command]
 pub async fn ignore_command(
     command_str: String,
-    config_state: State<'_, ConfigState>,
+    settings_state: State<'_, SettingsState>,
     commands_state: State<'_, CommandsState>,
     app_handle: tauri::AppHandle,
 ) -> Result<(), AppError> {
     use tauri::Emitter;
 
-    let config_snapshot = {
-        let mut config = config_state.config.lock().map_err(AppError::lock)?;
-        if config.ignored.contains(&command_str) {
+    let settings_snapshot = {
+        let mut settings = settings_state.settings.lock().map_err(AppError::lock)?;
+        if settings.ignored.contains(&command_str) {
             return Ok(());
         }
-        config.ignored.push(command_str.clone());
-        config.clone()
+        settings.ignored.push(command_str.clone());
+        settings.clone()
     };
 
-    config_state.config_store.save(&config_snapshot).await?;
+    settings_state
+        .settings_store
+        .save(&settings_snapshot)
+        .await?;
 
     {
         let mut registry = commands_state.commands.lock().map_err(AppError::lock)?;
@@ -61,7 +66,7 @@ pub async fn ignore_command(
     }
 
     // The registry is already up to date, so the webview only has to refetch; no rescan of the
-    // sources is needed (the config file watcher still triggers one for the new ignored list).
+    // sources is needed (the settings file watcher still triggers one for the new ignored list).
     if let Err(e) = app_handle.emit("config-reloaded", ()) {
         log::error!("Failed to emit config-reloaded after ignore: {}", e);
     }
@@ -73,21 +78,24 @@ pub async fn ignore_command(
 #[tauri::command]
 pub async fn unignore_command(
     command_str: String,
-    config_state: State<'_, ConfigState>,
+    settings_state: State<'_, SettingsState>,
     app_handle: tauri::AppHandle,
 ) -> Result<(), AppError> {
     use tauri::Emitter;
 
-    let config_snapshot = {
-        let mut config = config_state.config.lock().map_err(AppError::lock)?;
-        if !config.ignored.contains(&command_str) {
+    let settings_snapshot = {
+        let mut settings = settings_state.settings.lock().map_err(AppError::lock)?;
+        if !settings.ignored.contains(&command_str) {
             return Ok(());
         }
-        config.ignored.retain(|c| c != &command_str);
-        config.clone()
+        settings.ignored.retain(|c| c != &command_str);
+        settings.clone()
     };
 
-    config_state.config_store.save(&config_snapshot).await?;
+    settings_state
+        .settings_store
+        .save(&settings_snapshot)
+        .await?;
 
     if let Err(e) = app_handle.emit("request-reload", ()) {
         log::error!("Failed to emit request-reload after unignore: {}", e);
@@ -103,7 +111,7 @@ pub async fn unignore_command(
 pub async fn set_external_alias(
     command_str: String,
     alias: Option<String>,
-    config_state: State<'_, ConfigState>,
+    settings_state: State<'_, SettingsState>,
     commands_state: State<'_, CommandsState>,
     app_handle: tauri::AppHandle,
 ) -> Result<(), AppError> {
@@ -118,16 +126,19 @@ pub async fn set_external_alias(
         registry.set_external_alias(&command_str, alias.as_deref())?;
     }
 
-    let config_snapshot = {
-        let mut config = config_state.config.lock().map_err(AppError::lock)?;
+    let settings_snapshot = {
+        let mut settings = settings_state.settings.lock().map_err(AppError::lock)?;
         match &alias {
-            Some(a) => config.aliases.insert(command_str, a.clone()),
-            None => config.aliases.remove(&command_str),
+            Some(a) => settings.aliases.insert(command_str, a.clone()),
+            None => settings.aliases.remove(&command_str),
         };
-        config.clone()
+        settings.clone()
     };
 
-    config_state.config_store.save(&config_snapshot).await?;
+    settings_state
+        .settings_store
+        .save(&settings_snapshot)
+        .await?;
 
     if let Err(e) = app_handle.emit("config-reloaded", ()) {
         log::error!(
@@ -142,10 +153,10 @@ pub async fn set_external_alias(
 /// Open settings.json
 #[tauri::command]
 pub async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
-    if let Some(state) = app_handle.try_state::<crate::state::ConfigState>() {
-        let _ = state.config_store.load().await; // creates file with defaults if absent
-        let config_path = state.config_store.file_in_use().to_string();
-        crate::os::open_path(&app_handle, &config_path)?;
+    if let Some(state) = app_handle.try_state::<crate::state::SettingsState>() {
+        let _ = state.settings_store.load().await; // creates file with defaults if absent
+        let settings_path = state.settings_store.file_in_use().to_string();
+        crate::os::open_path(&app_handle, &settings_path)?;
     }
     Ok(())
 }
