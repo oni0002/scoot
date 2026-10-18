@@ -185,14 +185,30 @@ impl CommandRegistry {
         Ok(())
     }
 
-    /// An alias is taken if a user command or an external command already carries it
-    pub fn is_alias_used(&self, alias: &str, exclude_id: Option<&str>) -> bool {
-        let excluded = |id: &str| exclude_id == Some(id);
-        self.alias_index.get(alias).is_some_and(|id| !excluded(id))
+    /// An alias is taken if a user command or an external command already carries it. The
+    /// command being given the alias is left out of the check, so it can keep what it has.
+    fn alias_taken(
+        &self,
+        alias: &str,
+        is_self_user: impl Fn(&str) -> bool,
+        is_self_external: impl Fn(&Command) -> bool,
+    ) -> bool {
+        self.alias_index
+            .get(alias)
+            .is_some_and(|id| !is_self_user(id))
             || self
                 .external_commands
                 .iter()
-                .any(|c| c.alias.as_deref() == Some(alias) && !excluded(&c.id))
+                .any(|c| c.alias.as_deref() == Some(alias) && !is_self_external(c))
+    }
+
+    /// Whether `alias` is taken by any command but the user command `exclude_id`
+    fn is_alias_used(&self, alias: &str, exclude_id: Option<&str>) -> bool {
+        self.alias_taken(
+            alias,
+            |id| exclude_id == Some(id),
+            |c| exclude_id == Some(c.id.as_str()),
+        )
     }
 
     /// Set or clear the alias of the external commands whose `command` string is `command_str`
@@ -214,12 +230,8 @@ impl CommandRegistry {
         }
         if let Some(alias) = alias {
             crate::commands::domain::validate_alias(alias)?;
-            let taken = self.alias_index.contains_key(alias)
-                || self
-                    .external_commands
-                    .iter()
-                    .any(|c| c.command != command_str && c.alias.as_deref() == Some(alias));
-            if taken {
+            // The same command string may come from two sources; they take the alias together
+            if self.alias_taken(alias, |_| false, |c| c.command == command_str) {
                 return Err(crate::error::AppError::Validation(format!(
                     "Alias '{}' is already used by another command.",
                     alias
