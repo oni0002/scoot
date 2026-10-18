@@ -50,11 +50,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         value={query}
                         onChange={(e) => onQueryChange(e.target.value)}
                         onKeyDown={onKeyDown}
-                        placeholder={
-                            argumentMode
-                                ? `${argumentMode.command.name} - ${argumentMode.command.description}`
-                                : 'Where do you wanna scoot?'
-                        }
+                        placeholder="Where do you wanna scoot?"
                         className="grow"
                         autoFocus
                         role="combobox"
