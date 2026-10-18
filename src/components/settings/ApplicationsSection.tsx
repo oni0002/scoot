@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { TauriAPI } from '../../tauri';
+import { useNotificationContext } from '../../context/NotificationContext';
 import { Config } from '../../types';
 import { ListRow, Section } from '../SettingsLayout';
 
@@ -13,12 +14,17 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({ config
     const update = (patch: Partial<Config['applications']>) =>
         onChange({ ...config, applications: { ...apps, ...patch } });
 
+    const { reportError } = useNotificationContext();
     const [newExtension, setNewExtension] = useState('');
     const [addingExtension, setAddingExtension] = useState(false);
 
     const addDirectory = async () => {
-        const selected = await openDialog({ directory: true, multiple: false });
-        if (typeof selected === 'string') update({ directories: [...apps.directories, selected] });
+        try {
+            const selected = await TauriAPI.pickPath(true);
+            if (selected) update({ directories: [...apps.directories, selected] });
+        } catch (err) {
+            reportError('choose a folder', err);
+        }
     };
 
     const closeExtensionEditor = () => {

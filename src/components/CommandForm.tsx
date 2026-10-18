@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Command } from '../types';
-import { open } from '@tauri-apps/plugin-dialog';
 import { LuFile, LuFolder, LuArrowLeft } from 'react-icons/lu';
+import { TauriAPI } from '../tauri';
 import { hasPlaceholders } from '../command';
 import { ConfirmDialog } from './ConfirmDialog';
 import { useEscapeToClose } from '../hooks/useEscapeToClose';
@@ -117,10 +117,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({
     // dialog needs no modal guard of its own.
     const browse = async (directory: boolean) => {
         try {
-            const selected = await open({ multiple: false, directory });
-            if (selected && typeof selected === 'string') {
-                handleInputChange('command', selected);
-            }
+            const selected = await TauriAPI.pickPath(directory);
+            if (selected) handleInputChange('command', selected);
         } catch (err) {
             console.error(`Failed to open ${directory ? 'folder' : 'file'} dialog:`, err);
         }

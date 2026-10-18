@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { message } from '@tauri-apps/plugin-dialog';
+import { message, open } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
 import { Command, Config, UsageMap } from './types';
 
@@ -103,5 +103,11 @@ export const TauriAPI = {
 
     async showMessage(msg: string, title: string = 'Scoot'): Promise<void> {
         await message(msg, { title, kind: 'info' });
+    },
+
+    /** Asks for a file or a folder; null when the user cancels. */
+    async pickPath(directory: boolean): Promise<string | null> {
+        const selected = await open({ multiple: false, directory });
+        return typeof selected === 'string' ? selected : null;
     },
 };

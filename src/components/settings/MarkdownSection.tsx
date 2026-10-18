@@ -1,5 +1,6 @@
 import React from 'react';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { TauriAPI } from '../../tauri';
+import { useNotificationContext } from '../../context/NotificationContext';
 import { Config } from '../../types';
 import { ListRow, Section } from '../SettingsLayout';
 
@@ -9,13 +10,18 @@ interface MarkdownSectionProps {
 }
 
 export const MarkdownSection: React.FC<MarkdownSectionProps> = ({ config, onChange }) => {
+    const { reportError } = useNotificationContext();
     const md = config.markdown;
     const update = (patch: Partial<Config['markdown']>) =>
         onChange({ ...config, markdown: { ...md, ...patch } });
 
     const addFile = async () => {
-        const selected = await openDialog({ directory: false, multiple: false });
-        if (typeof selected === 'string') update({ paths: [...md.paths, selected] });
+        try {
+            const selected = await TauriAPI.pickPath(false);
+            if (selected) update({ paths: [...md.paths, selected] });
+        } catch (err) {
+            reportError('choose a file', err);
+        }
     };
 
     return (

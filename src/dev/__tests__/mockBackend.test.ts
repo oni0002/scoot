@@ -5,7 +5,7 @@ import { createMockHandlers } from '../mockBackend';
 // Guards against the mock drifting from the real IPC surface: every TauriAPI method that goes
 // through invoke() must reach a mock handler. getVersion and showMessage use plugins, which
 // setupTests mocks separately.
-const PLUGIN_BACKED = ['getVersion', 'showMessage'];
+const PLUGIN_BACKED = ['getVersion', 'showMessage', 'pickPath'];
 const methods = Object.keys(TauriAPI).filter((name) => !PLUGIN_BACKED.includes(name));
 
 type Method = (...args: unknown[]) => Promise<unknown>;
