@@ -3144,7 +3144,6 @@ dependencies = [
 name = "scoot"
 version = "0.2.10"
 dependencies = [
- "dirs",
  "json5",
  "log",
  "nanoid",

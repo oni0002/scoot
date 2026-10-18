@@ -2,7 +2,7 @@ use crate::commands::domain::{Command, CATEGORY_URL, SOURCE_BOOKMARK};
 use crate::config::domain::BookmarkConfig;
 
 use serde::Deserialize;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::fs;
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -78,18 +78,23 @@ pub async fn load(config: &BookmarkConfig) -> Result<Vec<Command>, crate::error:
     Ok(commands)
 }
 
-/// Get the path to the bookmark file
-/// Only brave, chrome, and edge are supported
+/// Get the path to the bookmark file, under %LOCALAPPDATA% (which need not be below the home
+/// directory). Only brave, chrome, and edge are supported.
 fn get_bookmark_path(browser: &str) -> Result<PathBuf, crate::error::AppError> {
-    let home_dir = dirs::home_dir().ok_or_else(|| {
-        crate::error::AppError::System("Could not find home directory".to_string())
+    let local_app_data = std::env::var_os("LOCALAPPDATA").ok_or_else(|| {
+        crate::error::AppError::System("The LOCALAPPDATA variable is not set".to_string())
     })?;
-    let bookmark_path = match browser {
-        "brave" => {
-            home_dir.join("AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Bookmarks")
-        }
-        "chrome" => home_dir.join("AppData/Local/Google/Chrome/User Data/Default/Bookmarks"),
-        "edge" => home_dir.join("AppData/Local/Microsoft/Edge/User Data/Default/Bookmarks"),
+    bookmark_path_in(Path::new(&local_app_data), browser)
+}
+
+fn bookmark_path_in(
+    local_app_data: &Path,
+    browser: &str,
+) -> Result<PathBuf, crate::error::AppError> {
+    let relative = match browser {
+        "brave" => "BraveSoftware/Brave-Browser/User Data/Default/Bookmarks",
+        "chrome" => "Google/Chrome/User Data/Default/Bookmarks",
+        "edge" => "Microsoft/Edge/User Data/Default/Bookmarks",
         _ => {
             return Err(crate::error::AppError::System(format!(
                 "Unsupported browser: {}",
@@ -97,7 +102,7 @@ fn get_bookmark_path(browser: &str) -> Result<PathBuf, crate::error::AppError> {
             )));
         }
     };
-    Ok(bookmark_path)
+    Ok(local_app_data.join(relative))
 }
 
 /// Collect commands from bookmarks
@@ -128,5 +133,32 @@ fn collect(
                 collect(child, commands, seen_urls);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bookmark_files_live_under_local_app_data_wherever_that_is() {
+        // %LOCALAPPDATA% can be moved off the home directory, so nothing may assume where it is
+        let base = Path::new("D:/Redirected/Local");
+        for (browser, tail) in [
+            (
+                "brave",
+                "BraveSoftware/Brave-Browser/User Data/Default/Bookmarks",
+            ),
+            ("chrome", "Google/Chrome/User Data/Default/Bookmarks"),
+            ("edge", "Microsoft/Edge/User Data/Default/Bookmarks"),
+        ] {
+            assert_eq!(bookmark_path_in(base, browser).unwrap(), base.join(tail));
+        }
+    }
+
+    #[test]
+    fn an_unsupported_browser_is_an_error() {
+        let err = bookmark_path_in(Path::new("C:/Local"), "firefox").unwrap_err();
+        assert!(err.to_string().contains("Unsupported browser: firefox"));
     }
 }
