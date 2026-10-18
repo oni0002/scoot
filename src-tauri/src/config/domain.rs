@@ -38,7 +38,7 @@ pub struct Config {
 
 /// Bookmark config struct
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct BookmarkConfig {
     pub enabled: bool,
     pub browser: String,
@@ -46,7 +46,7 @@ pub struct BookmarkConfig {
 
 /// Application config struct
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct ApplicationConfig {
     pub enabled: bool,
     pub directories: Vec<String>,
@@ -69,7 +69,7 @@ impl Default for ApplicationConfig {
 
 /// Markdown config struct
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct MarkdownConfig {
     pub enabled: bool,
     pub paths: Vec<String>,
@@ -194,6 +194,22 @@ mod tests {
     fn empty_object_falls_back_to_defaults() {
         let config = parse("{}").unwrap();
         assert_eq!(config.max_results, Config::default().max_results);
+    }
+
+    #[test]
+    fn nested_sections_may_leave_fields_out() {
+        let config =
+            parse(r#"{"bookmarks": {"enabled": false}, "markdown": {"enabled": true}}"#).unwrap();
+        assert!(!config.bookmarks.enabled);
+        assert_eq!(config.bookmarks.browser, "brave");
+        assert!(config.markdown.enabled);
+        assert!(config.markdown.paths.is_empty());
+        assert!(parse(r#"{"applications": {"enabled": false}}"#)
+            .unwrap()
+            .applications
+            .directories
+            .iter()
+            .all(|d| d.starts_with('%')));
     }
 
     #[test]
