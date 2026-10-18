@@ -71,20 +71,17 @@ pub async fn leave_modal(state: State<'_, WindowState>) -> Result<(), crate::err
 }
 
 /// Handle focus change event
-pub fn handle_focus_change(
-    window: &tauri::WebviewWindow,
-    focused: bool,
-    last_window_shown: &std::sync::Mutex<Option<std::time::Instant>>,
-    prevent_hide: &std::sync::atomic::AtomicUsize,
-    last_window_hidden: &std::sync::Mutex<Option<std::time::Instant>>,
-) {
+fn handle_focus_change(window: &tauri::WebviewWindow, focused: bool) {
     // If focused, do nothing
     if focused {
         return;
     }
+    let Some(state) = window.try_state::<WindowState>() else {
+        return;
+    };
 
     // If shown within 200ms, do nothing
-    if let Ok(last_shown) = last_window_shown.lock() {
+    if let Ok(last_shown) = state.last_window_shown.lock() {
         if let Some(ref instant) = *last_shown {
             if instant.elapsed().as_millis() <= 200 {
                 return;
@@ -93,24 +90,19 @@ pub fn handle_focus_change(
     }
 
     // If any modal is open, do nothing
-    if prevent_hide.load(std::sync::atomic::Ordering::SeqCst) > 0 {
+    if state.prevent_hide.load(std::sync::atomic::Ordering::SeqCst) > 0 {
         return;
     }
 
     // Hide window
-    if let Ok(mut hidden) = last_window_hidden.lock() {
+    if let Ok(mut hidden) = state.last_window_hidden.lock() {
         *hidden = Some(std::time::Instant::now());
     }
     let _ = window.hide();
 }
 
 /// Setup window events
-pub fn setup_window_events(
-    app: &tauri::App,
-    last_window_shown: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
-    prevent_hide: std::sync::Arc<std::sync::atomic::AtomicUsize>,
-    last_window_hidden: std::sync::Arc<std::sync::Mutex<Option<std::time::Instant>>>,
-) {
+pub fn setup_window_events(app: &tauri::App) {
     if let Some(window) = app.get_webview_window("main") {
         let window_clone = window.clone();
         window.on_window_event(move |event| {
@@ -122,13 +114,7 @@ pub fn setup_window_events(
                 }
                 // When focus changes
                 tauri::WindowEvent::Focused(focused) => {
-                    handle_focus_change(
-                        &window_clone,
-                        *focused,
-                        &last_window_shown,
-                        &prevent_hide,
-                        &last_window_hidden,
-                    );
+                    handle_focus_change(&window_clone, *focused);
                 }
                 _ => {}
             }

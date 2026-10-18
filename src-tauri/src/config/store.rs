@@ -10,14 +10,8 @@ pub struct ConfigStore {
 
 /// Config store
 /// Load, save, and validate config.json
-impl Default for ConfigStore {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl ConfigStore {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             config_path: crate::os::app_dir()
                 .join("config.json")

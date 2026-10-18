@@ -7,14 +7,8 @@ pub struct CommandStore {
     commands_path: String,
 }
 
-impl Default for CommandStore {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl CommandStore {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             commands_path: crate::os::app_dir()
                 .join("commands.json")

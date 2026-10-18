@@ -4,7 +4,8 @@ use crate::commands::usage::UsageTracker;
 use crate::config::domain::Config;
 use crate::config::store::ConfigStore;
 use crate::watcher::FileWatcher;
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::AtomicUsize;
+use std::sync::Mutex;
 use std::time::Instant;
 
 pub struct CommandsState {
@@ -19,15 +20,18 @@ pub struct ConfigState {
     pub _file_watcher_keep_alive: Option<FileWatcher>,
 }
 
+#[derive(Default)]
 pub struct ShortcutState {
     pub shortcut: Mutex<Option<String>>,
 }
 
+#[derive(Default)]
 pub struct WindowState {
-    pub last_window_shown: Arc<Mutex<Option<Instant>>>,
-    pub last_window_hidden: Arc<Mutex<Option<Instant>>>,
+    pub last_window_shown: Mutex<Option<Instant>>,
+    pub last_window_hidden: Mutex<Option<Instant>>,
     pub last_tray_click: Mutex<Option<Instant>>,
-    pub prevent_hide: Arc<std::sync::atomic::AtomicUsize>,
+    /// How many dialogs or screens hold the window open; it hides itself only at zero
+    pub prevent_hide: AtomicUsize,
 }
 
 impl CommandsState {
@@ -46,37 +50,6 @@ impl ConfigState {
             config: Mutex::new(config),
             config_store: store,
             _file_watcher_keep_alive: watcher,
-        }
-    }
-}
-
-impl Default for ShortcutState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl ShortcutState {
-    pub fn new() -> Self {
-        Self {
-            shortcut: Mutex::new(None),
-        }
-    }
-}
-
-impl Default for WindowState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl WindowState {
-    pub fn new() -> Self {
-        Self {
-            last_window_shown: Arc::new(Mutex::new(None)),
-            last_window_hidden: Arc::new(Mutex::new(None)),
-            last_tray_click: Mutex::new(None),
-            prevent_hide: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         }
     }
 }

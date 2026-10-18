@@ -52,7 +52,7 @@ pub fn run() {
             log::info!("Initializing Scoot");
             // Initialize application state
             let config_store = ConfigStore::new();
-            let command_registry = CommandRegistry::new();
+            let command_registry = CommandRegistry::default();
             let command_store = CommandStore::new();
 
             // Load Config
@@ -69,13 +69,8 @@ pub fn run() {
             // State construction
             let commands_state = CommandsState::new(command_registry, command_store);
             let config_state = ConfigState::new(config, config_store, config_file_watcher);
-            let shortcut_state = ShortcutState::new();
-            let window_state = WindowState::new();
-
-            // Clone Arcs for window event listeners before moving into managed state
-            let last_window_shown = window_state.last_window_shown.clone();
-            let prevent_hide = window_state.prevent_hide.clone();
-            let last_window_hidden = window_state.last_window_hidden.clone();
+            let shortcut_state = ShortcutState::default();
+            let window_state = WindowState::default();
 
             // State registration
             app.manage(commands_state);
@@ -84,12 +79,7 @@ pub fn run() {
             app.manage(window_state);
 
             // Set window events
-            crate::window::setup_window_events(
-                app,
-                last_window_shown,
-                prevent_hide,
-                last_window_hidden,
-            );
+            crate::window::setup_window_events(app);
             // Set event listeners and background tasks
             crate::lifecycle::setup_reload_listeners(app)?;
             crate::lifecycle::start_periodic_reload(app.handle().clone());

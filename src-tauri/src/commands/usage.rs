@@ -19,14 +19,8 @@ pub struct UsageTracker {
     entries: Mutex<HashMap<String, Usage>>,
 }
 
-impl Default for UsageTracker {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl UsageTracker {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let path = crate::os::app_dir()
             .join("usage.json")
             .to_string_lossy()

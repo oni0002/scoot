@@ -2,6 +2,7 @@ use crate::commands::domain::Command;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 
+#[derive(Default)]
 pub struct CommandRegistry {
     user_commands: Vec<Command>, // in the order of commands.json
     /// Commands from commands.json that failed validation. They are neither offered nor run, but a
@@ -13,24 +14,7 @@ pub struct CommandRegistry {
     alias_index: HashMap<String, String>, // alias string → id
 }
 
-impl Default for CommandRegistry {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl CommandRegistry {
-    pub fn new() -> Self {
-        Self {
-            user_commands: Vec::new(),
-            rejected_commands: Vec::new(),
-            external_commands: Vec::new(),
-            external_index: HashMap::new(),
-            command_index: HashMap::new(),
-            alias_index: HashMap::new(),
-        }
-    }
-
     // Counter-based IDs restart every launch and could collide with persisted user IDs
     fn assign_id(command: &mut Command) {
         if command.id.is_empty() {
@@ -289,7 +273,7 @@ mod tests {
 
     #[test]
     fn test_duplicate_alias_check() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
 
         let cmd_a = create_dummy_command(Some("p1"));
         assert!(manager.validate_command(&cmd_a).is_ok());
@@ -317,7 +301,7 @@ mod tests {
 
     #[test]
     fn test_set_external_commands() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
         let cmd = create_dummy_command(None);
 
         manager.set_external_commands(vec![cmd]);
@@ -329,7 +313,7 @@ mod tests {
 
     #[test]
     fn test_get_command_finds_user_and_external() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
         let user_id = manager.add_user_command(create_dummy_command(Some("p1")));
         manager.set_external_commands(vec![create_dummy_command(None)]);
         let external_id = manager.get_all_commands().last().unwrap().id.clone();
@@ -341,7 +325,7 @@ mod tests {
 
     #[test]
     fn external_ids_survive_a_reload() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
         manager.set_external_commands(vec![create_dummy_command(None)]);
         let before = manager.get_all_commands()[0].id.clone();
 
@@ -354,7 +338,7 @@ mod tests {
 
     #[test]
     fn external_ids_stay_distinct_for_identical_commands() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
         manager.set_external_commands(vec![create_dummy_command(None), create_dummy_command(None)]);
         let all = manager.get_all_commands();
         assert_ne!(all[0].id, all[1].id);
@@ -362,7 +346,7 @@ mod tests {
 
     #[test]
     fn removing_an_external_command_keeps_lookups_correct() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
         manager.set_external_commands(vec![
             create_dummy_command(Some("a")),
             create_dummy_command(Some("b")),
@@ -374,7 +358,7 @@ mod tests {
 
     #[test]
     fn external_alias_is_set_cleared_and_unique() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
         manager.add_user_command(create_dummy_command(Some("taken")));
         let mut a = create_dummy_command(None);
         a.command = "C:\\Apps\\a.lnk".to_string();
@@ -417,7 +401,7 @@ mod tests {
 
     #[test]
     fn user_command_cannot_take_an_external_alias() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
         let mut ext = create_dummy_command(Some("code"));
         ext.source = "application".to_string();
         manager.set_external_commands(vec![ext]);
@@ -429,7 +413,7 @@ mod tests {
 
     #[test]
     fn user_commands_keep_their_order_through_edits() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
         let names = ["a", "b", "c", "d"];
         let ids: Vec<String> = names
             .iter()
@@ -455,7 +439,7 @@ mod tests {
 
     #[test]
     fn commands_that_fail_validation_survive_a_save() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
         let mut valid = create_dummy_command(None);
         valid.name = "valid".to_string();
         let mut invalid = create_dummy_command(None);
@@ -486,7 +470,7 @@ mod tests {
 
     #[test]
     fn test_add_user_command_id_generation() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
         let cmd = create_dummy_command(None);
 
         let id = manager.add_user_command(cmd);
@@ -496,7 +480,7 @@ mod tests {
 
     #[test]
     fn test_duplicate_command_check() {
-        let mut manager = CommandRegistry::new();
+        let mut manager = CommandRegistry::default();
 
         let mut cmd1 = create_dummy_command(Some("p1"));
         cmd1.command = "https://google.com".to_string();
