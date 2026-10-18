@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Notification } from '../components/NotificationToast';
+import { getErrorMessage } from '../error';
 
 let notificationId = 0;
 
@@ -54,11 +55,21 @@ export const useNotifications = () => {
         [addNotification],
     );
 
+    /** Logs a failure and tells the user: "Could not <what>: <the reason>". */
+    const reportError = useCallback(
+        (what: string, err: unknown, duration?: number, action?: Notification['action']) => {
+            console.error(`Failed to ${what}:`, err);
+            return showError(`Could not ${what}: ${getErrorMessage(err)}`, duration, action);
+        },
+        [showError],
+    );
+
     return {
         notifications,
         removeNotification,
         showSuccess,
         showError,
         showWarning,
+        reportError,
     };
 };

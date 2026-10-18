@@ -4,7 +4,6 @@ import { Config } from '../../types';
 import { THEME_OPTIONS } from '../../theme';
 import { HotkeyCapture } from '../../hooks/useHotkeyCapture';
 import { useNotificationContext } from '../../context/NotificationContext';
-import { getErrorMessage } from '../../error';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { Row, Section } from '../SettingsLayout';
 
@@ -21,7 +20,7 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
     hotkey,
     onClearHistory,
 }) => {
-    const { showSuccess, showError } = useNotificationContext();
+    const { showSuccess, reportError } = useNotificationContext();
     const [confirmingClear, setConfirmingClear] = useState(false);
     // null until the Startup folder has been checked
     const [startupShortcut, setStartupShortcut] = useState<boolean | null>(null);
@@ -42,9 +41,7 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
             setStartupShortcut(created);
             showSuccess(created ? 'Scoot will run at startup' : 'Scoot will not run at startup');
         } catch (err) {
-            showError(
-                `Could not ${startupShortcut ? 'remove' : 'create'} the startup shortcut: ${getErrorMessage(err)}`,
-            );
+            reportError(`${startupShortcut ? 'remove' : 'create'} the startup shortcut`, err);
         } finally {
             setStartupBusy(false);
         }
@@ -56,7 +53,7 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
             await onClearHistory();
             showSuccess('History cleared');
         } catch (err) {
-            showError(`Could not clear history: ${getErrorMessage(err)}`);
+            reportError('clear history', err);
         }
     };
 

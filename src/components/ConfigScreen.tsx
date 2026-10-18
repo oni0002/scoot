@@ -21,7 +21,7 @@ interface ConfigScreenProps {
 
 export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHistory }) => {
     const { config, saveConfig } = useConfigContext();
-    const { showSuccess, showError } = useNotificationContext();
+    const { showSuccess, reportError } = useNotificationContext();
     const [saveError, setSaveError] = useState<string | null>(null);
     const [edited, setEdited] = useState<Config | null>(null);
     const local = edited ?? config;
@@ -60,7 +60,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
         try {
             await TauriAPI.openConfigJson();
         } catch (err) {
-            showError(`Could not open config.json: ${getErrorMessage(err)}`);
+            reportError('open config.json', err);
             return;
         }
         onBack();

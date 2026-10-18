@@ -1,7 +1,7 @@
 // The Rust AppError Display adds a category prefix ("Validation error: ", ...). Users need the
 // message itself, not the internal category.
 const BACKEND_PREFIX =
-    /^(?:Validation error|Command execution error|System error|Not found|IO error|JSON error): /;
+    /^(?:Validation error|Command execution error|System error|Not found|IO error): /;
 
 export function getErrorMessage(err: unknown): string {
     const message =

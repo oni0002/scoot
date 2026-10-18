@@ -8,7 +8,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Command } from './types';
 import { TauriAPI } from './tauri';
 import { NOTIFICATION_DURATION } from './constants';
-import { getErrorMessage } from './error';
 import { useAppEvents } from './hooks/useAppEvents';
 import { usePreventHide } from './hooks/usePreventHide';
 import { CommandProvider, useCommandContext } from './context/CommandContext';
@@ -20,7 +19,7 @@ import { NotificationProvider, useNotificationContext } from './context/Notifica
 
 // 内部コンポーネント: Contextを使用するために分離する
 const AppContent = () => {
-    const { showSuccess, showError, showWarning } = useNotificationContext();
+    const { showSuccess, showError, showWarning, reportError } = useNotificationContext();
 
     const {
         loading,
@@ -128,22 +127,19 @@ const AppContent = () => {
                         try {
                             await TauriAPI.unignoreCommand(command.command);
                         } catch (err) {
-                            showError(
-                                `Could not undo ignoring "${command.name}": ${getErrorMessage(err)}`,
+                            reportError(
+                                `undo ignoring "${command.name}"`,
+                                err,
                                 NOTIFICATION_DURATION.LONG,
                             );
                         }
                     },
                 });
             } catch (err) {
-                console.error('Failed to ignore command:', err);
-                showError(
-                    `Could not ignore "${command.name}": ${getErrorMessage(err)}`,
-                    NOTIFICATION_DURATION.LONG,
-                );
+                reportError(`ignore "${command.name}"`, err, NOTIFICATION_DURATION.LONG);
             }
         },
-        [showSuccess, showError],
+        [showSuccess, reportError],
     );
 
     const handleCancelAlias = useCallback(() => setAliasingCommand(undefined), []);
@@ -183,10 +179,9 @@ const AppContent = () => {
             await TauriAPI.reloadAll(); // emits config-reloaded, which refetches the list
             showSuccess('Commands and config reloaded', 2000);
         } catch (err) {
-            console.error('Failed to reload:', err);
-            showError(`Could not reload configuration: ${getErrorMessage(err)}`);
+            reportError('reload configuration', err);
         }
-    }, [showSuccess, showError]);
+    }, [showSuccess, reportError]);
 
     // 初期化とイベントリスナー設定
     useAppEvents({

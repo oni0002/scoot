@@ -3,7 +3,6 @@ import { Command } from '../types';
 import { TauriAPI } from '../tauri';
 import { NOTIFICATION_DURATION, resultOptionId } from '../constants';
 import { RowAction, rowActionsFor } from '../rowActions';
-import { getErrorMessage } from '../error';
 import { hasPlaceholders, parseArgs, substituteArgs } from '../command';
 import { SearchBar } from './SearchBar';
 import { SearchResultList } from './SearchResultList';
@@ -50,17 +49,16 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     isDialogOpen = false,
 }) => {
     const { commands, usage, executeCommand: rawExecuteCommand } = useCommandContext();
-    const { showError } = useNotificationContext();
+    const { reportError } = useNotificationContext();
 
     const executeContextCommand = useCallback(
         async (command: Command, args: string[]) => {
             try {
                 return await rawExecuteCommand(command, args);
             } catch (err) {
-                const message = getErrorMessage(err);
-                console.error(`Failed to execute command "${command.name}":`, message);
-                showError(
-                    `Could not run "${command.name}": ${message}`,
+                reportError(
+                    `run "${command.name}"`,
+                    err,
                     NOTIFICATION_DURATION.LONG,
                     command.source === 'user'
                         ? { label: 'Edit', onClick: () => onEditCommand?.(command) }
@@ -69,7 +67,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
                 return null;
             }
         },
-        [rawExecuteCommand, showError, onEditCommand],
+        [rawExecuteCommand, reportError, onEditCommand],
     );
 
     const searchState = useSearchState(
@@ -233,8 +231,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
             try {
                 await action();
             } catch (e) {
-                console.error(`Failed to ${label}:`, e);
-                showError(`Could not ${label}: ${getErrorMessage(e)}`);
+                reportError(label, e);
             }
         };
     const handleOpenCommandsJson = menuHandler(
