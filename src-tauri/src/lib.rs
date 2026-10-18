@@ -64,7 +64,14 @@ pub fn run() {
 
             // config.json watcher
             let config_path = config_store.get_config_path();
-            let config_file_watcher = FileWatcher::new(config_path, app.handle().clone()).ok();
+            let config_file_watcher = FileWatcher::new(config_path, app.handle().clone())
+                .map_err(|e| {
+                    log::warn!(
+                        "Edits to config.json will only be picked up by the next Reload: {}",
+                        e
+                    )
+                })
+                .ok();
 
             // State construction
             let commands_state = CommandsState::new(command_registry, command_store);
