@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { listen } from '@tauri-apps/api/event';
+import { listenTo } from '../listen';
 import { TauriAPI } from '../tauri';
 
 /**
@@ -24,14 +24,11 @@ export const useHotkeyCapture = (onCapture: (hotkey: string) => void) => {
 
     useEffect(() => {
         if (!capturing) return;
-        let unlisten: (() => void) | null = null;
         void TauriAPI.startHotkeyCapture();
-        listen<string>('hotkey-captured', (event) => finish(event.payload)).then((fn) => {
-            unlisten = fn;
-        });
+        const stopListening = listenTo<string>('hotkey-captured', finish);
         return () => {
             void TauriAPI.stopHotkeyCapture();
-            unlisten?.();
+            stopListening();
         };
     }, [capturing, finish]);
 

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { TauriAPI } from '../tauri';
+import { listenTo } from '../listen';
 
 export const useWindowEvents = (
     isDialogOpen: boolean,
@@ -55,18 +56,5 @@ export const useWindowEvents = (
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isDialogOpen]);
 
-    useEffect(() => {
-        let unlisten: (() => void) | undefined;
-
-        import('@tauri-apps/api/event')
-            .then(({ listen }) => listen('window-shown', resetState))
-            .then((fn) => {
-                unlisten = fn;
-            })
-            .catch((error) => console.warn('Failed to setup window-shown listener:', error));
-
-        return () => {
-            unlisten?.();
-        };
-    }, [resetState]);
+    useEffect(() => listenTo('window-shown', () => resetState()), [resetState]);
 };
