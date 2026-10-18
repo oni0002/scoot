@@ -48,7 +48,7 @@ export const useSearchState = (
     }, []);
 
     const computeMode = useCallback(
-        (newQuery: string, currentMode: SearchMode): SearchMode => {
+        (newQuery: string): SearchMode => {
             const trimmed = newQuery.trim();
 
             if (!trimmed) {
@@ -66,12 +66,6 @@ export const useSearchState = (
                     return { mode: 'argument', alias: potentialAlias, command: matchingCommand };
                 }
                 // Still typing the alias keyword — fall through to search
-            } else if (
-                currentMode.mode === 'argument' &&
-                newQuery.startsWith(currentMode.alias + ' ')
-            ) {
-                // Typed something after alias prefix that isn't recognized — stay in argument mode
-                return currentMode;
             }
 
             const searchResults = fuseSearch(fuse, newQuery, commands, maxResults, usage);
@@ -88,7 +82,7 @@ export const useSearchState = (
     const handleQueryChange = useCallback(
         (newQuery: string) => {
             setQuery(newQuery);
-            setSearchMode((prev) => computeMode(newQuery, prev));
+            setSearchMode(computeMode(newQuery));
         },
         [computeMode],
     );
@@ -97,7 +91,7 @@ export const useSearchState = (
         // eslint-disable-next-line react-hooks/set-state-in-effect -- query-driven mode transition is intentional
         setSearchMode((prev) => {
             if (!query || prev.mode === 'argument') return prev;
-            return computeMode(query, prev);
+            return computeMode(query);
         });
     }, [commands, fuzzyThreshold, maxResults]); // eslint-disable-line react-hooks/exhaustive-deps
 
