@@ -28,7 +28,7 @@ Compared with other Windows launchers (for example PowerToys Run, Flow Launcher)
 
 ## Capabilities and Constraints
 - Command categories: `url`, `file`, `command` (shell), and `scoot` (built-in app actions such as settings, reload, quit). Sources: `user`, `bookmark`, `application`, `scoot`.
-- Aliases take arguments through placeholders (`{$1}`, `{$2}`, `{$*}`); typing an alias followed by a space enters Argument Mode, where the input becomes arguments instead of search.
+- An alias is a short name any command can have, and search matches it like the name. A command with placeholders (`{$1}`, `{$2}`, `{$*}`) requires one: typing the alias followed by a space enters Argument Mode, where the input becomes arguments instead of search.
 - Typing a URL or an absolute path directly offers to open it.
 - Settings: theme, global hotkey (captured in-app), max results, fuzzy threshold, reload interval, ignored commands, and per-source options (bookmarks browser, application directories and extensions, Markdown files).
 - Themes: `System` (follows the OS), `Light` and `Dark`. Both are Scoot's own: cool neutral greys with a single indigo accent, which marks matched text and the selected alias. Every text and background pair is held to WCAG AA.

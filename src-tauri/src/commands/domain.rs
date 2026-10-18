@@ -110,6 +110,36 @@ pub fn get_scoot_commands() -> Vec<Command> {
     ]
 }
 
+/// Format rules for an alias, shared by user commands and the aliases set on external ones
+pub fn validate_alias(alias: &str) -> Result<(), crate::error::AppError> {
+    let fail = |msg: String| Err(crate::error::AppError::Validation(msg));
+    if alias.trim().is_empty() {
+        return fail(
+            "Alias cannot be empty if specified. Either provide a valid alias or leave it blank."
+                .to_string(),
+        );
+    }
+    if alias.len() > 10 {
+        return fail(format!(
+            "Alias is too long ({} characters). Maximum allowed is 10 characters.",
+            alias.len()
+        ));
+    }
+    if alias.contains(' ') || alias.contains('\t') || alias.contains('\n') {
+        return fail("Alias cannot contain whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.".to_string());
+    }
+    if alias
+        .chars()
+        .any(|c| !c.is_alphanumeric() && c != '-' && c != '_')
+    {
+        return fail(
+            "Alias can only contain letters, numbers, hyphens (-), and underscores (_)."
+                .to_string(),
+        );
+    }
+    Ok(())
+}
+
 /// Percent-encode everything except RFC 3986 unreserved characters
 fn percent_encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
@@ -240,31 +270,8 @@ impl Command {
             return Err(crate::error::AppError::Validation(format!("Command description is too long ({} characters). Maximum allowed is 500 characters.", self.description.len())));
         }
 
-        // Alias validation
         if let Some(ref alias) = self.alias {
-            if alias.trim().is_empty() {
-                return Err(crate::error::AppError::Validation("Alias cannot be empty if specified. Either provide a valid alias or leave it blank.".to_string()));
-            }
-            if alias.len() > 10 {
-                return Err(crate::error::AppError::Validation(format!(
-                    "Alias is too long ({} characters). Maximum allowed is 10 characters.",
-                    alias.len()
-                )));
-            }
-            if alias.contains(' ') || alias.contains('\t') || alias.contains('\n') {
-                return Err(crate::error::AppError::Validation("Alias cannot contain whitespace characters (spaces, tabs, or newlines). Use a single word without spaces.".to_string()));
-            }
-
-            // Special characters check
-            if alias
-                .chars()
-                .any(|c| !c.is_alphanumeric() && c != '-' && c != '_')
-            {
-                return Err(crate::error::AppError::Validation(
-                    "Alias can only contain letters, numbers, hyphens (-), and underscores (_)."
-                        .to_string(),
-                ));
-            }
+            validate_alias(alias)?;
         }
 
         // Scoot command validation

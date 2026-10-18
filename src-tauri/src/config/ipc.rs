@@ -96,6 +96,49 @@ pub async fn unignore_command(
     Ok(())
 }
 
+/// Set (or, with `None`, clear) the alias of an external command. Like `ignore_command` it is keyed
+/// by the `command` string and written to config.json at once; the registry is checked first so a
+/// taken or malformed alias never reaches the file.
+#[tauri::command]
+pub async fn set_external_alias(
+    command_str: String,
+    alias: Option<String>,
+    config_state: State<'_, ConfigState>,
+    commands_state: State<'_, CommandsState>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), AppError> {
+    use tauri::Emitter;
+
+    let alias = alias
+        .map(|a| a.trim().to_string())
+        .filter(|a| !a.is_empty());
+
+    {
+        let mut registry = commands_state.commands.lock().map_err(AppError::lock)?;
+        registry.set_external_alias(&command_str, alias.as_deref())?;
+    }
+
+    let config_snapshot = {
+        let mut config = config_state.config.lock().map_err(AppError::lock)?;
+        match &alias {
+            Some(a) => config.aliases.insert(command_str, a.clone()),
+            None => config.aliases.remove(&command_str),
+        };
+        config.clone()
+    };
+
+    config_state.config_store.save(&config_snapshot).await?;
+
+    if let Err(e) = app_handle.emit("config-reloaded", ()) {
+        log::error!(
+            "Failed to emit config-reloaded after setting an alias: {}",
+            e
+        );
+    }
+
+    Ok(())
+}
+
 /// Open config.json
 #[tauri::command]
 pub async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {

@@ -79,7 +79,9 @@ You can add custom commands to expand Scoot's capabilities.
     - **Description**: What the command does (e.g., `Search the web using Google`)
     - **Category**: `URL`, `File`, or `Command`
     - **Command**: The target path, URL, or shell command to execute
-    - **Alias**: (Optional) A short prefix string used to trigger this command and accept arguments (e.g., `g`)
+    - **Alias**: A short name for the command (e.g., `g`). Optional, except for commands that take arguments. Search matches it like the name.
+
+Applications, bookmarks and other commands that Scoot finds for you can have an alias too: open the ⋮ menu on a result (or press `Ctrl+L`) and choose **Alias**. It is saved in `config.json`.
 
 ### Using Alias Arguments
 

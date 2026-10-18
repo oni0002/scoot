@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Command, SearchResult, UsageMap } from '../types';
 import { createFuse, fuseSearch, detectDirectOpen } from '../search';
+import { hasPlaceholders } from '../command';
 
 const NO_USAGE: UsageMap = {};
 
@@ -48,7 +49,8 @@ export const useSearchState = (
             const potentialAlias = parts[0];
             const matchingCommand = commandByAlias.get(potentialAlias);
 
-            if (matchingCommand) {
+            // An alias on a command without placeholders is only another name to search by
+            if (matchingCommand && hasPlaceholders(matchingCommand.command)) {
                 const shouldEnter = parts.length > 1 || newQuery.endsWith(' ');
                 if (shouldEnter) {
                     return { mode: 'argument', alias: potentialAlias, command: matchingCommand };

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Command, SearchResult } from '../types';
 import { SearchMode } from './useSearchState';
 import { TauriAPI } from '../tauri';
-import { parseArgs } from '../command';
+import { hasPlaceholders, parseArgs } from '../command';
 
 interface UseCommandExecutionProps {
     query: string;
@@ -41,6 +41,7 @@ export const useCommandExecution = ({
 
                 if (
                     selectedResult.command.alias &&
+                    hasPlaceholders(selectedResult.command.command) &&
                     !query.startsWith(selectedResult.command.alias + ' ')
                 ) {
                     setQuery(selectedResult.command.alias + ' ');

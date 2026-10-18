@@ -3,6 +3,7 @@ import { SearchWindow } from './components/SearchWindow';
 import { CommandForm } from './components/CommandForm';
 import { ConfigScreen } from './components/ConfigScreen';
 import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
+import { AliasDialog } from './components/AliasDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Command } from './types';
 import { TauriAPI } from './tauri';
@@ -39,6 +40,7 @@ const AppContent = () => {
     const [duplicatingCommand, setDuplicatingCommand] = useState<Command | undefined>(undefined);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [deletingCommand, setDeletingCommand] = useState<Command | undefined>(undefined);
+    const [aliasingCommand, setAliasingCommand] = useState<Command | undefined>(undefined);
 
     usePreventHide(currentView !== 'search');
 
@@ -148,6 +150,24 @@ const AppContent = () => {
         [showSuccess, showError],
     );
 
+    const handleCancelAlias = useCallback(() => setAliasingCommand(undefined), []);
+
+    // A rejection stays in the dialog, which shows the reason beside the field
+    const handleSubmitAlias = useCallback(
+        async (alias: string | null) => {
+            if (!aliasingCommand) return;
+            // The backend announces config-reloaded, which refetches the list
+            await TauriAPI.setExternalAlias(aliasingCommand.command, alias);
+            showSuccess(
+                alias
+                    ? `Alias "${alias}" set for "${aliasingCommand.name}"`
+                    : `Alias removed from "${aliasingCommand.name}"`,
+            );
+            setAliasingCommand(undefined);
+        },
+        [aliasingCommand, showSuccess],
+    );
+
     const handleCopyCommand = useCallback(
         async (command: Command) => {
             if (!command.command) return;
@@ -218,10 +238,11 @@ const AppContent = () => {
                     onDeleteCommand={handleDeleteCommandFromSearch}
                     onAddCommand={handleAddCommand}
                     onCopyCommand={handleCopyCommand}
+                    onAliasCommand={setAliasingCommand}
                     onIgnoreCommand={handleIgnoreCommand}
                     onReloadCommands={handleReloadCommands}
                     onOpenConfig={handleOpenConfig}
-                    isDialogOpen={showDeleteDialog}
+                    isDialogOpen={showDeleteDialog || Boolean(aliasingCommand)}
                 />
             ) : currentView === 'config' ? (
                 <ConfigScreen
@@ -239,6 +260,12 @@ const AppContent = () => {
                     onCancel={handleCancelDialog}
                 />
             )}
+
+            <AliasDialog
+                command={aliasingCommand}
+                onSubmit={handleSubmitAlias}
+                onCancel={handleCancelAlias}
+            />
 
             <DeleteConfirmDialog
                 isOpen={showDeleteDialog}

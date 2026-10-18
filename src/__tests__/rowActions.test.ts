@@ -17,9 +17,9 @@ describe('rowActionsFor', () => {
     });
 
     it.each(['bookmark', 'application', 'scoot'])(
-        'lets a %s result be copied or ignored, not edited',
+        'lets a %s result be copied, given an alias or ignored, not edited',
         (source) => {
-            expect(rowActionsFor({ ...base, source })).toEqual(['copy', 'ignore']);
+            expect(rowActionsFor({ ...base, source })).toEqual(['copy', 'alias', 'ignore']);
         },
     );
 

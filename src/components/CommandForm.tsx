@@ -109,17 +109,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
     };
 
     const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
-        setFormData((prev) => {
-            const newData = { ...prev, [field]: value };
-
-            // Auto-clear alias if command no longer has placeholders
-            if (field === 'command' && typeof value === 'string') {
-                if (!hasPlaceholders(value)) {
-                    newData.alias = '';
-                }
-            }
-            return newData;
-        });
+        setFormData((prev) => ({ ...prev, [field]: value }));
 
         // Clear error when user starts typing
         if (errors[field]) {
@@ -334,13 +324,12 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 placeholder="e.g., g"
                                 maxLength={10}
                                 className={`input input-sm w-full ${errors.alias ? 'input-error' : ''}`}
-                                disabled={!hasPlaceholders(formData.command)}
                             />
-                            {!hasPlaceholders(formData.command) && (
-                                <p className="px-1 py-1 text-xs text-muted">
-                                    Enabled when the command has {'{$1}'}
-                                </p>
-                            )}
+                            <p className="px-1 py-1 text-xs text-muted">
+                                {hasPlaceholders(formData.command)
+                                    ? 'Type it, then the arguments'
+                                    : 'Optional short name'}
+                            </p>
                             {errors.alias && (
                                 <p
                                     role="alert"

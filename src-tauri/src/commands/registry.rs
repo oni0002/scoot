@@ -168,11 +168,55 @@ impl CommandRegistry {
         Ok(())
     }
 
+    /// An alias is taken if a user command or an external command already carries it
     pub fn is_alias_used(&self, alias: &str, exclude_id: Option<&str>) -> bool {
-        match self.alias_index.get(alias) {
-            Some(id) => exclude_id.is_none_or(|ex| ex != id),
-            None => false,
+        let excluded = |id: &str| exclude_id == Some(id);
+        self.alias_index.get(alias).is_some_and(|id| !excluded(id))
+            || self
+                .external_commands
+                .iter()
+                .any(|c| c.alias.as_deref() == Some(alias) && !excluded(&c.id))
+    }
+
+    /// Set or clear the alias of the external commands whose `command` string is `command_str`
+    /// (the same command can come from two sources, and both take it). The alias must be free
+    /// everywhere else.
+    pub fn set_external_alias(
+        &mut self,
+        command_str: &str,
+        alias: Option<&str>,
+    ) -> Result<(), crate::error::AppError> {
+        if !self
+            .external_commands
+            .iter()
+            .any(|c| c.command == command_str)
+        {
+            return Err(crate::error::AppError::NotFound(
+                "Command not found".to_string(),
+            ));
         }
+        if let Some(alias) = alias {
+            crate::commands::domain::validate_alias(alias)?;
+            let taken = self.alias_index.contains_key(alias)
+                || self
+                    .external_commands
+                    .iter()
+                    .any(|c| c.command != command_str && c.alias.as_deref() == Some(alias));
+            if taken {
+                return Err(crate::error::AppError::Validation(format!(
+                    "Alias '{}' is already used by another command.",
+                    alias
+                )));
+            }
+        }
+        for c in self
+            .external_commands
+            .iter_mut()
+            .filter(|c| c.command == command_str)
+        {
+            c.alias = alias.map(str::to_string);
+        }
+        Ok(())
     }
 
     pub fn get_command(&self, id: &str) -> Option<Command> {
@@ -296,6 +340,61 @@ mod tests {
         let kept = manager.get_all_commands()[1].clone();
         manager.remove_external_by_command(&manager.get_all_commands()[0].command.clone());
         assert_eq!(manager.get_command(&kept.id).unwrap().command, kept.command);
+    }
+
+    #[test]
+    fn external_alias_is_set_cleared_and_unique() {
+        let mut manager = CommandRegistry::new();
+        manager.add_user_command(create_dummy_command(Some("taken")));
+        let mut a = create_dummy_command(None);
+        a.command = "C:\\Apps\\a.lnk".to_string();
+        let mut b = create_dummy_command(None);
+        b.command = "C:\\Apps\\b.lnk".to_string();
+        manager.set_external_commands(vec![a, b]);
+
+        manager
+            .set_external_alias("C:\\Apps\\a.lnk", Some("aa"))
+            .unwrap();
+        let alias_of = |m: &CommandRegistry, cmd: &str| {
+            m.get_all_commands()
+                .into_iter()
+                .find(|c| c.command == cmd)
+                .unwrap()
+                .alias
+        };
+        assert_eq!(alias_of(&manager, "C:\\Apps\\a.lnk").as_deref(), Some("aa"));
+
+        // Taken by a user command, by another external command, or malformed
+        assert!(manager
+            .set_external_alias("C:\\Apps\\b.lnk", Some("taken"))
+            .is_err());
+        assert!(manager
+            .set_external_alias("C:\\Apps\\b.lnk", Some("aa"))
+            .is_err());
+        assert!(manager
+            .set_external_alias("C:\\Apps\\b.lnk", Some("a a"))
+            .is_err());
+        assert!(manager.set_external_alias("missing", Some("zz")).is_err());
+
+        // Setting it again on the same command is not a clash
+        assert!(manager
+            .set_external_alias("C:\\Apps\\a.lnk", Some("aa"))
+            .is_ok());
+
+        manager.set_external_alias("C:\\Apps\\a.lnk", None).unwrap();
+        assert_eq!(alias_of(&manager, "C:\\Apps\\a.lnk"), None);
+    }
+
+    #[test]
+    fn user_command_cannot_take_an_external_alias() {
+        let mut manager = CommandRegistry::new();
+        let mut ext = create_dummy_command(Some("code"));
+        ext.source = "application".to_string();
+        manager.set_external_commands(vec![ext]);
+
+        let user = create_dummy_command(Some("code"));
+        let res = manager.validate_command(&user);
+        assert!(res.unwrap_err().to_string().contains("already used"));
     }
 
     #[test]

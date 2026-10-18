@@ -25,6 +25,7 @@ interface SearchWindowProps {
     onDeleteCommand?: (command: Command) => void;
     onAddCommand?: () => void;
     onCopyCommand?: (command: Command) => void;
+    onAliasCommand?: (command: Command) => void;
     onIgnoreCommand?: (command: Command) => void;
     onReloadCommands?: () => void;
     onOpenConfig?: () => void;
@@ -40,6 +41,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     onDeleteCommand,
     onAddCommand,
     onCopyCommand,
+    onAliasCommand,
     onIgnoreCommand,
     onReloadCommands,
     onOpenConfig,
@@ -155,9 +157,17 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
             else if (action === 'edit') onEditCommand?.(command);
             else if (action === 'duplicate') onDuplicateCommand?.(command);
             else if (action === 'delete') onDeleteCommand?.(command);
+            else if (action === 'alias') onAliasCommand?.(command);
             else handleIgnore(command);
         },
-        [onCopyCommand, onEditCommand, onDuplicateCommand, onDeleteCommand, handleIgnore],
+        [
+            onCopyCommand,
+            onEditCommand,
+            onDuplicateCommand,
+            onDeleteCommand,
+            onAliasCommand,
+            handleIgnore,
+        ],
     );
 
     const handleRowAction = useCallback(

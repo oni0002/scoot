@@ -88,6 +88,11 @@ export const TauriAPI = {
         return await invoke('unignore_command', { commandStr });
     },
 
+    /** Sets the alias of an external command (bookmark, application, ...); null clears it. */
+    async setExternalAlias(commandStr: string, alias: string | null): Promise<void> {
+        return await invoke('set_external_alias', { commandStr, alias });
+    },
+
     async getVersion(): Promise<string> {
         return await getVersion();
     },

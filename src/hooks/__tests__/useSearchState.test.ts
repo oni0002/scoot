@@ -2,12 +2,18 @@ import { renderHook, act } from '@testing-library/react';
 import { useSearchState } from '../useSearchState';
 import { Command } from '../../types';
 
-const makeCmd = (name: string, id = name, alias?: string): Command => ({
+// A command with an alias takes arguments unless the test says otherwise
+const makeCmd = (
+    name: string,
+    id = name,
+    alias?: string,
+    command = alias ? 'https://example.com/?q={$1}' : 'https://example.com',
+): Command => ({
     id,
     name,
     category: 'url',
     source: 'user',
-    command: 'https://example.com',
+    command,
     description: '',
     alias,
 });
@@ -53,6 +59,20 @@ describe('useSearchState', () => {
                 result.current.handleQueryChange('g');
             });
             expect(result.current.selectedIndex).toBe(0);
+        });
+    });
+
+    describe('an alias on a command without placeholders', () => {
+        // Declared once: a fresh array on every render would re-run the hook's effect forever
+        const commands = [makeCmd('Visual Studio Code', 'vscode', 'code', 'C:\\Apps\\Code.lnk')];
+
+        it('is only another name to search by, never argument mode', () => {
+            const { result } = renderHook(() => useSearchState(commands, THRESHOLD, MAX));
+            act(() => {
+                result.current.handleQueryChange('code ');
+            });
+            expect(result.current.searchMode.mode).toBe('search');
+            expect(result.current.results[0]?.command.id).toBe('vscode');
         });
     });
 

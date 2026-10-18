@@ -1,5 +1,6 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::sync::LazyLock;
 
 static HOTKEY_RE: LazyLock<Regex> = LazyLock::new(|| {
@@ -23,6 +24,9 @@ pub struct Config {
     pub applications: ApplicationConfig,
     pub markdown: MarkdownConfig,
     pub ignored: Vec<String>,
+    /// Aliases for external commands, keyed by their `command` string (like `ignored`). Their IDs
+    /// are hashes that std does not promise to keep stable, so they cannot be persisted.
+    pub aliases: BTreeMap<String, String>,
     pub theme: String,
     pub hotkey: String,
     pub reload_interval_minutes: u64,
@@ -99,6 +103,7 @@ impl Default for Config {
             applications: ApplicationConfig::default(),
             markdown: MarkdownConfig::default(),
             ignored: Vec::new(),
+            aliases: BTreeMap::new(),
             theme: DEFAULT_THEME.to_string(),
             hotkey: DEFAULT_SHORTCUT.to_string(),
             reload_interval_minutes: 30,
@@ -152,6 +157,9 @@ impl Config {
                 "hotkey '{}' is not a valid shortcut such as Alt+Space or Ctrl+Shift+K.",
                 self.hotkey
             ));
+        }
+        for alias in self.aliases.values() {
+            crate::commands::domain::validate_alias(alias)?;
         }
         Ok(())
     }
@@ -221,6 +229,15 @@ mod tests {
             let config = parse(&format!(r#"{{"theme": "{theme}"}}"#)).unwrap();
             assert_eq!(config.theme, DEFAULT_THEME);
         }
+    }
+
+    #[test]
+    fn aliases_default_to_none_and_must_be_valid() {
+        assert!(parse("{}").unwrap().aliases.is_empty());
+        let config = parse(r#"{"aliases": {"C:\\Apps\\Code.lnk": "vscode"}}"#).unwrap();
+        assert_eq!(config.aliases["C:\\Apps\\Code.lnk"], "vscode");
+        assert!(parse(r#"{"aliases": {"x": "has space"}}"#).is_err());
+        assert!(parse(r#"{"aliases": {"x": ""}}"#).is_err());
     }
 
     #[test]

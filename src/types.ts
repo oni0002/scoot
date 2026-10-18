@@ -41,6 +41,8 @@ export interface Config {
     applications: ApplicationConfig;
     markdown: MarkdownConfig;
     ignored: string[];
+    /** Aliases of external commands, keyed by their `command` string. */
+    aliases: Record<string, string>;
     theme: string;
     hotkey: string;
     reloadIntervalMinutes: number;

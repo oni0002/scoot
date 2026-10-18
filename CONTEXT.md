@@ -25,7 +25,7 @@ _Avoid_: Built-in command, internal command
 ### 引数とエイリアス
 
 **Alias**:
-引数を受け取る Command に付けた短い呼び出しキーワード。ユーザーが `<alias> <args>` と入力すると Argument Mode に入り、引数がコマンドに渡される。
+Command に付けられる短い名前。どの Command にも付けられ、Fuzzy Search では名前と同じように照合される。Placeholder を持つ Command では必須で、ユーザーが `<alias> <args>` と入力すると Argument Mode に入り、引数がコマンドに渡される。外部ソースの Command(Bookmark など)には、行メニューから後付けできる(`config.json` の `aliases` に `command` 文字列をキーにして保存)。
 _Avoid_: Prompt, trigger, keyword
 
 **Placeholder**:
@@ -33,7 +33,7 @@ Command の実行内容に埋め込む引数の位置指定子。`{$1}` `{$2}` �
 _Avoid_: Template variable, parameter
 
 **Argument Mode**:
-ユーザーが Alias を入力した後に引数を入力している UI の状態。この状態では検索ではなく Placeholder への値の埋め込みが行われる。
+Placeholder を持つ Command の Alias を入力した後に、引数を入力している UI の状態。この状態では検索ではなく Placeholder への値の埋め込みが行われる。Placeholder を持たない Command の Alias では入らない(検索のまま)。
 _Avoid_: Prompt mode
 
 ### 検索

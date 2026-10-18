@@ -28,6 +28,7 @@ describe('row action shortcuts', () => {
     it.each([
         ['e', 'edit'],
         ['d', 'delete'],
+        ['l', 'alias'],
         ['i', 'ignore'],
     ])('Ctrl+%s runs %s on the selected row', (key, action) => {
         const { props, press } = setup();

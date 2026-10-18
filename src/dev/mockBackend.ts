@@ -81,6 +81,7 @@ const defaultConfig = (): Config => ({
         'https://example.com/old-bookmark',
         'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Administrative Tools\\dfrgui.lnk',
     ],
+    aliases: {},
     theme: previewTheme() ?? 'dark',
     hotkey: 'Alt+Space',
     reloadIntervalMinutes: 30,
@@ -93,7 +94,11 @@ export function createMockHandlers(): Record<string, Handler> {
     let nextId = 100;
     const usage: Record<string, { count: number; lastUsed: number }> = {};
     const visibleExternal = () =>
-        externalCommands().filter((c) => !config.ignored.includes(c.command));
+        externalCommands()
+            .filter((c) => !config.ignored.includes(c.command))
+            .map((c) =>
+                config.aliases[c.command] ? { ...c, alias: config.aliases[c.command] } : c,
+            );
 
     return {
         get_all_commands: () => [...users, ...visibleExternal()],
@@ -169,6 +174,21 @@ export function createMockHandlers(): Record<string, Handler> {
         },
         unignore_command: ({ commandStr }) => {
             config = { ...config, ignored: config.ignored.filter((c) => c !== commandStr) };
+            return emit('config-reloaded');
+        },
+        set_external_alias: ({ commandStr, alias }) => {
+            const key = String(commandStr);
+            const next = typeof alias === 'string' ? alias.trim() : '';
+            const taken = [...users, ...visibleExternal()].some(
+                (c) => c.alias === next && c.command !== key,
+            );
+            if (next && taken) {
+                throw new Error(`Alias '${next}' is already used by another command.`);
+            }
+            const aliases = { ...config.aliases };
+            if (next) aliases[key] = next;
+            else delete aliases[key];
+            config = { ...config, aliases };
             return emit('config-reloaded');
         },
         'plugin:app|version': () => '0.2.10',
