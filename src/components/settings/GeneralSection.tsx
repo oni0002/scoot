@@ -6,6 +6,7 @@ import { HotkeyCapture } from '../../hooks/useHotkeyCapture';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { Row, Section } from '../SettingsLayout';
+import { NumberInput } from './NumberInput';
 
 interface GeneralSectionProps {
     config: Config;
@@ -106,19 +107,12 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                     htmlFor="cfg-max-results"
                     description="How many results to show."
                 >
-                    <input
+                    <NumberInput
                         id="cfg-max-results"
-                        type="number"
                         min={1}
                         max={100}
-                        className="input input-sm w-24"
                         value={config.maxResults}
-                        onChange={(e) =>
-                            onChange({
-                                ...config,
-                                maxResults: Math.max(1, Math.min(100, Number(e.target.value))),
-                            })
-                        }
+                        onChange={(maxResults) => onChange({ ...config, maxResults })}
                     />
                 </Row>
                 <Row
@@ -149,21 +143,13 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                     htmlFor="cfg-reload"
                     description="Minutes between source reloads."
                 >
-                    <input
+                    <NumberInput
                         id="cfg-reload"
-                        type="number"
                         min={1}
                         max={1440}
-                        className="input input-sm w-24"
                         value={config.reloadIntervalMinutes}
-                        onChange={(e) =>
-                            onChange({
-                                ...config,
-                                reloadIntervalMinutes: Math.max(
-                                    1,
-                                    Math.min(1440, Number(e.target.value)),
-                                ),
-                            })
+                        onChange={(reloadIntervalMinutes) =>
+                            onChange({ ...config, reloadIntervalMinutes })
                         }
                     />
                 </Row>
