@@ -24,7 +24,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 
 ## 構成
 
-- `src/` — フロントエンド。`components/`(UI)、`hooks/`(状態とロジック)、`context/`、`search.ts`(Fuse.js)、`tauri.ts`(IPC呼び出しはここに集約)
+- `src/` — フロントエンド。`components/`(UI)、`hooks/`(状態とロジック)、`context/`、`search.ts`(Fuse.js と、略称を拾う `boundaryMatch.ts` の合成)、`tauri.ts`(IPC呼び出しはここに集約)
 - `src-tauri/src/commands/` — コマンドの `domain` / `registry`(メモリ上の一覧) / `store`(commands.json) / `loader`(各ソースの読み込み) / `execution` / `ipc`。`bookmark` / `application` / `markdown` が外部ソース
 - `src-tauri/src/config/` — 設定(config.json)
 - `src-tauri/src/` 直下 — `lifecycle`(reload・終了)、`window`、`shortcut`、`hotkey_capture`、`tray`、`system_theme`(タスクバーのテーマ。トレイアイコンの切り替え用)、`watcher` など

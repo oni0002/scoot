@@ -1,6 +1,7 @@
 import Fuse, { IFuseOptions } from 'fuse.js';
 import { Command, SearchResult, Usage, UsageMap } from './types';
 import { DIRECT_OPEN_ID } from './constants';
+import { boundaryMatch, BoundaryMatch } from './boundaryMatch';
 
 export const FUSE_KEYS: IFuseOptions<Command>['keys'] = [
     { name: 'name', weight: 0.7 },
@@ -58,23 +59,41 @@ export function fuseSearch(
     if (!query.trim()) {
         return commands.slice(0, maxResults).map((command) => ({ command, score: 0, matches: [] }));
     }
-    // Scattered one-letter hits are kept and highlighted like longer runs, so a result
-    // never looks unexplained.
-    // Re-ranking by history needs every match, not just the first maxResults
-    return fuse
-        .search(query)
-        .map((r) => ({
-            rank: (r.score ?? 0) - usageBoost(usage[r.item.id], now),
-            result: {
-                command: r.item,
-                score: r.score ?? 0,
-                matches:
-                    r.matches?.map((m) => ({ indices: [...m.indices], key: m.key ?? '' })) ?? [],
-            },
-        }))
+    // Re-ranking by history needs every match, not just the first maxResults. Scattered one-letter
+    // hits are kept and highlighted like longer runs, so a result never looks unexplained.
+    const ranked = new Map<string, SearchResult>();
+    for (const r of fuse.search(query)) {
+        ranked.set(r.item.id, {
+            command: r.item,
+            score: r.score ?? 0,
+            matches: r.matches?.map((m) => ({ indices: [...m.indices], key: m.key ?? '' })) ?? [],
+        });
+    }
+    // Abbreviations such as "vscode" are invisible to Fuse; add them, or lift them when this fits better
+    for (const command of commands) {
+        const hit = boundaryMatch(command.name, query);
+        if (!hit) continue;
+        const score = boundaryScore(hit, query);
+        const existing = ranked.get(command.id);
+        if (existing && existing.score <= score) continue;
+        ranked.set(command.id, {
+            command,
+            score,
+            matches: [{ indices: hit.indices, key: 'name' }],
+        });
+    }
+    return [...ranked.values()]
+        .map((r) => ({ r, rank: r.score - usageBoost(usage[r.command.id], now) }))
         .sort((a, b) => a.rank - b.rank)
         .slice(0, maxResults)
-        .map((r) => r.result);
+        .map(({ r }) => r);
+}
+
+// A word-start match scores like a good Fuse match, tighter (fewer words) first. It stays below
+// 0.05 so that history, which is capped at that much, cannot reorder it against a literal hit.
+function boundaryScore(hit: BoundaryMatch, query: string): number {
+    const length = Math.max(1, query.replace(/\s+/g, '').length);
+    return 0.02 + 0.03 * Math.min(1, hit.words / length);
 }
 
 const URL_PATTERN = /^(https?|ftp|file|mailto|scoot):\/\/?/i;

@@ -166,3 +166,46 @@ describe('run history', () => {
         expect(usageBoost(undefined, NOW)).toBe(0);
     });
 });
+
+describe('abbreviations', () => {
+    const names = [
+        'Comet',
+        'Node.js',
+        'Visual Studio Code',
+        'RecoveryDrive',
+        'oni0002/vscode-todomd',
+    ];
+    const commands = names.map((n) => makeCommand(n));
+    const fuse = createFuse(commands, 0.5);
+
+    it('ranks word-start abbreviations above scattered Fuse hits', () => {
+        const results = fuseSearch(fuse, 'vscode', commands, 10);
+        const order = results.map((r) => r.command.name);
+        expect(order.indexOf('Visual Studio Code')).toBeLessThan(order.indexOf('Comet'));
+        expect(order.indexOf('Visual Studio Code')).toBeLessThan(order.indexOf('RecoveryDrive'));
+    });
+
+    it('finds a command Fuse alone would drop at a strict threshold', () => {
+        const strict = createFuse(commands, 0.3);
+        const results = fuseSearch(strict, 'vscode', commands, 10);
+        expect(results.map((r) => r.command.name)).toContain('Visual Studio Code');
+    });
+
+    it('highlights the matched word starts', () => {
+        const [hit] = fuseSearch(fuse, 'vscode', [commands[2]], 10);
+        expect(hit.matches[0]).toEqual({
+            key: 'name',
+            indices: [
+                [0, 0],
+                [7, 7],
+                [14, 17],
+            ],
+        });
+    });
+
+    it('does not duplicate a command that both match', () => {
+        const results = fuseSearch(fuse, 'vscode', commands, 10);
+        const ids = results.map((r) => r.command.id);
+        expect(new Set(ids).size).toBe(ids.length);
+    });
+});
