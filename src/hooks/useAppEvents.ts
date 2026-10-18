@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { TauriAPI } from '../tauri';
 import { NOTIFICATION_DURATION } from '../constants';
 
 interface UseAppEventsProps {
@@ -60,6 +61,13 @@ export const useAppEvents = ({
                 if (isMounted) {
                     loadCommands();
                     loadConfig();
+                    // The Hotkey is registered in setup, before this page can hear anything
+                    TauriAPI.getShortcutWarning().then(
+                        (warning) => {
+                            if (isMounted && warning) showWarning(warning);
+                        },
+                        (err) => console.warn('Failed to read the hotkey status:', err),
+                    );
                 }
             } catch (err) {
                 if (isMounted) {

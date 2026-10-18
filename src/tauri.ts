@@ -60,6 +60,11 @@ export const TauriAPI = {
         return await invoke('leave_modal');
     },
 
+    /** Why the Hotkey could not be registered, if it could not (e.g. another app holds it). */
+    async getShortcutWarning(): Promise<string | null> {
+        return await invoke<string | null>('get_shortcut_warning');
+    },
+
     async getStartupShortcut(): Promise<boolean> {
         return await invoke<boolean>('get_startup_shortcut');
     },

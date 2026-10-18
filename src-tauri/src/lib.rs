@@ -139,6 +139,7 @@ pub fn run() {
             crate::window::enter_modal,
             crate::window::leave_modal,
             // Startup
+            crate::shortcut::get_shortcut_warning,
             crate::startup::get_startup_shortcut,
             crate::startup::set_startup_shortcut,
             // Hotkey capture

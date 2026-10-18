@@ -26,9 +26,21 @@ pub struct ShortcutState {
     pub shortcut: Mutex<Option<String>>,
     /// The hotkey let go of while a hotkey capture runs, to be taken again when it ends
     suspended: Mutex<Option<String>>,
+    /// Why the Hotkey could not be registered, until a registration works
+    warning: Mutex<Option<String>>,
 }
 
 impl ShortcutState {
+    pub fn set_warning(&self, warning: Option<String>) {
+        if let Ok(mut current) = self.warning.lock() {
+            *current = warning;
+        }
+    }
+
+    pub fn warning(&self) -> Option<String> {
+        self.warning.lock().ok()?.clone()
+    }
+
     /// Let go of the held hotkey and remember it. Returns it, so the caller can unregister it.
     /// Nothing is overwritten when no hotkey is held (a capture already running).
     pub fn suspend(&self) -> Option<String> {
@@ -85,6 +97,19 @@ mod tests {
         let state = ShortcutState::default();
         *state.shortcut.lock().unwrap() = Some(hotkey.to_string());
         state
+    }
+
+    #[test]
+    fn the_warning_stays_until_a_registration_clears_it() {
+        let state = ShortcutState::default();
+        assert_eq!(state.warning(), None);
+        state.set_warning(Some("Alt+Space is not available.".to_string()));
+        assert_eq!(
+            state.warning().as_deref(),
+            Some("Alt+Space is not available.")
+        );
+        state.set_warning(None);
+        assert_eq!(state.warning(), None);
     }
 
     #[test]
