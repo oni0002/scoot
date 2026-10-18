@@ -1,7 +1,7 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import { Command } from '../types';
 import { getErrorMessage } from '../error';
-import { usePreventHide } from '../hooks/usePreventHide';
+import { Modal } from './Modal';
 
 interface AliasDialogProps {
     /** The external command to name; the dialog is open while this is set. */
@@ -17,17 +17,6 @@ const AliasDialogBody: React.FC<Required<AliasDialogProps>> = ({ command, onSubm
     const [value, setValue] = useState(command.alias ?? '');
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
-
-    usePreventHide(true);
-
-    useEffect(() => {
-        const dialog = dialogRef.current;
-        if (!dialog) return;
-        dialog.showModal();
-        // Esc and the backdrop close the dialog natively
-        dialog.addEventListener('close', onCancel);
-        return () => dialog.removeEventListener('close', onCancel);
-    }, [onCancel]);
 
     const submit = async (alias: string | null) => {
         setBusy(true);
@@ -46,8 +35,8 @@ const AliasDialogBody: React.FC<Required<AliasDialogProps>> = ({ command, onSubm
     };
 
     return (
-        <dialog ref={dialogRef} className="modal" aria-labelledby={titleId}>
-            <form onSubmit={handleSubmit} className="modal-box rounded-lg p-4 w-96 max-w-none">
+        <Modal open titleId={titleId} dialogRef={dialogRef} onClose={onCancel}>
+            <form onSubmit={handleSubmit}>
                 <h3 id={titleId} className="mb-2">
                     Alias
                 </h3>
@@ -99,12 +88,7 @@ const AliasDialogBody: React.FC<Required<AliasDialogProps>> = ({ command, onSubm
                     </button>
                 </div>
             </form>
-            <form method="dialog" className="modal-backdrop">
-                <button tabIndex={-1} aria-label="Close">
-                    close
-                </button>
-            </form>
-        </dialog>
+        </Modal>
     );
 };
 

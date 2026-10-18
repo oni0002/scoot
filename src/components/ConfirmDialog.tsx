@@ -1,5 +1,5 @@
-import React, { useId, useRef, useEffect } from 'react';
-import { usePreventHide } from '../hooks/usePreventHide';
+import React, { useId, useRef } from 'react';
+import { Modal } from './Modal';
 
 interface ConfirmDialogProps {
     isOpen: boolean;
@@ -28,28 +28,6 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     const dialogRef = useRef<HTMLDialogElement>(null);
     const titleId = useId();
 
-    usePreventHide(isOpen);
-
-    useEffect(() => {
-        if (isOpen) {
-            dialogRef.current?.showModal();
-        } else {
-            dialogRef.current?.close();
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        const dialog = dialogRef.current;
-        if (!dialog) return;
-
-        const handleClose = () => {
-            onCancel();
-        };
-
-        dialog.addEventListener('close', handleClose);
-        return () => dialog.removeEventListener('close', handleClose);
-    }, [onCancel]);
-
     const handleCancel = () => {
         dialogRef.current?.close();
     };
@@ -60,36 +38,29 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     };
 
     return (
-        <dialog ref={dialogRef} className="modal" aria-labelledby={titleId}>
-            <div className="modal-box rounded-lg p-4 w-96 max-w-none">
-                <h3 id={titleId} className="mb-2">
-                    {title}
-                </h3>
-                <p className="py-2 text-sm">{children}</p>
+        <Modal open={isOpen} titleId={titleId} dialogRef={dialogRef} onClose={onCancel}>
+            <h3 id={titleId} className="mb-2">
+                {title}
+            </h3>
+            <p className="py-2 text-sm">{children}</p>
 
-                <div className="modal-action">
-                    <button
-                        type="button"
-                        onClick={handleCancel}
-                        className="btn btn-sm btn-ghost"
-                        autoFocus
-                    >
-                        {cancelLabel}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleConfirm}
-                        className={`btn btn-sm ${destructive ? 'btn-error' : 'btn-primary'}`}
-                    >
-                        {confirmLabel}
-                    </button>
-                </div>
-            </div>
-            <form method="dialog" className="modal-backdrop">
-                <button tabIndex={-1} aria-label="Close">
-                    close
+            <div className="modal-action">
+                <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="btn btn-sm btn-ghost"
+                    autoFocus
+                >
+                    {cancelLabel}
                 </button>
-            </form>
-        </dialog>
+                <button
+                    type="button"
+                    onClick={handleConfirm}
+                    className={`btn btn-sm ${destructive ? 'btn-error' : 'btn-primary'}`}
+                >
+                    {confirmLabel}
+                </button>
+            </div>
+        </Modal>
     );
 };
