@@ -80,19 +80,28 @@ where
     }
 }
 
-/// Unregister the shortcut
-pub fn unregister(app_handle: &AppHandle) {
-    if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
-        if let Ok(mut reg) = state.shortcut.lock() {
-            if let Some(hotkey) = reg.as_ref() {
-                log::debug!("Unregistering shortcut: {}", hotkey);
-                let _ = app_handle.global_shortcut().unregister(hotkey.as_str());
-            }
-            *reg = None;
+/// Let go of the hotkey while one is being captured: a registered key never reaches the window.
+/// `resume` takes it again.
+pub fn suspend(app_handle: &AppHandle) {
+    if let Some(held) = app_handle
+        .try_state::<crate::state::ShortcutState>()
+        .and_then(|state| state.suspend())
+    {
+        log::debug!("Unregistering shortcut: {}", held);
+        let _ = app_handle.global_shortcut().unregister(held.as_str());
+    }
+}
+
+/// Take back the hotkey `suspend` let go of. It is the one that worked before, not the saved
+/// one: the saved hotkey can be unavailable, and an edit made in the settings is not saved yet.
+pub fn resume(app_handle: &AppHandle) {
+    let resumed = app_handle
+        .try_state::<crate::state::ShortcutState>()
+        .and_then(|state| state.resume());
+    if let Some(hotkey) = resumed {
+        if let Err(e) = setup_global_shortcuts(app_handle, &hotkey) {
+            log::error!("Failed to take the hotkey back after a capture: {}", e);
         }
-    } else {
-        // Fallback if state cannot be retrieved
-        let _ = app_handle.global_shortcut().unregister_all();
     }
 }
 

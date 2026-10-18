@@ -2,17 +2,14 @@ use tauri::AppHandle;
 
 #[tauri::command]
 pub fn start_hotkey_capture(app: AppHandle) {
-    crate::shortcut::unregister(&app);
+    crate::shortcut::suspend(&app);
     imp::start(app);
 }
 
 #[tauri::command]
 pub async fn stop_hotkey_capture(app: AppHandle) {
     imp::stop();
-    let hotkey = crate::shortcut::configured_hotkey(&app);
-    if let Err(e) = crate::shortcut::setup_global_shortcuts(&app, &hotkey) {
-        log::error!("Failed to re-register shortcut after hotkey capture: {}", e);
-    }
+    crate::shortcut::resume(&app);
 }
 
 #[cfg(target_os = "windows")]
