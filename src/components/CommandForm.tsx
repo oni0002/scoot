@@ -65,10 +65,6 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             newErrors.name = 'Name is required';
         }
 
-        if (!formData.category.trim()) {
-            newErrors.category = 'Category is required';
-        }
-
         if (!formData.command.trim()) {
             newErrors.command =
                 formData.category === 'url'
@@ -215,20 +211,12 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 id="cf-category"
                                 value={formData.category}
                                 onChange={(e) => handleInputChange('category', e.target.value)}
-                                className={`select select-bordered select-sm w-full ${errors.category ? 'select-error' : ''}`}
+                                className="select select-sm w-full"
                             >
                                 <option value="url">URL</option>
                                 <option value="command">Cmd</option>
                                 <option value="file">File</option>
                             </select>
-                            {errors.category && (
-                                <p
-                                    role="alert"
-                                    className="flex items-center px-1 py-2 text-xs text-error"
-                                >
-                                    {errors.category}
-                                </p>
-                            )}
                         </div>
                     </div>
 
@@ -385,7 +373,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                             value={formData.description}
                             onChange={(e) => handleInputChange('description', e.target.value)}
                             placeholder="Brief description"
-                            className={`input input-sm w-full ${errors.description ? 'input-error' : ''}`}
+                            className="input input-sm w-full"
                         />
                     </div>
                 </div>
