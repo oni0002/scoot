@@ -24,9 +24,12 @@ export interface ApplicationConfig {
     extensions: string[];
 }
 
+/** The browsers bookmark.rs can read. */
+export const BROWSERS = ['brave', 'chrome', 'edge'] as const;
+
 export interface BookmarkConfig {
     enabled: boolean;
-    browser: 'brave' | 'chrome' | 'edge'; // the browsers bookmark.rs can read
+    browser: (typeof BROWSERS)[number];
 }
 
 export interface MarkdownConfig {

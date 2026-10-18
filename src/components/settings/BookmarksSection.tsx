@@ -1,8 +1,6 @@
 import React from 'react';
-import { Config } from '../../types';
+import { BookmarkConfig, BROWSERS, Config } from '../../types';
 import { Row, Section } from '../SettingsLayout';
-
-const BROWSERS = ['brave', 'chrome', 'edge'] as const; // the browsers bookmark.rs can read
 
 interface BookmarksSectionProps {
     config: Config;
@@ -28,7 +26,7 @@ export const BookmarksSection: React.FC<BookmarksSectionProps> = ({ config, onCh
                         ...config,
                         bookmarks: {
                             ...config.bookmarks,
-                            browser: e.target.value as (typeof BROWSERS)[number],
+                            browser: e.target.value as BookmarkConfig['browser'],
                         },
                     })
                 }
