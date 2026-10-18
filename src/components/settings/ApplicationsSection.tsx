@@ -71,7 +71,11 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({ config
                                 onChange={(e) => setNewExtension(e.target.value)}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') confirmAddExtension();
-                                    if (e.key === 'Escape') closeExtensionEditor();
+                                    if (e.key === 'Escape') {
+                                        // Only this field is closed, not the screen around it
+                                        e.preventDefault();
+                                        closeExtensionEditor();
+                                    }
                                 }}
                             />
                             <button

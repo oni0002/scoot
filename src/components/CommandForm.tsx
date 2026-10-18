@@ -5,6 +5,7 @@ import { LuFile, LuFolder, LuArrowLeft } from 'react-icons/lu';
 import { TauriAPI } from '../tauri';
 import { hasPlaceholders } from '../command';
 import { ConfirmDialog } from './ConfirmDialog';
+import { useEscapeToClose } from '../hooks/useEscapeToClose';
 
 interface CommandFormProps {
     command?: Command; // If provided, we're editing; otherwise, we're adding
@@ -151,18 +152,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
         }
     };
 
-    // Keyboard navigation for Escape key to cancel
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && !confirmingDiscard) {
-                // Without this the same Esc would also close the dialog that requestCancel opens
-                e.preventDefault();
-                requestCancel();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [requestCancel, confirmingDiscard]);
+    useEscapeToClose(requestCancel, !confirmingDiscard);
 
     return (
         <div className="h-screen w-screen flex flex-col bg-base-100 text-base-content scrollbar-gutter-auto">

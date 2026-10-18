@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { LuArrowLeft, LuFileJson } from 'react-icons/lu';
 import { TauriAPI } from '../tauri';
 import { Config } from '../types';
 import { useConfigContext } from '../context/ConfigContext';
 import { useNotificationContext } from '../context/NotificationContext';
 import { useHotkeyCapture } from '../hooks/useHotkeyCapture';
+import { useEscapeToClose } from '../hooks/useEscapeToClose';
 import { getErrorMessage } from '../error';
 import { daisyTheme } from '../theme';
 import { GeneralSection } from './settings/GeneralSection';
@@ -66,16 +67,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
     };
 
     // While the hotkey field is capturing, Esc cancels the capture instead of closing the screen
-    const capturing = hotkey.capturing;
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && !capturing) {
-                handleBack();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleBack, capturing]);
+    useEscapeToClose(handleBack, !hotkey.capturing);
 
     if (!local) return null;
 

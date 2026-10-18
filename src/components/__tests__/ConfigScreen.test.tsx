@@ -99,6 +99,31 @@ describe('ConfigScreen closing', () => {
     });
 });
 
+describe('ConfigScreen Esc', () => {
+    it('closes the screen', async () => {
+        const onBack = renderScreen();
+        await screen.findByLabelText('Theme');
+        await userEvent.keyboard('{Escape}');
+        expect(onBack).toHaveBeenCalled();
+    });
+
+    it('only closes the confirmation when one is open', async () => {
+        const onBack = renderScreen();
+        await userEvent.click(await screen.findByRole('button', { name: 'Clear' }));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        await userEvent.keyboard('{Escape}');
+        expect(onBack).not.toHaveBeenCalled();
+    });
+
+    it('only closes the extension field when it has focus', async () => {
+        const onBack = renderScreen();
+        await userEvent.click(await screen.findByRole('button', { name: 'Add extension' }));
+        await userEvent.type(screen.getByLabelText('New extension'), '{Escape}');
+        expect(screen.queryByLabelText('New extension')).not.toBeInTheDocument();
+        expect(onBack).not.toHaveBeenCalled();
+    });
+});
+
 describe('ConfigScreen sections', () => {
     it('disables a sources controls while its switch is off', async () => {
         renderScreen();
