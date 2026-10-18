@@ -73,7 +73,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
 
     return (
         <div
-            className="h-screen w-screen flex flex-col pb-4 bg-base-100 text-base-content scrollbar-gutter-auto"
+            className="h-screen w-screen flex flex-col pb-4 bg-base-100 text-base-content"
             data-theme={daisyTheme(local.theme)}
         >
             {/* Header */}
@@ -113,7 +113,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
             )}
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto px-4 pb-2 scrollbar-gutter-auto">
+            <div className="flex-1 overflow-y-auto px-4 pb-2">
                 {/* Same left edge as the section headings; -mb-3 tightens the gap to the first one */}
                 <p className="-mb-3 mt-1 px-3 text-xs text-subtle">
                     Changes are saved when you go back.

@@ -92,29 +92,9 @@ textarea::placeholder {
     opacity: 1;
 }
 
-/* Fix for DaisyUI modal scrollbar-gutter issue */
-/* https://github.com/saadeghi/daisyui/issues/3726 */
-.modal {
-    scrollbar-gutter: auto !important;
-}
-
-.modal-box {
-    scrollbar-gutter: auto !important;
-}
-
-/* Alternative fix: completely remove scrollbar-gutter */
-html,
-body,
+/* daisyUI reserves a scrollbar gutter when a modal is open, which shifts the layout of this
+   fixed-size window (https://github.com/saadeghi/daisyui/issues/3726). This rule is outside any
+   layer and !important, so it wins over daisyUI's wherever the gutter is set. */
 * {
-    scrollbar-gutter: auto !important;
-}
-
-/* Ensure dialog element also doesn't have scrollbar-gutter */
-dialog {
-    scrollbar-gutter: auto !important;
-}
-
-/* Override any DaisyUI scrollbar-gutter settings */
-@utility scrollbar-gutter-auto {
     scrollbar-gutter: auto !important;
 }

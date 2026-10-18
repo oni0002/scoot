@@ -129,7 +129,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
     useEscapeToClose(requestCancel, !confirmingDiscard);
 
     return (
-        <div className="h-screen w-screen flex flex-col bg-base-100 text-base-content scrollbar-gutter-auto">
+        <div className="h-screen w-screen flex flex-col bg-base-100 text-base-content">
             {/* Header */}
             <div className="flex-none p-4 flex items-center gap-2">
                 <button
@@ -147,7 +147,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
 
             {/* Body */}
             <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto px-4 scrollbar-gutter-auto space-y-2">
+                <div className="flex-1 overflow-y-auto px-4 space-y-2">
                     <div className="flex gap-2">
                         {/* Name */}
                         <div className="flex flex-col flex-1">

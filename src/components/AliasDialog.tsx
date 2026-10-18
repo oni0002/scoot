@@ -46,11 +46,8 @@ const AliasDialogBody: React.FC<Required<AliasDialogProps>> = ({ command, onSubm
     };
 
     return (
-        <dialog ref={dialogRef} className="modal scrollbar-gutter-auto" aria-labelledby={titleId}>
-            <form
-                onSubmit={handleSubmit}
-                className="modal-box rounded-lg p-4 w-96 max-w-none scrollbar-gutter-auto"
-            >
+        <dialog ref={dialogRef} className="modal" aria-labelledby={titleId}>
+            <form onSubmit={handleSubmit} className="modal-box rounded-lg p-4 w-96 max-w-none">
                 <h3 id={titleId} className="mb-2">
                     Alias
                 </h3>

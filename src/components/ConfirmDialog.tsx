@@ -60,8 +60,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     };
 
     return (
-        <dialog ref={dialogRef} className="modal scrollbar-gutter-auto" aria-labelledby={titleId}>
-            <div className="modal-box rounded-lg p-4 w-96 max-w-none scrollbar-gutter-auto">
+        <dialog ref={dialogRef} className="modal" aria-labelledby={titleId}>
+            <div className="modal-box rounded-lg p-4 w-96 max-w-none">
                 <h3 id={titleId} className="mb-2">
                     {title}
                 </h3>
