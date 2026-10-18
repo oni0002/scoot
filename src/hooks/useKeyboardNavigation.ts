@@ -32,6 +32,9 @@ export const useKeyboardNavigation = ({
 }: UseKeyboardNavigationProps) => {
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
+            // Enter, arrows and Esc while composing text (IME) belong to the composition
+            if (e.nativeEvent.isComposing) return;
+
             if (e.ctrlKey) {
                 if (KEYBOARD_SHORTCUTS.MOVE_DOWN_ALT.includes(e.key)) {
                     e.preventDefault();

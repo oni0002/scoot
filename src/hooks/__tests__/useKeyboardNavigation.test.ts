@@ -17,12 +17,34 @@ const setup = () => {
     };
     const { result } = renderHook(() => useKeyboardNavigation(props));
     const press = (key: string, init: Partial<React.KeyboardEvent> = {}) => {
-        const event = { key, preventDefault: jest.fn(), ...init } as unknown as React.KeyboardEvent;
+        const event = {
+            key,
+            preventDefault: jest.fn(),
+            nativeEvent: { isComposing: false },
+            ...init,
+        } as unknown as React.KeyboardEvent;
         result.current.handleKeyDown(event);
         return event;
     };
     return { props, press };
 };
+
+describe('while composing text (IME)', () => {
+    it.each(['Enter', 'ArrowDown', 'Escape', 'Tab'])('ignores %s', (key) => {
+        const { props, press } = setup();
+        const event = press(key, { nativeEvent: { isComposing: true } as KeyboardEvent });
+        expect(event.preventDefault).not.toHaveBeenCalled();
+        expect(props.executeCommand).not.toHaveBeenCalled();
+        expect(props.moveSelection).not.toHaveBeenCalled();
+        expect(props.setQuery).not.toHaveBeenCalled();
+    });
+
+    it('runs the command on Enter once composition is over', () => {
+        const { props, press } = setup();
+        press('Enter');
+        expect(props.executeCommand).toHaveBeenCalled();
+    });
+});
 
 describe('row action shortcuts', () => {
     it.each([
