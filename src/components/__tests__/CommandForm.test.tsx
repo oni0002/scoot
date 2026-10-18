@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { CommandForm } from '../CommandForm';
@@ -127,5 +127,23 @@ describe('CommandForm duplicating', () => {
         expect(onSave).toHaveBeenCalledWith(
             expect.objectContaining({ id: '', name: 'git status copy', alias: 'gs' }),
         );
+    });
+});
+
+describe('CommandForm saving', () => {
+    it('ignores a second submit while the first save is still pending', async () => {
+        let finish: () => void = () => {};
+        const onSave = jest.fn(() => new Promise<void>((resolve) => (finish = resolve)));
+        render(<CommandForm onSave={onSave} onCancel={jest.fn()} />);
+        await userEvent.type(screen.getByLabelText(/name/i), 'Docs');
+        await userEvent.click(screen.getByLabelText(/url/i));
+        await userEvent.paste('https://docs.dev');
+
+        await userEvent.keyboard('{Enter}{Enter}');
+        expect(onSave).toHaveBeenCalledTimes(1);
+        expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
+
+        await act(async () => finish());
+        expect(screen.getByRole('button', { name: 'Add' })).toBeEnabled();
     });
 });

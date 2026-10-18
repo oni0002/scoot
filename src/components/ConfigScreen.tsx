@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { LuArrowLeft, LuFileJson } from 'react-icons/lu';
 import { TauriAPI } from '../tauri';
 import { Config } from '../types';
@@ -49,21 +49,35 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
         return true;
     }, [edited, config, showSuccess]);
 
+    // Esc pressed twice must not save twice, nor leave twice
+    const busy = useRef(false);
     const handleBack = useCallback(async () => {
-        if (await saveEdits()) onBack();
+        if (busy.current) return;
+        busy.current = true;
+        try {
+            if (await saveEdits()) onBack();
+        } finally {
+            busy.current = false;
+        }
     }, [saveEdits, onBack]);
 
     // Saves first so the file is current, then leaves: an open screen would go stale as soon as
     // the file is edited.
     const openConfigJson = async () => {
-        if (!(await saveEdits())) return;
+        if (busy.current) return;
+        busy.current = true;
         try {
-            await TauriAPI.openConfigJson();
-        } catch (err) {
-            reportError('open config.json', err);
-            return;
+            if (!(await saveEdits())) return;
+            try {
+                await TauriAPI.openConfigJson();
+            } catch (err) {
+                reportError('open config.json', err);
+                return;
+            }
+            onBack();
+        } finally {
+            busy.current = false;
         }
-        onBack();
     };
 
     // While the hotkey field is capturing, Esc cancels the capture instead of closing the screen

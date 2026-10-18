@@ -107,6 +107,20 @@ describe('ConfigScreen Esc', () => {
         expect(onBack).toHaveBeenCalled();
     });
 
+    it('saves once when Esc is pressed twice', async () => {
+        let finish: () => void = () => {};
+        jest.mocked(TauriAPI.saveConfig).mockImplementation(
+            () => new Promise<void>((resolve) => (finish = resolve)),
+        );
+        const onBack = renderScreen();
+        await userEvent.selectOptions(await screen.findByLabelText('Theme'), 'light');
+
+        await userEvent.keyboard('{Escape}{Escape}');
+        finish();
+        await waitFor(() => expect(onBack).toHaveBeenCalledTimes(1));
+        expect(TauriAPI.saveConfig).toHaveBeenCalledTimes(1);
+    });
+
     it('only closes the confirmation when one is open', async () => {
         const onBack = renderScreen();
         await userEvent.click(await screen.findByRole('button', { name: 'Clear' }));

@@ -9,7 +9,8 @@ import { useEscapeToClose } from '../hooks/useEscapeToClose';
 interface CommandFormProps {
     command?: Command; // If provided, we're editing; otherwise, we're adding
     template?: Command; // Prefills a new command from an existing one (duplicate)
-    onSave: (command: Command) => void;
+    /** The form ignores further submits until a returned promise settles. */
+    onSave: (command: Command) => void | Promise<void>;
     onCancel: () => void;
 }
 
@@ -38,6 +39,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
     const [formData, setFormData] = useState(() => toFormData(command, template));
     const [confirmingDiscard, setConfirmingDiscard] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- initializing form state from props is intentional
@@ -81,10 +83,10 @@ export const CommandForm: React.FC<CommandFormProps> = ({
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validateForm()) {
+        if (saving || !validateForm()) {
             return;
         }
 
@@ -101,7 +103,14 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             showWindow: isCmdCategory ? formData.showWindow : undefined,
         };
 
-        onSave(commandToSave);
+        // A second Enter before the first save is answered would add the command again, and be
+        // told it already exists
+        setSaving(true);
+        try {
+            await onSave(commandToSave);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
@@ -358,7 +367,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                     <button type="button" onClick={requestCancel} className="btn btn-ghost btn-sm">
                         Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary btn-sm">
+                    <button type="submit" disabled={saving} className="btn btn-primary btn-sm">
                         {command ? 'Update' : 'Add'}
                     </button>
                 </div>
