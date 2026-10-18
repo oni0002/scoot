@@ -4,7 +4,7 @@ import { RowAction } from '../rowActions';
 import { SearchResultItem } from './SearchResultItem';
 import { ArgumentPanel } from './ArgumentPanel';
 import { NoResults, QuickGuide } from './EmptyState';
-import { RESULT_LIST_ID } from '../constants';
+import { RESULT_HEADING_ID, RESULT_LIST_ID } from '../constants';
 
 interface SearchResultListProps {
     results: SearchResult[];
@@ -22,6 +22,8 @@ interface SearchResultListProps {
     /** Copies the expanded command while in argument mode. */
     onCopyExpanded?: () => void;
     focusSearch?: () => void;
+    /** Names the list when it is not the answer to a query, e.g. the commands shown before typing. */
+    heading?: string;
 }
 
 export const SearchResultList: React.FC<SearchResultListProps> = ({
@@ -38,6 +40,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     aliasExample,
     onCopyExpanded,
     focusSearch,
+    heading,
 }) => {
     const listRef = useRef<HTMLDivElement>(null);
 
@@ -68,26 +71,41 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                 </div>
             ) : (
                 // Distinct key forces a remount so orphaned rows can't linger into other modes
-                <div key="results" id={RESULT_LIST_ID} role="listbox" aria-label="Search results">
-                    {results.map((result, index) => (
-                        <SearchResultItem
-                            key={result.command.id}
-                            index={index}
-                            result={result}
-                            isSelected={index === selectedIndex}
-                            showActions={
-                                hoveredIndex !== null
-                                    ? hoveredIndex === index
-                                    : index === selectedIndex
-                            }
-                            onClick={onResultClick}
-                            onMouseEnter={onMouseEnter}
-                            onMouseLeave={onMouseLeave}
-                            onAction={onAction}
-                            totalCount={results.length}
-                            focusSearch={focusSearch}
-                        />
-                    ))}
+                <div key="results">
+                    {heading && (
+                        <p
+                            id={RESULT_HEADING_ID}
+                            className="px-3 pb-1 text-xs text-subtle select-none"
+                        >
+                            {heading}
+                        </p>
+                    )}
+                    <div
+                        id={RESULT_LIST_ID}
+                        role="listbox"
+                        aria-label={heading ? undefined : 'Search results'}
+                        aria-labelledby={heading ? RESULT_HEADING_ID : undefined}
+                    >
+                        {results.map((result, index) => (
+                            <SearchResultItem
+                                key={result.command.id}
+                                index={index}
+                                result={result}
+                                isSelected={index === selectedIndex}
+                                showActions={
+                                    hoveredIndex !== null
+                                        ? hoveredIndex === index
+                                        : index === selectedIndex
+                                }
+                                onClick={onResultClick}
+                                onMouseEnter={onMouseEnter}
+                                onMouseLeave={onMouseLeave}
+                                onAction={onAction}
+                                totalCount={results.length}
+                                focusSearch={focusSearch}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

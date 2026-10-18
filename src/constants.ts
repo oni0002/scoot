@@ -2,6 +2,7 @@ export const DIRECT_OPEN_ID = 'direct-open';
 
 // DOM ids tying the search input (combobox) to the result list (listbox) and its options
 export const RESULT_LIST_ID = 'search-results';
+export const RESULT_HEADING_ID = 'search-results-heading';
 export const resultOptionId = (index: number) => `search-result-${index}`;
 
 export const NOTIFICATION_DURATION = {

@@ -113,6 +113,8 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         executeCommand: executeContextCommand,
     });
 
+    const showingFrequent = searchMode.mode === 'idle' && results.length > 0;
+
     const aliasExample = useMemo(
         () => commands.find((c) => c.alias && hasPlaceholders(c.command))?.alias,
         [commands],
@@ -298,6 +300,7 @@ A fast and efficient command launcher for your desktop.`,
                 aliasExample={aliasExample}
                 onCopyExpanded={copyExpanded}
                 focusSearch={focusSearch}
+                heading={showingFrequent ? 'Frequently used' : undefined}
             />
 
             <SearchHints
