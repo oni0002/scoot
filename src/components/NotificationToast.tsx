@@ -1,15 +1,23 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { daisyTheme } from '../theme';
-import { LuX, LuCheck, LuTriangleAlert, LuCircleX, LuInfo } from 'react-icons/lu';
+import { LuX, LuCheck, LuTriangleAlert, LuCircleX } from 'react-icons/lu';
 
 export interface Notification {
     id: string;
-    type: 'success' | 'error' | 'warning' | 'info';
+    type: 'success' | 'error' | 'warning';
     message: string;
     duration?: number;
     /** A single follow-up the user can take from the toast, e.g. Undo. */
     action?: { label: string; onClick: () => void };
 }
+
+// A quiet surface with a coloured icon: the filled daisyUI alerts put white text on strong
+// colours, which made the Undo action hard to read and shouted over the launcher's palette.
+const TYPE_STYLE: Record<Notification['type'], { icon: React.ReactNode; className: string }> = {
+    success: { icon: <LuCheck />, className: 'text-success' },
+    error: { icon: <LuCircleX />, className: 'text-error' },
+    warning: { icon: <LuTriangleAlert />, className: 'text-warning' },
+};
 
 interface NotificationToastProps {
     notifications: Notification[];
@@ -71,36 +79,6 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
         };
     }, [notification.duration, handleRemove]);
 
-    // A quiet surface with a coloured icon: the filled daisyUI alerts put white text on strong
-    // colours, which made the Undo action hard to read and shouted over the launcher's palette.
-    const getIconClass = () => {
-        switch (notification.type) {
-            case 'success':
-                return 'text-success';
-            case 'error':
-                return 'text-error';
-            case 'warning':
-                return 'text-warning';
-            default:
-                return 'text-info';
-        }
-    };
-
-    const getIcon = () => {
-        switch (notification.type) {
-            case 'success':
-                return <LuCheck />;
-            case 'error':
-                return <LuCircleX />;
-            case 'warning':
-                return <LuTriangleAlert />;
-            case 'info':
-                return <LuInfo />;
-            default:
-                return <LuInfo />;
-        }
-    };
-
     return (
         <div
             role={notification.type === 'error' ? 'alert' : 'status'}
@@ -108,8 +86,11 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
                 isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
             }`}
         >
-            <span className={`text-base ${getIconClass()}`} aria-hidden="true">
-                {getIcon()}
+            <span
+                className={`text-base ${TYPE_STYLE[notification.type].className}`}
+                aria-hidden="true"
+            >
+                {TYPE_STYLE[notification.type].icon}
             </span>
             <div className="min-w-0 flex-1">
                 <div className="text-sm leading-snug whitespace-normal break-words">
