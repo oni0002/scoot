@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { SearchWindow } from './components/SearchWindow';
 import { CommandForm } from './components/CommandForm';
 import { ConfigScreen } from './components/ConfigScreen';
-import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
+import { ConfirmDialog } from './components/ConfirmDialog';
 import { AliasDialog } from './components/AliasDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Command } from './types';
@@ -259,12 +259,19 @@ const AppContent = () => {
                 onCancel={handleCancelAlias}
             />
 
-            <DeleteConfirmDialog
+            <ConfirmDialog
                 isOpen={showDeleteDialog}
-                command={deletingCommand}
+                title="Delete Command"
+                confirmLabel="Delete"
+                destructive
                 onConfirm={handleConfirmDelete}
                 onCancel={handleCancelDelete}
-            />
+            >
+                Are you sure you want to delete{' '}
+                <span className="font-semibold">{deletingCommand?.name}</span>?
+                <br />
+                This action cannot be undone.
+            </ConfirmDialog>
         </div>
     );
 };
