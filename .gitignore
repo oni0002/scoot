@@ -49,3 +49,6 @@ work/
 .env.production
 .env.*.local
 
+
+# Impeccable design tool
+.impeccable/
