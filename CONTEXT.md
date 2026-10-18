@@ -4,6 +4,8 @@
 
 ## Language
 
+_Avoid_ は、コード上の名前・内部向けの文書・コミットで避ける言い換えの指針。画面に出る文言と、それを説明する利用者向けの文書(README)は、利用者に自然な語を使ってよい(例: 画面の見出しは "Settings"、Ignored の欄は "Hidden from search"、Hotkey の通知は "Global shortcut")。
+
 ### コアエンティティ
 
 **Command**:
@@ -79,5 +81,5 @@ Config を GUI で編集するための画面。Scoot Command (OpenSettings) ま
 _Avoid_: Settings screen, preferences screen
 
 **Reload**:
-Config と全 Command ソースを再読み込みしてアプリの状態を最新化する操作。設定ファイルの変更検知・タイマー・手動操作で発生する。
+Config と全 Command ソースを再読み込みしてアプリの状態を最新化する操作。config.json の変更検知・タイマー・手動操作で発生する。commands.json は監視しない。Command は主に UI から追加するので、手で書き換えた分は手動またはタイマーの Reload で反映される。
 _Avoid_: Refresh, restart
