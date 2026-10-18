@@ -99,7 +99,7 @@ export const useSearchState = (
             if (!query || prev.mode === 'argument') return prev;
             return computeMode(query, prev);
         });
-    }, [commands, fuzzyThreshold]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [commands, fuzzyThreshold, maxResults]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const idleCount = idleResults.length;
     const isIdle = searchMode.mode === 'idle';

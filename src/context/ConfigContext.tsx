@@ -13,6 +13,10 @@ interface ConfigContextType {
     saveConfig: (config: Config) => Promise<void>;
 }
 
+// What Config::default gives in src-tauri/src/config/domain.rs, used until the real config arrives
+const DEFAULT_FUZZY_THRESHOLD = 0.5;
+const DEFAULT_MAX_RESULTS = 10;
+
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 
 interface ConfigProviderProps {
@@ -38,8 +42,8 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
         () => ({
             config,
             theme: config?.theme ?? '',
-            fuzzyThreshold: config?.fuzzyThreshold ?? 0,
-            maxResults: config?.maxResults ?? 0,
+            fuzzyThreshold: config?.fuzzyThreshold ?? DEFAULT_FUZZY_THRESHOLD,
+            maxResults: config?.maxResults ?? DEFAULT_MAX_RESULTS,
             usageHistory: config?.usageHistory ?? true,
             frequentFirst: config?.frequentFirst ?? true,
             loadConfig,
