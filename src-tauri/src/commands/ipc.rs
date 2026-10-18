@@ -19,6 +19,9 @@ pub async fn add_command(
     state: State<'_, CommandsState>,
 ) -> Result<String, crate::error::AppError> {
     command.source = crate::commands::domain::SOURCE_USER.to_string();
+    // A new command gets a new id. One sent by the webview could replace a stored command or
+    // shadow an external one.
+    command.id.clear();
     let (id, commands) = {
         let mut manager = state.commands.lock().map_err(AppError::lock)?;
         // Validate
