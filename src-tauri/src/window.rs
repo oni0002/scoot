@@ -61,13 +61,15 @@ pub async fn enter_modal(state: State<'_, WindowState>) -> Result<(), crate::err
 /// Decrement the modal refcount; auto-hide resumes when count reaches zero
 #[tauri::command]
 pub async fn leave_modal(state: State<'_, WindowState>) -> Result<(), crate::error::AppError> {
-    let prev = state.prevent_hide.load(std::sync::atomic::Ordering::SeqCst);
-    if prev > 0 {
-        state
-            .prevent_hide
-            .fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
-    }
+    release_modal(&state.prevent_hide);
     Ok(())
+}
+
+/// Lower the count by one but never below zero. One atomic step: with a separate check and
+/// subtraction, two calls at count 1 would wrap it to usize::MAX and the window would never hide.
+fn release_modal(count: &std::sync::atomic::AtomicUsize) {
+    use std::sync::atomic::Ordering::SeqCst;
+    let _ = count.fetch_update(SeqCst, SeqCst, |n| n.checked_sub(1));
 }
 
 /// Handle focus change event
@@ -121,5 +123,35 @@ pub fn setup_window_events(app: &tauri::App) {
         });
         // Hide window on startup
         let _ = window.hide();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+
+    #[test]
+    fn releasing_a_modal_never_goes_below_zero() {
+        let count = AtomicUsize::new(1);
+        release_modal(&count);
+        release_modal(&count);
+        release_modal(&count);
+        assert_eq!(count.load(SeqCst), 0);
+    }
+
+    #[test]
+    fn concurrent_releases_do_not_wrap_the_count() {
+        let count = std::sync::Arc::new(AtomicUsize::new(1));
+        let threads: Vec<_> = (0..8)
+            .map(|_| {
+                let count = count.clone();
+                std::thread::spawn(move || release_modal(&count))
+            })
+            .collect();
+        for t in threads {
+            t.join().unwrap();
+        }
+        assert_eq!(count.load(SeqCst), 0);
     }
 }
