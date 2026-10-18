@@ -21,7 +21,7 @@ pub const SOURCE_SCOOT: &str = "scoot";
 // Scoot command constants
 pub const CMD_SCOOT_ADD_COMMAND: &str = "scoot://add-command";
 pub const CMD_SCOOT_OPEN_COMMANDS: &str = "scoot://open-commands";
-pub const CMD_SCOOT_OPEN_SETTINGS_JSON: &str = "scoot://open-config";
+pub const CMD_SCOOT_OPEN_SETTINGS_JSON: &str = "scoot://open-settings-json";
 pub const CMD_SCOOT_OPEN_SETTINGS: &str = "scoot://open-settings";
 pub const CMD_SCOOT_OPEN_LOG: &str = "scoot://open-log";
 pub const CMD_SCOOT_RELOAD: &str = "scoot://reload";
