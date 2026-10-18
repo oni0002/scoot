@@ -197,9 +197,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         onRowAction: handleRowAction,
         resetState,
         query,
-        setQuery,
         searchMode,
-        setSearchMode,
         inputRef,
     });
 

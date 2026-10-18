@@ -1,8 +1,12 @@
 import React from 'react';
 import { renderHook } from '@testing-library/react';
 import { useKeyboardNavigation } from '../useKeyboardNavigation';
+import { TauriAPI } from '../../tauri';
+import { SearchMode } from '../useSearchState';
 
-const setup = () => {
+jest.mock('../../tauri');
+
+const setup = (override: { query?: string; searchMode?: SearchMode } = {}) => {
     const props = {
         moveSelection: jest.fn(),
         executeCommand: jest.fn(),
@@ -10,10 +14,9 @@ const setup = () => {
         onRowAction: jest.fn(),
         resetState: jest.fn(),
         query: 'd',
-        setQuery: jest.fn(),
-        searchMode: { mode: 'idle' } as const,
-        setSearchMode: jest.fn(),
+        searchMode: { mode: 'idle' } as SearchMode,
         inputRef: { current: document.createElement('input') },
+        ...override,
     };
     const { result } = renderHook(() => useKeyboardNavigation(props));
     const press = (key: string, init: Partial<React.KeyboardEvent> = {}) => {
@@ -36,13 +39,37 @@ describe('while composing text (IME)', () => {
         expect(event.preventDefault).not.toHaveBeenCalled();
         expect(props.executeCommand).not.toHaveBeenCalled();
         expect(props.moveSelection).not.toHaveBeenCalled();
-        expect(props.setQuery).not.toHaveBeenCalled();
+        expect(props.resetState).not.toHaveBeenCalled();
     });
 
     it('runs the command on Enter once composition is over', () => {
         const { props, press } = setup();
         press('Enter');
         expect(props.executeCommand).toHaveBeenCalled();
+    });
+});
+
+describe('Esc', () => {
+    it('clears what was typed', () => {
+        const { props, press } = setup(); // query is "d"
+        const event = press('Escape');
+        expect(props.resetState).toHaveBeenCalled();
+        expect(event.preventDefault).toHaveBeenCalled();
+    });
+
+    it('leaves argument mode', () => {
+        const { props, press } = setup({
+            searchMode: { mode: 'argument', alias: 'd', command: {} as never },
+        });
+        press('Escape');
+        expect(props.resetState).toHaveBeenCalled();
+    });
+
+    it('hides the window once nothing is left to clear', () => {
+        const { props, press } = setup({ query: '' });
+        press('Escape');
+        expect(props.resetState).not.toHaveBeenCalled();
+        expect(TauriAPI.hideWindow).toHaveBeenCalled();
     });
 });
 

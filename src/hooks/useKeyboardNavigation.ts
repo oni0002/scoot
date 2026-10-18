@@ -12,9 +12,7 @@ interface UseKeyboardNavigationProps {
     onRowAction?: (action: Exclude<RowAction, 'copy'>) => void;
     resetState: () => void;
     query: string;
-    setQuery: (query: string) => void;
     searchMode: SearchMode;
-    setSearchMode: (mode: SearchMode) => void;
     inputRef: React.RefObject<HTMLInputElement | null>;
 }
 
@@ -25,9 +23,7 @@ export const useKeyboardNavigation = ({
     onRowAction,
     resetState,
     query,
-    setQuery,
     searchMode,
-    setSearchMode,
     inputRef,
 }: UseKeyboardNavigationProps) => {
     const handleKeyDown = useCallback(
@@ -77,11 +73,8 @@ export const useKeyboardNavigation = ({
                 executeCommand();
             } else if (KEYBOARD_SHORTCUTS.CANCEL.includes(e.key)) {
                 e.preventDefault();
-                if (searchMode.mode === 'argument') {
+                if (searchMode.mode === 'argument' || query) {
                     resetState();
-                } else if (query) {
-                    setQuery('');
-                    setSearchMode({ mode: 'idle' });
                 } else {
                     TauriAPI.hideWindow();
                 }
@@ -95,8 +88,6 @@ export const useKeyboardNavigation = ({
             searchMode,
             query,
             resetState,
-            setQuery,
-            setSearchMode,
             inputRef,
         ],
     );
