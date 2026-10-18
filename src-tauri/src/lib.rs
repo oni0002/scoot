@@ -6,6 +6,7 @@ pub mod lifecycle;
 pub mod notices;
 pub mod os;
 pub mod settings;
+pub mod shell_link;
 pub mod shortcut;
 pub mod startup;
 pub mod state;
@@ -129,6 +130,7 @@ pub fn run() {
             crate::commands::ipc::delete_command,
             crate::commands::execution::execute_command,
             crate::commands::execution::open_target,
+            crate::commands::reveal::reveal_command,
             crate::commands::usage::get_usage,
             crate::commands::usage::clear_usage,
             crate::commands::ipc::open_commands_json,

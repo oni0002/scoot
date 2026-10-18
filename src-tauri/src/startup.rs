@@ -25,7 +25,7 @@ pub async fn set_startup_shortcut(enabled: bool) -> Result<bool, AppError> {
     tokio::task::spawn_blocking(move || {
         let path = shortcut_path();
         if enabled {
-            create(&path, &std::env::current_exe()?, &crate::os::app_dir())?;
+            crate::shell_link::create(&path, &std::env::current_exe()?, &crate::os::app_dir())?;
         } else {
             remove(&path)?;
         }
@@ -42,59 +42,10 @@ fn remove(path: &Path) -> Result<(), AppError> {
     }
 }
 
-#[cfg(target_os = "windows")]
-fn create(path: &Path, target: &Path, working_dir: &Path) -> Result<(), AppError> {
-    use windows::core::{Interface, HSTRING};
-    use windows::Win32::System::Com::{
-        CoCreateInstance, CoInitializeEx, CoUninitialize, IPersistFile, CLSCTX_INPROC_SERVER,
-        COINIT_APARTMENTTHREADED,
-    };
-    use windows::Win32::UI::Shell::{IShellLinkW, ShellLink};
-
-    // Calls CoUninitialize on every way out, but only if CoInitializeEx succeeded
-    struct Com;
-    impl Drop for Com {
-        fn drop(&mut self) {
-            unsafe { CoUninitialize() };
-        }
-    }
-
-    let fail = |e: windows::core::Error| {
-        AppError::System(format!("Failed to create the startup shortcut: {e}"))
-    };
-
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir)?;
-    }
-
-    unsafe {
-        CoInitializeEx(None, COINIT_APARTMENTTHREADED)
-            .ok()
-            .map_err(fail)?;
-        let _com = Com;
-        let link: IShellLinkW =
-            CoCreateInstance(&ShellLink, None, CLSCTX_INPROC_SERVER).map_err(fail)?;
-        link.SetPath(&HSTRING::from(target.as_os_str()))
-            .map_err(fail)?;
-        link.SetWorkingDirectory(&HSTRING::from(working_dir.as_os_str()))
-            .map_err(fail)?;
-        let file: IPersistFile = link.cast().map_err(fail)?;
-        file.Save(&HSTRING::from(path.as_os_str()), true)
-            .map_err(fail)?;
-    }
-    Ok(())
-}
-
-#[cfg(not(target_os = "windows"))]
-fn create(_: &Path, _: &Path, _: &Path) -> Result<(), AppError> {
-    Err(AppError::System(
-        "The startup shortcut is only supported on Windows".to_string(),
-    ))
-}
-
 #[cfg(all(test, target_os = "windows"))]
 mod tests {
     use super::*;
+    use crate::shell_link::create;
 
     fn temp_dir(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("scoot-startup-{name}-{}", std::process::id()));

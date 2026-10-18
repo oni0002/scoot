@@ -42,6 +42,8 @@ Open the Settings screen from the 3-dot menu or via the `Open Settings` preset c
 | Fuzzy Threshold | How closely queries must match (0.0 = exact, 1.0 = anything)         | `0.5`       |
 | Reload Interval | How often sources are reloaded, in minutes                           | `30`        |
 | Ignored         | Commands hidden from search results. Add via the ⋮ menu on a result. | `[]`        |
+| Frequent first  | List the commands you run most before you type (needs usage history) | `true`      |
+| Launch at login | Button that adds or removes a shortcut in the Windows Startup folder | -           |
 
 **Bookmarks**
 

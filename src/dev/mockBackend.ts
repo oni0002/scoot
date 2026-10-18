@@ -155,6 +155,7 @@ export function createMockHandlers(): Record<string, Handler> {
             return { keepWindowOpen: false };
         },
         open_target: () => ({ keepWindowOpen: false }),
+        reveal_command: () => undefined,
         // Like the real backend, anything that reloads announces it with settings-reloaded
         reload_all: () => emit('settings-reloaded'),
         hide_window: () => undefined,

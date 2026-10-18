@@ -152,11 +152,30 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         [onIgnoreCommand, resetState],
     );
 
+    // Explorer opens with the file selected, so the launcher gets out of the way like after a run
+    const handleReveal = useCallback(
+        async (command: Command) => {
+            try {
+                await TauriAPI.revealCommand(command.id);
+                resetState();
+                TauriAPI.hideWindow();
+            } catch (err) {
+                reportError(
+                    `show "${command.name}" in its folder`,
+                    err,
+                    NOTIFICATION_DURATION.LONG,
+                );
+            }
+        },
+        [resetState, reportError],
+    );
+
     // One path for every row action, whether picked from the row or by its shortcut
     const runRowAction = useCallback(
         (action: RowAction, command: Command) => {
             if (!rowActionsFor(command).includes(action)) return;
             if (action === 'copy') onCopyCommand?.(command);
+            else if (action === 'reveal') void handleReveal(command);
             else if (action === 'edit') onEditCommand?.(command);
             else if (action === 'duplicate') onDuplicateCommand?.(command);
             else if (action === 'delete') onDeleteCommand?.(command);
@@ -169,6 +188,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
             onDuplicateCommand,
             onDeleteCommand,
             onAliasCommand,
+            handleReveal,
             handleIgnore,
         ],
     );

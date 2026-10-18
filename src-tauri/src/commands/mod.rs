@@ -6,5 +6,6 @@ pub mod ipc;
 pub mod loader;
 pub mod markdown;
 pub mod registry;
+pub mod reveal;
 pub mod store;
 pub mod usage;

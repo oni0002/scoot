@@ -36,6 +36,10 @@ export const TauriAPI = {
         return await invoke('open_target', { target });
     },
 
+    async revealCommand(id: string): Promise<void> {
+        return await invoke('reveal_command', { id });
+    },
+
     async reloadAll(): Promise<void> {
         return await invoke('reload_all');
     },
