@@ -23,20 +23,42 @@ pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::
     Ok(())
 }
 
-/// Reload config and commands
+/// Reload config and commands. A config.json that fails to load does not stop the commands from
+/// loading: the last good config stays in force, the webview is told, and the error is returned
+/// once everything else is done.
 pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::AppError> {
     use tauri::Emitter;
 
-    let config = if let Some(state) = app_handle.try_state::<ConfigState>() {
-        let new_config = crate::config::store::reload(&state.config_store, &state.config).await?;
-        if let Err(e) = crate::shortcut::setup_global_shortcuts(app_handle, &new_config.hotkey) {
-            log::warn!("Failed to re-register hotkey: {}", e);
-        }
-        new_config
-    } else {
+    let Some(config_state) = app_handle.try_state::<ConfigState>() else {
         return Err(crate::error::AppError::System(
             "Failed to get ConfigState".to_string(),
         ));
+    };
+    let (config, config_error) = match crate::config::store::reload(
+        &config_state.config_store,
+        &config_state.config,
+    )
+    .await
+    {
+        Ok(new_config) => {
+            if let Err(e) = crate::shortcut::setup_global_shortcuts(app_handle, &new_config.hotkey)
+            {
+                log::warn!("Failed to re-register hotkey: {}", e);
+            }
+            (new_config, None)
+        }
+        Err(e) => {
+            log::error!("Failed to load config: {}", e);
+            if let Err(emit_err) = app_handle.emit("config-load-error", e.to_string()) {
+                log::error!("Failed to emit config-load-error: {}", emit_err);
+            }
+            let current = config_state
+                .config
+                .lock()
+                .map_err(crate::error::AppError::lock)?
+                .clone();
+            (current, Some(e))
+        }
     };
 
     if let Some(state) = app_handle.try_state::<CommandsState>() {
@@ -54,7 +76,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
         log::info!("Reloaded config and commands");
     }
 
-    Ok(())
+    config_error.map_or(Ok(()), Err)
 }
 
 /// Open log (or log directory)
