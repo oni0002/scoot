@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Command } from '../types';
 import { open } from '@tauri-apps/plugin-dialog';
 import { LuFile, LuFolder, LuArrowLeft } from 'react-icons/lu';
-import { TauriAPI } from '../tauri';
 import { hasPlaceholders } from '../command';
 import { ConfirmDialog } from './ConfirmDialog';
 import { useEscapeToClose } from '../hooks/useEscapeToClose';
@@ -114,37 +113,16 @@ export const CommandForm: React.FC<CommandFormProps> = ({
         }
     };
 
-    const handleBrowseFile = async () => {
+    // The window cannot hide while the form is open (see usePreventHide in App), so the native
+    // dialog needs no modal guard of its own.
+    const browse = async (directory: boolean) => {
         try {
-            await TauriAPI.enterModal();
-            const selected = await open({
-                multiple: false,
-                directory: false,
-            });
+            const selected = await open({ multiple: false, directory });
             if (selected && typeof selected === 'string') {
                 handleInputChange('command', selected);
             }
         } catch (err) {
-            console.error('Failed to open file dialog:', err);
-        } finally {
-            await TauriAPI.leaveModal();
-        }
-    };
-
-    const handleBrowseFolder = async () => {
-        try {
-            await TauriAPI.enterModal();
-            const selected = await open({
-                multiple: false,
-                directory: true,
-            });
-            if (selected && typeof selected === 'string') {
-                handleInputChange('command', selected);
-            }
-        } catch (err) {
-            console.error('Failed to open folder dialog:', err);
-        } finally {
-            await TauriAPI.leaveModal();
+            console.error(`Failed to open ${directory ? 'folder' : 'file'} dialog:`, err);
         }
     };
 
@@ -254,7 +232,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                     <>
                                         <button
                                             type="button"
-                                            onClick={handleBrowseFile}
+                                            onClick={() => browse(false)}
                                             className="btn btn-square btn-sm btn-ghost"
                                             title="Select File"
                                             aria-label="Select file"
@@ -263,7 +241,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={handleBrowseFolder}
+                                            onClick={() => browse(true)}
                                             className="btn btn-square btn-sm btn-ghost"
                                             title="Select Directory"
                                             aria-label="Select directory"
