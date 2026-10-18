@@ -162,7 +162,7 @@ export function createMockHandlers(): Record<string, Handler> {
         open_config_json: () => undefined,
         enter_modal: () => undefined,
         leave_modal: () => undefined,
-        get_shortcut_warning: () => null,
+        get_notices: () => [],
         get_startup_shortcut: () => startupShortcut,
         set_startup_shortcut: ({ enabled }) => (startupShortcut = Boolean(enabled)),
         start_hotkey_capture: () => undefined,

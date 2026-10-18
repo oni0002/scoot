@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { TauriAPI } from '../tauri';
+import { getErrorMessage } from '../error';
+import { Notice } from '../types';
 import { NOTIFICATION_DURATION } from '../constants';
 
 interface UseAppEventsProps {
@@ -25,12 +27,20 @@ export const useAppEvents = ({
     useEffect(() => {
         const unlistenFunctions: (() => void)[] = [];
         let isMounted = true;
-        // The last Hotkey warning the user was shown, so opening the window does not repeat it
-        let shownWarning: string | null = null;
-        const warnOnce = (warning: string | null) => {
-            if (!warning || warning === shownWarning) return;
-            shownWarning = warning;
-            showWarning(warning, NOTIFICATION_DURATION.LONG);
+        // What the user was last told, per source, so opening the window does not repeat it
+        const told = new Map<string, string>();
+        const tell = (notice: Notice) => {
+            told.set(notice.source, notice.message);
+            const message = getErrorMessage(notice.message);
+            if (notice.level === 'error') showError(message, NOTIFICATION_DURATION.VERY_LONG);
+            else showWarning(message, NOTIFICATION_DURATION.LONG);
+        };
+        // A notice raised while the window was hidden (startup, a timer, a file change) would have
+        // expired unseen: it waits in the backend until the window is shown
+        const tellNew = (notices: Notice[]) => {
+            const sources = new Set(notices.map((n) => n.source));
+            for (const source of [...told.keys()]) if (!sources.has(source)) told.delete(source);
+            notices.filter((n) => told.get(n.source) !== n.message).forEach(tell);
         };
 
         const setupEventListeners = async () => {
@@ -43,20 +53,12 @@ export const useAppEvents = ({
                         loadCommands();
                         loadConfig();
                     },
-                    // config.json or commands.json could not be read; the last good state stays in use
-                    'config-load-error': (event: { payload: string }) => {
-                        showError(event.payload, NOTIFICATION_DURATION.VERY_LONG);
-                    },
-                    // The Hotkey could not be taken (another app holds it); the message says which
-                    'shortcut-warning': (event: { payload: string }) => {
-                        shownWarning = event.payload;
-                        showWarning(event.payload, NOTIFICATION_DURATION.LONG);
-                    },
-                    // The Hotkey is registered at startup, while the window is hidden and nobody
-                    // would see a notice. Whoever opens the window (tray, second launch) sees it.
+                    // Sent only while the window is showing. config.json or commands.json could not
+                    // be read (the last good state stays in use), or the Hotkey could not be taken.
+                    notice: (event: { payload: Notice }) => tell(event.payload),
                     'window-shown': () => {
-                        TauriAPI.getShortcutWarning().then(warnOnce, (err) =>
-                            console.warn('Failed to read the hotkey status:', err),
+                        TauriAPI.getNotices().then(tellNew, (err) =>
+                            console.warn('Failed to read the notices:', err),
                         );
                     },
                 };

@@ -2,10 +2,21 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { listen } from '@tauri-apps/api/event';
 import { useAppEvents } from '../useAppEvents';
 import { TauriAPI } from '../../tauri';
+import { Notice } from '../../types';
 
 jest.mock('../../tauri');
 
-const WARNING = 'Alt+Space is not available. Pick another Hotkey in Settings.';
+const HOTKEY: Notice = {
+    source: 'hotkey',
+    level: 'warning',
+    message: 'Alt+Space is not available. Pick another Hotkey in Settings.',
+};
+const CONFIG: Notice = {
+    source: 'config',
+    level: 'error',
+    message:
+        'System error: App config file validation failed: maxResults must be between 1 and 100',
+};
 
 type Handler = (event: { payload?: unknown }) => void;
 
@@ -34,51 +45,74 @@ const setup = async () => {
     return { props, handlers, windowShown };
 };
 
-describe('useAppEvents hotkey warning', () => {
-    it('does not show anything at startup, while the window is hidden', async () => {
-        jest.mocked(TauriAPI.getShortcutWarning).mockResolvedValue(WARNING);
+describe('useAppEvents notices', () => {
+    beforeEach(() => jest.mocked(TauriAPI.getNotices).mockResolvedValue([]));
+
+    it('shows nothing at startup, while the window is hidden', async () => {
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([HOTKEY, CONFIG]);
         const { props } = await setup();
-        expect(TauriAPI.getShortcutWarning).not.toHaveBeenCalled();
+        expect(TauriAPI.getNotices).not.toHaveBeenCalled();
         expect(props.showWarning).not.toHaveBeenCalled();
+        expect(props.showError).not.toHaveBeenCalled();
     });
 
-    it('shows why the Hotkey could not be registered when the window is shown', async () => {
-        jest.mocked(TauriAPI.getShortcutWarning).mockResolvedValue(WARNING);
+    it('shows what waited, by level, when the window is shown', async () => {
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([CONFIG, HOTKEY]);
         const { props, windowShown } = await setup();
         await windowShown();
-        expect(props.showWarning).toHaveBeenCalledWith(WARNING, expect.any(Number));
+        expect(props.showWarning).toHaveBeenCalledWith(HOTKEY.message, expect.any(Number));
+        // without the "System error: " category the backend puts in front
+        expect(props.showError).toHaveBeenCalledWith(
+            'App config file validation failed: maxResults must be between 1 and 100',
+            expect.any(Number),
+        );
     });
 
-    it('does not repeat the same warning each time the window opens', async () => {
-        jest.mocked(TauriAPI.getShortcutWarning).mockResolvedValue(WARNING);
+    it('does not repeat a notice each time the window opens', async () => {
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([HOTKEY]);
         const { props, windowShown } = await setup();
         await windowShown();
         await windowShown();
         expect(props.showWarning).toHaveBeenCalledTimes(1);
     });
 
-    it('says nothing when the Hotkey is registered', async () => {
-        jest.mocked(TauriAPI.getShortcutWarning).mockResolvedValue(null);
+    it('tells again when the same problem comes back after it was gone', async () => {
         const { props, windowShown } = await setup();
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([HOTKEY]);
         await windowShown();
-        expect(props.showWarning).not.toHaveBeenCalled();
-    });
-
-    it('carries on when the status cannot be read', async () => {
-        jest.spyOn(console, 'warn').mockImplementation(() => {});
-        jest.mocked(TauriAPI.getShortcutWarning).mockRejectedValue(new Error('no'));
-        const { props, windowShown } = await setup();
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([]); // fixed
         await windowShown();
-        expect(props.showWarning).not.toHaveBeenCalled();
-    });
-
-    it('shows a warning that arrives as an event every time, and not again on the next opening', async () => {
-        jest.mocked(TauriAPI.getShortcutWarning).mockResolvedValue(WARNING);
-        const { props, handlers, windowShown } = await setup();
-        handlers['shortcut-warning']({ payload: WARNING });
-        handlers['shortcut-warning']({ payload: WARNING }); // saved twice: two notices
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([HOTKEY]); // broken again
+        await windowShown();
         expect(props.showWarning).toHaveBeenCalledTimes(2);
+    });
+
+    it('tells a changed message from the same source again', async () => {
+        const { props, windowShown } = await setup();
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([CONFIG]);
+        await windowShown();
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([{ ...CONFIG, message: 'another' }]);
+        await windowShown();
+        expect(props.showError).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows a notice that arrives while the window is showing, every time', async () => {
+        const { props, handlers, windowShown } = await setup();
+        handlers['notice']({ payload: HOTKEY });
+        handlers['notice']({ payload: HOTKEY }); // saved twice: two notices
+        expect(props.showWarning).toHaveBeenCalledTimes(2);
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([HOTKEY]);
         await windowShown(); // already told
         expect(props.showWarning).toHaveBeenCalledTimes(2);
+    });
+
+    it('says nothing when there is nothing, and carries on when the notices cannot be read', async () => {
+        jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const { props, windowShown } = await setup();
+        await windowShown();
+        jest.mocked(TauriAPI.getNotices).mockRejectedValue(new Error('no'));
+        await windowShown();
+        expect(props.showWarning).not.toHaveBeenCalled();
+        expect(props.showError).not.toHaveBeenCalled();
     });
 });

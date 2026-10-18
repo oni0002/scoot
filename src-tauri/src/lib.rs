@@ -4,6 +4,7 @@ pub mod error;
 pub mod hotkey_capture;
 pub mod json;
 pub mod lifecycle;
+pub mod notices;
 pub mod os;
 pub mod shortcut;
 pub mod startup;
@@ -77,12 +78,14 @@ pub fn run() {
             let commands_state = CommandsState::new(command_registry, command_store);
             let config_state = ConfigState::new(config, config_store, config_file_watcher);
             let shortcut_state = ShortcutState::default();
+            let notice_state = crate::notices::NoticeState::default();
             let window_state = WindowState::default();
 
             // State registration
             app.manage(commands_state);
             app.manage(config_state);
             app.manage(shortcut_state);
+            app.manage(notice_state);
             app.manage(window_state);
 
             // Set window events
@@ -142,7 +145,7 @@ pub fn run() {
             crate::window::enter_modal,
             crate::window::leave_modal,
             // Startup
-            crate::shortcut::get_shortcut_warning,
+            crate::notices::get_notices,
             crate::startup::get_startup_shortcut,
             crate::startup::set_startup_shortcut,
             // Hotkey capture

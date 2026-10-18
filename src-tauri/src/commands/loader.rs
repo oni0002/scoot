@@ -2,7 +2,6 @@ use crate::commands::domain::Command;
 use crate::commands::registry::CommandRegistry;
 use crate::error::AppError;
 use std::collections::{BTreeMap, HashSet};
-use tauri::Emitter;
 
 /// Reload commands, bookmarks, and apps into the registry
 pub async fn reload(
@@ -57,13 +56,14 @@ pub async fn reload(
     );
 
     let mut commands = match commands_result {
-        Ok(cmds) => cmds,
+        Ok(cmds) => {
+            crate::notices::clear(app_handle, "commands");
+            cmds
+        }
         Err(e) => {
             let msg = format!("Failed to load commands.json: {}", e);
             log::error!("{}", msg);
-            if let Err(emit_err) = app_handle.emit("config-load-error", &msg) {
-                log::error!("Failed to emit config-load-error: {}", emit_err);
-            }
+            crate::notices::raise(app_handle, "commands", crate::notices::ERROR, msg);
             Vec::new()
         }
     };

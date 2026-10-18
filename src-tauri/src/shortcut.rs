@@ -1,5 +1,5 @@
 use crate::config::domain::DEFAULT_SHORTCUT;
-use tauri::{App, AppHandle, Emitter, Manager};
+use tauri::{App, AppHandle, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 /// The hotkey this app currently holds, as it was written when it was registered
@@ -9,32 +9,18 @@ fn registered_hotkey(app_handle: &AppHandle) -> Option<String> {
     hotkey
 }
 
+/// The notice for a Hotkey that could not be registered. It is kept, since the first
+/// registration runs in setup, long before the window is shown.
+const NOTICE_SOURCE: &str = "hotkey";
+
 /// Note that `hotkey` is the one held now, which also means the last failure is over
 fn remember(app_handle: &AppHandle, hotkey: &str) {
     if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
         if let Ok(mut registered) = state.shortcut.lock() {
             *registered = Some(hotkey.to_string());
         }
-        state.set_warning(None);
     }
-}
-
-/// Tell the webview now, and keep the message for a webview that is not listening yet: the
-/// first registration runs in setup, before any page exists.
-fn warn(app_handle: &AppHandle, message: String) {
-    if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
-        state.set_warning(Some(message.clone()));
-    }
-    let _ = app_handle.emit("shortcut-warning", message);
-}
-
-/// Why the Hotkey could not be registered, if it could not (Tauri command). The webview asks
-/// once it is listening, since a warning emitted during setup reaches nobody.
-#[tauri::command]
-pub fn get_shortcut_warning(
-    state: tauri::State<'_, crate::state::ShortcutState>,
-) -> Option<String> {
-    state.warning()
+    crate::notices::clear(app_handle, NOTICE_SOURCE);
 }
 
 /// Register a global shortcut, replacing the one registered before.
@@ -91,8 +77,10 @@ where
         }
         Err(e) => {
             log::error!("Failed to register hotkey {}: {}", hotkey, e);
-            warn(
+            crate::notices::raise(
                 app_handle,
+                NOTICE_SOURCE,
+                crate::notices::WARNING,
                 format!("{hotkey} is not available. Pick another Hotkey in Settings."),
             );
             Err(crate::error::AppError::System(e.to_string()))

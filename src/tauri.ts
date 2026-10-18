@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { message, open } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
-import { Command, Config, UsageMap } from './types';
+import { Command, Config, Notice, UsageMap } from './types';
 
 export const TauriAPI = {
     async getAllCommands(): Promise<Command[]> {
@@ -60,9 +60,9 @@ export const TauriAPI = {
         return await invoke('leave_modal');
     },
 
-    /** Why the Hotkey could not be registered, if it could not (e.g. another app holds it). */
-    async getShortcutWarning(): Promise<string | null> {
-        return await invoke<string | null>('get_shortcut_warning');
+    /** The problems that still hold (a broken config, a Hotkey another app holds). */
+    async getNotices(): Promise<Notice[]> {
+        return await invoke<Notice[]>('get_notices');
     },
 
     async getStartupShortcut(): Promise<boolean> {

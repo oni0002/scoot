@@ -53,6 +53,14 @@ export interface Config {
     frequentFirst: boolean;
 }
 
+/** A problem found while the window may have been hidden, from the backend's `get_notices`. */
+export interface Notice {
+    /** What raised it; a source holds one notice at a time. */
+    source: string;
+    level: 'error' | 'warning';
+    message: string;
+}
+
 export interface SearchResult {
     command: Command;
     score: number;

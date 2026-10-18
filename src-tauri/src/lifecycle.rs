@@ -40,6 +40,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
     .await
     {
         Ok(new_config) => {
+            crate::notices::clear(app_handle, "config");
             if let Err(e) = crate::shortcut::setup_global_shortcuts(app_handle, &new_config.hotkey)
             {
                 log::warn!("Failed to re-register hotkey: {}", e);
@@ -48,9 +49,7 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
         }
         Err(e) => {
             log::error!("Failed to load config: {}", e);
-            if let Err(emit_err) = app_handle.emit("config-load-error", e.to_string()) {
-                log::error!("Failed to emit config-load-error: {}", emit_err);
-            }
+            crate::notices::raise(app_handle, "config", crate::notices::ERROR, e.to_string());
             let current = config_state
                 .config
                 .lock()
