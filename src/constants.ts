@@ -6,6 +6,8 @@ export const RESULT_HEADING_ID = 'search-results-heading';
 export const resultOptionId = (index: number) => `search-result-${index}`;
 
 export const NOTIFICATION_DURATION = {
+    /** What a notification gets when its caller names no duration. */
+    DEFAULT: 5000,
     UNDO: 6000,
     LONG: 8000,
     VERY_LONG: 10000,

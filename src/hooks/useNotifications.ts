@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Notification } from '../components/NotificationToast';
 import { getErrorMessage } from '../error';
+import { NOTIFICATION_DURATION } from '../constants';
 
 let notificationId = 0;
 
@@ -43,7 +44,12 @@ export const useNotifications = () => {
 
     const showError = useCallback(
         (message: string, duration?: number, action?: Notification['action']) => {
-            return addNotification('error', message, duration || 8000, action); // Errors stay longer
+            return addNotification(
+                'error',
+                message,
+                duration || NOTIFICATION_DURATION.LONG,
+                action,
+            ); // Errors stay longer
         },
         [addNotification],
     );

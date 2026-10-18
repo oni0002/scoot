@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { daisyTheme } from '../theme';
+import { NOTIFICATION_DURATION } from '../constants';
 import { LuX, LuCheck, LuTriangleAlert, LuCircleX } from 'react-icons/lu';
 
 export interface Notification {
@@ -68,7 +69,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
         const timer = setTimeout(() => setIsVisible(true), 10);
 
         // Auto-remove after duration
-        const duration = notification.duration || 5000;
+        const duration = notification.duration || NOTIFICATION_DURATION.DEFAULT;
         const removeTimer = setTimeout(() => {
             handleRemove();
         }, duration);
