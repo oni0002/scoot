@@ -47,6 +47,7 @@ export interface Config {
     hotkey: string;
     reloadIntervalMinutes: number;
     usageHistory: boolean;
+    frequentFirst: boolean;
 }
 
 export interface SearchResult {

@@ -48,6 +48,21 @@ export function usageBoost(usage: Usage | undefined, now: number): number {
     return (MAX_USAGE_BOOST * weight) / (weight + USAGE_SATURATION);
 }
 
+/** The most used commands, best first. Commands never run are left out, so a new install lists none. */
+export function frequentCommands(
+    commands: Command[],
+    usage: UsageMap,
+    maxResults: number,
+    now: number = Date.now(),
+): SearchResult[] {
+    return commands
+        .filter((command) => usage[command.id])
+        .map((command) => ({ command, boost: usageBoost(usage[command.id], now) }))
+        .sort((a, b) => b.boost - a.boost)
+        .slice(0, maxResults)
+        .map(({ command }) => ({ command, score: 0, matches: [] }));
+}
+
 export function fuseSearch(
     fuse: Fuse<Command>,
     query: string,

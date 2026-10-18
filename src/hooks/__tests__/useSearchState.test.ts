@@ -222,4 +222,56 @@ describe('useSearchState', () => {
             expect(result.current.results.some((r) => r.command.name === 'Beta')).toBe(true);
         });
     });
+
+    describe('frequent commands before typing', () => {
+        const commands = [makeCmd('Alpha'), makeCmd('Beta'), makeCmd('Gamma')];
+        const usage = {
+            Alpha: { count: 1, lastUsed: Date.now() },
+            Gamma: { count: 8, lastUsed: Date.now() },
+        };
+
+        it('lists the commands that were run, most used first', () => {
+            const { result } = renderHook(() =>
+                useSearchState(commands, THRESHOLD, MAX, usage, true),
+            );
+            expect(result.current.searchMode.mode).toBe('idle');
+            expect(result.current.results.map((r) => r.command.name)).toEqual(['Gamma', 'Alpha']);
+        });
+
+        it('lists nothing when switched off', () => {
+            const { result } = renderHook(() => useSearchState(commands, THRESHOLD, MAX, usage));
+            expect(result.current.results).toEqual([]);
+        });
+
+        it('moves the selection through the list and wraps around', () => {
+            const { result } = renderHook(() =>
+                useSearchState(commands, THRESHOLD, MAX, usage, true),
+            );
+            act(() => result.current.moveSelection('down'));
+            expect(result.current.selectedIndex).toBe(1);
+            act(() => result.current.moveSelection('down'));
+            expect(result.current.selectedIndex).toBe(0);
+            act(() => result.current.moveSelection('up'));
+            expect(result.current.selectedIndex).toBe(1);
+        });
+
+        it('starts from the top again after a reset', () => {
+            const { result } = renderHook(() =>
+                useSearchState(commands, THRESHOLD, MAX, usage, true),
+            );
+            act(() => result.current.moveSelection('down'));
+            act(() => result.current.resetState());
+            expect(result.current.selectedIndex).toBe(0);
+        });
+
+        it('returns to the list when the query is cleared', () => {
+            const { result } = renderHook(() =>
+                useSearchState(commands, THRESHOLD, MAX, usage, true),
+            );
+            act(() => result.current.handleQueryChange('beta'));
+            expect(result.current.results.map((r) => r.command.name)).toEqual(['Beta']);
+            act(() => result.current.handleQueryChange(''));
+            expect(result.current.results.map((r) => r.command.name)).toEqual(['Gamma', 'Alpha']);
+        });
+    });
 });

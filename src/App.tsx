@@ -33,7 +33,8 @@ const AppContent = () => {
         clearUsage,
     } = useCommandContext();
 
-    const { theme, fuzzyThreshold, maxResults, usageHistory, loadConfig } = useConfigContext();
+    const { theme, fuzzyThreshold, maxResults, usageHistory, frequentFirst, loadConfig } =
+        useConfigContext();
 
     const [currentView, setCurrentView] = useState<'search' | 'form' | 'config'>('search');
     const [editingCommand, setEditingCommand] = useState<Command | undefined>(undefined);
@@ -233,6 +234,7 @@ const AppContent = () => {
                     fuzzyThreshold={fuzzyThreshold}
                     maxResults={maxResults}
                     usageHistory={usageHistory}
+                    frequentFirst={frequentFirst}
                     onEditCommand={handleEditCommandFromSearch}
                     onDuplicateCommand={handleDuplicateCommandFromSearch}
                     onDeleteCommand={handleDeleteCommandFromSearch}

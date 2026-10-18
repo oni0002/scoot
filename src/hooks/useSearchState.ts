@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Command, SearchResult, UsageMap } from '../types';
-import { createFuse, fuseSearch, detectDirectOpen } from '../search';
+import { createFuse, fuseSearch, frequentCommands, detectDirectOpen } from '../search';
 import { hasPlaceholders } from '../command';
 
 const NO_USAGE: UsageMap = {};
@@ -15,9 +15,11 @@ export const useSearchState = (
     fuzzyThreshold: number,
     maxResults: number,
     usage: UsageMap = NO_USAGE,
+    showFrequent = false,
 ) => {
     const [query, setQuery] = useState('');
     const [searchMode, setSearchMode] = useState<SearchMode>({ mode: 'idle' });
+    const [idleIndex, setIdleIndex] = useState(0);
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -31,9 +33,17 @@ export const useSearchState = (
         return map;
     }, [commands]);
 
+    // Before anything is typed, the list is derived from the history rather than stored, so it is
+    // current each time the window opens and when the history loads late
+    const idleResults = useMemo(
+        () => (showFrequent ? frequentCommands(commands, usage, maxResults) : []),
+        [showFrequent, commands, usage, maxResults],
+    );
+
     const resetState = useCallback(() => {
         setQuery('');
         setSearchMode({ mode: 'idle' });
+        setIdleIndex(0);
         inputRef.current?.focus();
     }, []);
 
@@ -90,20 +100,36 @@ export const useSearchState = (
         });
     }, [commands, fuzzyThreshold]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const moveSelection = useCallback((direction: 'up' | 'down') => {
-        setSearchMode((prev) => {
-            if (prev.mode !== 'search' || prev.results.length === 0) return prev;
-            const count = prev.results.length;
-            const newIndex =
-                direction === 'down'
-                    ? (prev.selectedIndex + 1) % count
-                    : (prev.selectedIndex - 1 + count) % count;
-            return { ...prev, selectedIndex: newIndex };
-        });
-    }, []);
+    const idleCount = idleResults.length;
+    const isIdle = searchMode.mode === 'idle';
+    const moveSelection = useCallback(
+        (direction: 'up' | 'down') => {
+            const step = (index: number, count: number) =>
+                direction === 'down' ? (index + 1) % count : (index - 1 + count) % count;
+            if (isIdle) {
+                if (idleCount > 0) setIdleIndex((index) => step(index, idleCount));
+                return;
+            }
+            setSearchMode((prev) => {
+                if (prev.mode !== 'search' || prev.results.length === 0) return prev;
+                return { ...prev, selectedIndex: step(prev.selectedIndex, prev.results.length) };
+            });
+        },
+        [isIdle, idleCount],
+    );
 
-    const results = searchMode.mode === 'search' ? searchMode.results : [];
-    const selectedIndex = searchMode.mode === 'search' ? searchMode.selectedIndex : 0;
+    const results =
+        searchMode.mode === 'search'
+            ? searchMode.results
+            : searchMode.mode === 'idle'
+              ? idleResults
+              : [];
+    const selectedIndex =
+        searchMode.mode === 'search'
+            ? searchMode.selectedIndex
+            : searchMode.mode === 'idle'
+              ? Math.min(idleIndex, Math.max(0, idleCount - 1))
+              : 0;
     const argumentMode =
         searchMode.mode === 'argument'
             ? { alias: searchMode.alias, command: searchMode.command }

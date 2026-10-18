@@ -32,6 +32,8 @@ pub struct Config {
     pub reload_interval_minutes: u64,
     /// Whether runs are recorded and used to order search results
     pub usage_history: bool,
+    /// Whether the most used commands are listed before anything is typed
+    pub frequent_first: bool,
 }
 
 /// Bookmark config struct
@@ -108,6 +110,7 @@ impl Default for Config {
             hotkey: DEFAULT_SHORTCUT.to_string(),
             reload_interval_minutes: 30,
             usage_history: true,
+            frequent_first: true,
         }
     }
 }
@@ -197,6 +200,12 @@ mod tests {
     fn usage_history_is_on_unless_turned_off() {
         assert!(parse("{}").unwrap().usage_history);
         assert!(!parse(r#"{"usageHistory": false}"#).unwrap().usage_history);
+    }
+
+    #[test]
+    fn frequent_first_is_on_unless_turned_off() {
+        assert!(parse("{}").unwrap().frequent_first);
+        assert!(!parse(r#"{"frequentFirst": false}"#).unwrap().frequent_first);
     }
 
     #[test]

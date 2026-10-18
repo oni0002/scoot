@@ -86,6 +86,7 @@ const defaultConfig = (): Config => ({
     hotkey: 'Alt+Space',
     reloadIntervalMinutes: 30,
     usageHistory: true,
+    frequentFirst: true,
 });
 
 export function createMockHandlers(): Record<string, Handler> {

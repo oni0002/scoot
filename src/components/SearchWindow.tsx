@@ -20,6 +20,7 @@ interface SearchWindowProps {
     fuzzyThreshold?: number;
     maxResults?: number;
     usageHistory?: boolean;
+    frequentFirst?: boolean;
     onEditCommand?: (command: Command) => void;
     onDuplicateCommand?: (command: Command) => void;
     onDeleteCommand?: (command: Command) => void;
@@ -36,6 +37,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     fuzzyThreshold = 0.5,
     maxResults = 10,
     usageHistory = true,
+    frequentFirst = true,
     onEditCommand,
     onDuplicateCommand,
     onDeleteCommand,
@@ -75,6 +77,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         fuzzyThreshold,
         maxResults,
         usageHistory ? usage : undefined,
+        usageHistory && frequentFirst,
     );
     const {
         query,
@@ -298,8 +301,10 @@ A fast and efficient command launcher for your desktop.`,
             />
 
             <SearchHints
-                mode={searchMode.mode}
-                command={searchMode.mode === 'search' ? results[selectedIndex]?.command : undefined}
+                mode={searchMode.mode === 'idle' && results.length > 0 ? 'search' : searchMode.mode}
+                command={
+                    searchMode.mode !== 'argument' ? results[selectedIndex]?.command : undefined
+                }
             />
         </div>
     );

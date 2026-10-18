@@ -1,4 +1,4 @@
-import { detectDirectOpen, createFuse, fuseSearch, usageBoost } from '../search';
+import { detectDirectOpen, createFuse, fuseSearch, frequentCommands, usageBoost } from '../search';
 import { DIRECT_OPEN_ID } from '../constants';
 import { Command } from '../types';
 
@@ -164,6 +164,43 @@ describe('run history', () => {
     it('caps the boost', () => {
         expect(usageBoost({ count: 1e6, lastUsed: NOW }, NOW)).toBeLessThanOrEqual(0.05);
         expect(usageBoost(undefined, NOW)).toBe(0);
+    });
+});
+
+describe('frequentCommands', () => {
+    const NOW = Date.UTC(2026, 9, 18);
+    const DAY = 24 * 60 * 60 * 1000;
+    const commands = [makeCommand('A'), makeCommand('B'), makeCommand('C'), makeCommand('D')];
+    const names = (usage: Record<string, { count: number; lastUsed: number }>, max = 10) =>
+        frequentCommands(commands, usage, max, NOW).map((r) => r.command.name);
+
+    it('lists nothing when no command has been run', () => {
+        expect(names({})).toEqual([]);
+    });
+
+    it('lists only commands that were run, most used first', () => {
+        const usage = {
+            A: { count: 1, lastUsed: NOW },
+            C: { count: 9, lastUsed: NOW },
+        };
+        expect(names(usage)).toEqual(['C', 'A']);
+    });
+
+    it('ranks a recent run above an old one', () => {
+        const usage = {
+            A: { count: 5, lastUsed: NOW - 365 * DAY },
+            B: { count: 2, lastUsed: NOW },
+        };
+        expect(names(usage)).toEqual(['B', 'A']);
+    });
+
+    it('ignores history of commands that no longer exist and respects maxResults', () => {
+        const usage = {
+            gone: { count: 99, lastUsed: NOW },
+            A: { count: 3, lastUsed: NOW },
+            B: { count: 2, lastUsed: NOW },
+        };
+        expect(names(usage, 1)).toEqual(['A']);
     });
 });
 

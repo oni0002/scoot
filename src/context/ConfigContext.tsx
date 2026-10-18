@@ -8,6 +8,7 @@ interface ConfigContextType {
     fuzzyThreshold: number;
     maxResults: number;
     usageHistory: boolean;
+    frequentFirst: boolean;
     loadConfig: () => Promise<void>;
     saveConfig: (config: Config) => Promise<void>;
 }
@@ -40,6 +41,7 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
             fuzzyThreshold: config?.fuzzyThreshold ?? 0,
             maxResults: config?.maxResults ?? 0,
             usageHistory: config?.usageHistory ?? true,
+            frequentFirst: config?.frequentFirst ?? true,
             loadConfig,
             saveConfig,
         }),

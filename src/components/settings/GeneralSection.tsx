@@ -88,14 +88,14 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                     htmlFor="cfg-fuzzy"
                     description="Higher is stricter, lower is more permissive."
                 >
-                    <div className="flex items-center gap-3">
+                    <div className="flex w-40 items-center gap-2">
                         <input
                             id="cfg-fuzzy"
                             type="range"
                             min={0}
                             max={1}
                             step={0.1}
-                            className="range w-44"
+                            className="range range-sm min-w-0 flex-1"
                             value={config.fuzzyThreshold}
                             onChange={(e) =>
                                 onChange({ ...config, fuzzyThreshold: Number(e.target.value) })
@@ -136,6 +136,24 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                         className="toggle"
                         checked={config.usageHistory}
                         onChange={(e) => onChange({ ...config, usageHistory: e.target.checked })}
+                    />
+                </Row>
+                <Row
+                    label="Frequent commands"
+                    htmlFor="cfg-frequent-first"
+                    description={
+                        config.usageHistory
+                            ? 'List the commands you run most before you type.'
+                            : 'Needs usage history.'
+                    }
+                >
+                    <input
+                        id="cfg-frequent-first"
+                        type="checkbox"
+                        className="toggle"
+                        disabled={!config.usageHistory}
+                        checked={config.frequentFirst && config.usageHistory}
+                        onChange={(e) => onChange({ ...config, frequentFirst: e.target.checked })}
                     />
                 </Row>
                 <Row label="Clear history" description="Forget which commands you have run.">
