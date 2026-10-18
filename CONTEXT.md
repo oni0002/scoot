@@ -63,7 +63,7 @@ OS のスタートメニュー等の指定ディレクトリから収集した�
 _Avoid_: App, shortcut
 
 **Markdown Link**:
-指定した Markdown ファイルから抽出した URL または ファイルパスの Command。Source は抽出元の Markdown のファイル名（行のバッジに表示される）。
+指定した Markdown ファイルから抽出した URL または ファイルパスの Command。相対パスは、その Markdown ファイルのあるフォルダを基準に解決する。http・https・ftp・mailto 以外のスキーム（`javascript:`、`obsidian://` など）のリンクは、開けないので対象にしない。Source は抽出元の Markdown のファイル名（行のバッジに表示される）。
 _Avoid_: Link, md link
 
 ### 設定・ライフサイクル
