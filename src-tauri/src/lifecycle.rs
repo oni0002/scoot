@@ -115,35 +115,35 @@ fn show_and_emit(app_handle: &AppHandle, event: &str) -> Result<(), crate::error
         .map_err(|e| crate::error::AppError::System(format!("Failed to emit {}: {}", event, e)))
 }
 
+/// How long `request-reload` events must stay quiet before the reload runs. An editor saves in
+/// several steps, and the app's own save is followed by a file event; the reload should read the
+/// finished file, once.
+const RELOAD_QUIET_PERIOD: std::time::Duration = std::time::Duration::from_millis(300);
+
 /// Setup reload event listeners
 pub fn setup_reload_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    use std::sync::{Arc, Mutex};
-    use std::time::{Duration, Instant};
-    use tauri::{Emitter, Listener};
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::sync::Arc;
+    use tauri::Listener;
 
     let app_handle = app.handle().clone();
-    let last_reload = Arc::new(Mutex::new(Instant::now() - Duration::from_secs(1)));
+    let latest_request = Arc::new(AtomicU64::new(0));
 
     app.listen("request-reload", move |_event| {
         log::debug!("Received request-reload event");
-        if let Ok(mut last) = last_reload.lock() {
-            if last.elapsed() < Duration::from_millis(500) {
-                return;
-            }
-            *last = Instant::now();
-        }
-
+        let this_request = latest_request.fetch_add(1, Ordering::SeqCst) + 1;
+        let latest_request = latest_request.clone();
         let handle = app_handle.clone();
         tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(RELOAD_QUIET_PERIOD).await;
+            // A newer request is waiting; it will do the reload
+            if latest_request.load(Ordering::SeqCst) != this_request {
+                return;
+            }
             if let Err(e) = reload(&handle).await {
                 log::error!("Failed to reload configuration: {}", e);
             }
         });
-    });
-
-    let app_handle_for_proxy = app.handle().clone();
-    app.listen("config-file-changed", move |_| {
-        let _ = app_handle_for_proxy.emit("request-reload", ());
     });
 
     Ok(())

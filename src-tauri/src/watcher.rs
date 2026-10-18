@@ -2,7 +2,6 @@ use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::Path;
 use std::sync::mpsc;
 use std::thread;
-use std::time::Duration;
 use tauri::Emitter;
 
 /// File watcher struct
@@ -11,7 +10,8 @@ pub struct FileWatcher {
 }
 
 /// File watcher
-/// Watches a file and emits events when changes are detected
+/// Watches a file and asks for a reload when it changes. Bursts of events are folded into one
+/// reload by the `request-reload` listener (see `lifecycle::setup_reload_listeners`).
 impl FileWatcher {
     pub fn new<P: AsRef<Path>>(
         file_path: P,
@@ -57,8 +57,6 @@ impl FileWatcher {
 
         // Process file change events in a separate thread
         thread::spawn(move || {
-            let mut last_event_time = std::time::Instant::now();
-
             while let Ok(event) = rx.recv() {
                 // Check if the event is for the target file
                 let is_target_file = event.paths.iter().any(|path| {
@@ -68,20 +66,12 @@ impl FileWatcher {
                 });
 
                 if is_target_file {
-                    // Prevent duplicate events within 500ms (debounce)
-                    let now = std::time::Instant::now();
-                    if now.duration_since(last_event_time) < Duration::from_millis(500) {
-                        continue;
-                    }
-                    last_event_time = now;
-
-                    // If the event is related to the target file (Modify, Create, Rename, Remove, etc.)
-                    // Try to reload
-                    // If Remove, ConfigStore will regenerate default values
+                    // Modify, Create, Rename, Remove, ... all mean "read it again". If the file
+                    // was removed, ConfigStore will regenerate the defaults.
                     log::debug!("Config file event ({:?}): {:?}", event.kind, event.paths);
 
-                    if let Err(e) = app_handle.emit("config-file-changed", ()) {
-                        log::error!("Failed to emit config file changed event: {}", e);
+                    if let Err(e) = app_handle.emit("request-reload", ()) {
+                        log::error!("Failed to request a reload: {}", e);
                     }
                 }
             }
