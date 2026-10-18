@@ -28,7 +28,7 @@ export const useCommandExecution = ({
     const runSelectedCommand = useCallback(
         async (targetIndex?: number) => {
             let commandToExecute: Command;
-            let argsToPass: string[];
+            let argsToPass: string[] = [];
 
             if (argumentMode) {
                 commandToExecute = argumentMode.command;
@@ -56,11 +56,6 @@ export const useCommandExecution = ({
                 }
 
                 commandToExecute = selectedResult.command;
-                const parts = query
-                    .trim()
-                    .split(/\s+/)
-                    .filter((a) => a);
-                argsToPass = parts.length <= 1 ? [] : parts;
             }
 
             const keepWindowOpen = await executeCommand(commandToExecute, argsToPass);
