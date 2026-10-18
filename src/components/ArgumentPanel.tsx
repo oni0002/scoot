@@ -34,9 +34,9 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args, onC
     const missing = missingSlots(command.command, args).length > 0;
 
     return (
-        <div className="space-y-4 pt-1">
+        <div className="space-y-4">
             {/* One frame: the selected-row look, extended down to hold what the alias will do */}
-            <div className="relative rounded-lg bg-base-content/10 ring-1 ring-inset ring-base-content/50">
+            <div className="relative rounded-lg bg-base-content/10 ring-1 ring-inset ring-base-content/40">
                 {/* Mouse convenience, like the row buttons: Ctrl+C is the keyboard path, named in the hint bar */}
                 <div aria-hidden="true" className="absolute right-2 top-1.5 z-[1]">
                     <button
@@ -51,13 +51,16 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args, onC
                     </button>
                 </div>
                 <div className="flex items-center gap-2 p-2">
-                    {command.alias && (
-                        <div className="badge badge-sm badge-primary">{command.alias}</div>
-                    )}
-                    <div className="font-medium text-sm truncate">{command.name}</div>
-                    <div className="text-xs truncate flex-1 min-w-0 mr-8 text-subtle">
+                    <div className="text-sm truncate">{command.name}</div>
+                    <div className="text-xs truncate flex-1 min-w-0 text-subtle">
                         {command.description}
                     </div>
+                    {/* Where the result rows put it; the margin keeps it clear of the copy button */}
+                    {command.alias && (
+                        <div className="badge badge-sm badge-primary shrink-0 mr-8">
+                            {command.alias}
+                        </div>
+                    )}
                 </div>
 
                 <div className="px-2 pb-2">

@@ -98,6 +98,10 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-4 pb-2 scrollbar-gutter-auto">
+                {/* Same left edge as the section headings; -mb-3 tightens the gap to the first one */}
+                <p className="-mb-3 mt-1 text-xs text-subtle">
+                    Changes are saved when you go back.
+                </p>
                 <GeneralSection
                     config={local}
                     onChange={change}
