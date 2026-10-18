@@ -137,7 +137,6 @@ pub fn run() {
             crate::config::ipc::open_config_json,
             // Lifecycle
             crate::lifecycle::reload_all,
-            crate::lifecycle::quit_app,
             // Window
             crate::window::hide_window,
             crate::window::enter_modal,

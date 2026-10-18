@@ -52,10 +52,6 @@ export const TauriAPI = {
         return await invoke('open_config_json');
     },
 
-    async quitApp(): Promise<void> {
-        return await invoke('quit_app');
-    },
-
     async enterModal(): Promise<void> {
         return await invoke('enter_modal');
     },

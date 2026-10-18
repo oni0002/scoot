@@ -7,8 +7,7 @@ pub async fn reload_all(app_handle: tauri::AppHandle) -> Result<(), crate::error
     reload(&app_handle).await
 }
 
-/// Quit app (IPC). commands.json needs no final write: every change is saved as it happens.
-#[tauri::command]
+/// Quit app. commands.json needs no final write: every change is saved as it happens.
 pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     log::info!("Terminating application...");
 

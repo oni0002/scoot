@@ -160,7 +160,6 @@ export function createMockHandlers(): Record<string, Handler> {
         hide_window: () => undefined,
         open_commands_json: () => undefined,
         open_config_json: () => undefined,
-        quit_app: () => undefined,
         enter_modal: () => undefined,
         leave_modal: () => undefined,
         get_startup_shortcut: () => startupShortcut,
