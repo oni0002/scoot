@@ -127,7 +127,7 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                 <Row
                     label="Fuzzy threshold"
                     htmlFor="cfg-fuzzy"
-                    description="Higher is stricter, lower is more permissive."
+                    description="Lower matches more exactly, higher is more permissive."
                 >
                     <div className="flex w-40 items-center gap-2">
                         <input
