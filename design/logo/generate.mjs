@@ -9,7 +9,7 @@
 // The ring's inner edge is the mint shape offset by `gap`, so the gap is constant everywhere
 // (fillets included) and R = hubR + gap + T.
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -186,6 +186,11 @@ execFileSync('pnpm', ['prettier', '--write', 'src/logo.ts'], { cwd: root, stdio:
 
 // App icons: the full set from the large master, then the small sizes from the small master
 tauriIcon([join(here, 'icon.svg'), '-o', icons]);
+// `tauri icon` also writes the sets for platforms Scoot does not ship to (Android, iOS, Microsoft
+// Store, macOS, and the Linux window icon). The Windows build reads only these.
+const KEEP = new Set(['32x32.png', '128x128.png', '128x128@2x.png', 'icon.ico', 'tray']);
+for (const name of readdirSync(icons))
+  if (!KEEP.has(name)) rmSync(join(icons, name), { recursive: true, force: true });
 const tmp = mkdtempSync(join(tmpdir(), 'scoot-logo-'));
 try {
   const render = (name, sizes, out) => {

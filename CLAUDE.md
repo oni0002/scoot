@@ -28,7 +28,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 - `src-tauri/src/commands/` — コマンドの `domain` / `registry`(メモリ上の一覧) / `store`(commands.json) / `loader`(各ソースの読み込み) / `execution` / `ipc`。`bookmark` / `application` / `markdown` が外部ソース
 - `src-tauri/src/config/` — 設定(config.json)
 - `src-tauri/src/` 直下 — `lifecycle`(reload・終了)、`window`、`shortcut`、`hotkey_capture`、`tray`、`system_theme`(タスクバーのテーマ。トレイアイコンの切り替え用)、`watcher`(ファイルの変更を `request-reload` にするだけ。まとめて1回の reload にするのは `lifecycle`)、`json`(JSON の読み込みと一時ファイル経由の書き込み。config / commands / usage の保存はここを通す) など
-- `design/logo/generate.mjs` — ロゴの SVG、`src-tauri/icons/` 一式(32px 以下は小サイズ用の形、トレイ用の単色アイコン)、UI が描くパス(`src/logo.ts`)を生成する。アイコンは手で編集せず、このスクリプトの寸法を変えて再生成する
+- `design/logo/generate.mjs` — ロゴの SVG、`src-tauri/icons/` 一式(32px 以下は小サイズ用の形、トレイ用の単色アイコン)、UI が描くパス(`src/logo.ts`)を生成する。アイコンは手で編集せず、このスクリプトの寸法を変えて再生成する。`src-tauri/icons/` に残すのは Windows のビルドが読むものだけで、他のプラットフォーム向けの出力(Android・iOS・Microsoft Store・macOS・Linux)はスクリプトが消す
 
 ## 守るべき不変条件
 
