@@ -83,8 +83,10 @@ pub async fn reload(
     apply_aliases(&mut external, &config.aliases, &user_aliases);
 
     let mut manager = command_registry.lock().map_err(AppError::lock)?;
-    manager.set_user_commands(commands);
+    // External first: user commands are checked against their aliases, and `apply_aliases` has
+    // already given way to every alias a user command holds.
     manager.set_external_commands(external);
+    manager.set_user_commands(commands);
 
     Ok(())
 }
