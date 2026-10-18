@@ -1,4 +1,4 @@
-use crate::commands::domain::Command;
+use crate::commands::domain::{Command, CATEGORY_FILE, SOURCE_APPLICATION};
 use std::path::Path;
 use walkdir::WalkDir;
 
@@ -63,8 +63,8 @@ fn create_command(path: &Path) -> Option<Command> {
 
     Some(Command::new(
         file_stem,
-        "file",
-        "application",
+        CATEGORY_FILE,
+        SOURCE_APPLICATION,
         full_path,
         parent,
     ))

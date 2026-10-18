@@ -1,4 +1,4 @@
-use crate::commands::domain::Command;
+use crate::commands::domain::{Command, CATEGORY_URL, SOURCE_BOOKMARK};
 use crate::config::domain::BookmarkConfig;
 
 use serde::Deserialize;
@@ -115,8 +115,8 @@ fn collect(
 
             commands.push(Command::new(
                 bookmark.name.clone(),
-                "url",
-                "bookmark",
+                CATEGORY_URL,
+                SOURCE_BOOKMARK,
                 url.clone(),
                 url.clone(),
             ));
