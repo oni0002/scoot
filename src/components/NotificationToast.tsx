@@ -23,7 +23,7 @@ const TYPE_STYLE: Record<Notification['type'], { icon: React.ReactNode; classNam
 interface NotificationToastProps {
     notifications: Notification[];
     onRemove: (id: string) => void;
-    /** Config theme value; the toast lives outside the themed app root, so it needs its own. */
+    /** Settings theme value; the toast lives outside the themed app root, so it needs its own. */
     theme?: string;
 }
 

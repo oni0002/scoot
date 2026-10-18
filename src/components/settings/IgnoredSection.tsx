@@ -1,20 +1,20 @@
 import React from 'react';
-import { Config } from '../../types';
+import { Settings } from '../../types';
 import { ListRow, Section } from '../SettingsLayout';
 
 interface IgnoredSectionProps {
-    config: Config;
-    onChange: (config: Config) => void;
+    settings: Settings;
+    onChange: (settings: Settings) => void;
 }
 
-export const IgnoredSection: React.FC<IgnoredSectionProps> = ({ config, onChange }) => (
+export const IgnoredSection: React.FC<IgnoredSectionProps> = ({ settings, onChange }) => (
     <Section title="Ignored">
         <ListRow
             label="Hidden from search"
             description="Add from the ⋮ menu on a result."
-            items={config.ignored}
+            items={settings.ignored}
             onRemove={(idx) =>
-                onChange({ ...config, ignored: config.ignored.filter((_, i) => i !== idx) })
+                onChange({ ...settings, ignored: settings.ignored.filter((_, i) => i !== idx) })
             }
             emptyText="No ignored commands."
         />

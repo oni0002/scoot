@@ -28,7 +28,7 @@ interface SearchWindowProps {
     onAliasCommand?: (command: Command) => void;
     onIgnoreCommand?: (command: Command) => void;
     onReloadCommands?: () => void;
-    onOpenConfig?: () => void;
+    onOpenSettings?: () => void;
     isDialogOpen?: boolean;
 }
 
@@ -45,7 +45,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     onAliasCommand,
     onIgnoreCommand,
     onReloadCommands,
-    onOpenConfig,
+    onOpenSettings,
     isDialogOpen = false,
 }) => {
     const { commands, usage, executeCommand: rawExecuteCommand } = useCommandContext();
@@ -236,7 +236,10 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         () => TauriAPI.openCommandsJson(),
         'open commands.json',
     );
-    const handleOpenConfigJson = menuHandler(() => TauriAPI.openConfigJson(), 'open settings.json');
+    const handleOpenSettingsJson = menuHandler(
+        () => TauriAPI.openSettingsJson(),
+        'open settings.json',
+    );
     const handleShowAbout = menuHandler(async () => {
         const version = await TauriAPI.getVersion();
         await TauriAPI.showMessage(
@@ -267,9 +270,9 @@ A fast and efficient command launcher for your desktop.`,
                 onAddCommand={handleAddCommand}
                 onReloadCommands={handleReload}
                 onOpenCommandsJson={handleOpenCommandsJson}
-                onOpenConfigJson={handleOpenConfigJson}
+                onOpenSettingsJson={handleOpenSettingsJson}
                 onShowAbout={handleShowAbout}
-                onOpenConfig={onOpenConfig}
+                onOpenSettings={onOpenSettings}
                 hasResults={results.length > 0}
                 activeDescendantId={results.length > 0 ? resultOptionId(selectedIndex) : undefined}
             />

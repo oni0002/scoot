@@ -11,11 +11,11 @@ const HOTKEY: Notice = {
     level: 'warning',
     message: 'Alt+Space is not available. Pick another Hotkey in Settings.',
 };
-const CONFIG: Notice = {
-    source: 'config',
+const SETTINGS: Notice = {
+    source: 'settings',
     level: 'error',
     message:
-        'System error: App config file validation failed: maxResults must be between 1 and 100',
+        'System error: App settings file validation failed: maxResults must be between 1 and 100',
 };
 
 type Handler = (event: { payload?: unknown }) => void;
@@ -28,9 +28,9 @@ const setup = async () => {
     });
     const props = {
         handleAddCommand: jest.fn(),
-        handleOpenConfig: jest.fn(),
+        handleOpenSettings: jest.fn(),
         loadCommands: jest.fn(),
-        loadConfig: jest.fn(),
+        loadSettings: jest.fn(),
         showWarning: jest.fn(),
         showError: jest.fn(),
         setError: jest.fn(),
@@ -49,7 +49,7 @@ describe('useAppEvents notices', () => {
     beforeEach(() => jest.mocked(TauriAPI.getNotices).mockResolvedValue([]));
 
     it('shows nothing at startup, while the window is hidden', async () => {
-        jest.mocked(TauriAPI.getNotices).mockResolvedValue([HOTKEY, CONFIG]);
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([HOTKEY, SETTINGS]);
         const { props } = await setup();
         expect(TauriAPI.getNotices).not.toHaveBeenCalled();
         expect(props.showWarning).not.toHaveBeenCalled();
@@ -57,13 +57,13 @@ describe('useAppEvents notices', () => {
     });
 
     it('shows what waited, by level, when the window is shown', async () => {
-        jest.mocked(TauriAPI.getNotices).mockResolvedValue([CONFIG, HOTKEY]);
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([SETTINGS, HOTKEY]);
         const { props, windowShown } = await setup();
         await windowShown();
         expect(props.showWarning).toHaveBeenCalledWith(HOTKEY.message, expect.any(Number));
         // without the "System error: " category the backend puts in front
         expect(props.showError).toHaveBeenCalledWith(
-            'App config file validation failed: maxResults must be between 1 and 100',
+            'App settings file validation failed: maxResults must be between 1 and 100',
             expect.any(Number),
         );
     });
@@ -89,9 +89,9 @@ describe('useAppEvents notices', () => {
 
     it('tells a changed message from the same source again', async () => {
         const { props, windowShown } = await setup();
-        jest.mocked(TauriAPI.getNotices).mockResolvedValue([CONFIG]);
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([SETTINGS]);
         await windowShown();
-        jest.mocked(TauriAPI.getNotices).mockResolvedValue([{ ...CONFIG, message: 'another' }]);
+        jest.mocked(TauriAPI.getNotices).mockResolvedValue([{ ...SETTINGS, message: 'another' }]);
         await windowShown();
         expect(props.showError).toHaveBeenCalledTimes(2);
     });

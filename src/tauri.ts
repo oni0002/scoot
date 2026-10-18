@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { message, open } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
-import { Command, Config, Notice, UsageMap } from './types';
+import { Command, Settings, Notice, UsageMap } from './types';
 
 export const TauriAPI = {
     async getAllCommands(): Promise<Command[]> {
@@ -48,7 +48,7 @@ export const TauriAPI = {
         return await invoke('open_commands_json');
     },
 
-    async openConfigJson(): Promise<void> {
+    async openSettingsJson(): Promise<void> {
         return await invoke('open_config_json');
     },
 
@@ -60,7 +60,7 @@ export const TauriAPI = {
         return await invoke('leave_modal');
     },
 
-    /** The problems that still hold (a broken config, a Hotkey another app holds). */
+    /** The problems that still hold (a broken settings, a Hotkey another app holds). */
     async getNotices(): Promise<Notice[]> {
         return await invoke<Notice[]>('get_notices');
     },
@@ -81,12 +81,12 @@ export const TauriAPI = {
         return await invoke('stop_hotkey_capture');
     },
 
-    async getConfig(): Promise<Config> {
-        return await invoke<Config>('get_config');
+    async getSettings(): Promise<Settings> {
+        return await invoke<Settings>('get_settings');
     },
 
-    async saveConfig(config: Config): Promise<void> {
-        return await invoke('save_config', { config });
+    async saveSettings(settings: Settings): Promise<void> {
+        return await invoke('save_settings', { settings });
     },
 
     async ignoreCommand(commandStr: string): Promise<void> {

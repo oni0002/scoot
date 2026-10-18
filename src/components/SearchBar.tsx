@@ -14,9 +14,9 @@ interface SearchBarProps {
     onAddCommand: (e: React.MouseEvent) => void;
     onReloadCommands: (e: React.MouseEvent) => void;
     onOpenCommandsJson: (e: React.MouseEvent) => void;
-    onOpenConfigJson: (e: React.MouseEvent) => void;
+    onOpenSettingsJson: (e: React.MouseEvent) => void;
     onShowAbout: (e: React.MouseEvent) => void;
-    onOpenConfig?: () => void;
+    onOpenSettings?: () => void;
 
     // Combobox wiring: the input drives the result listbox without taking focus away from it
     hasResults: boolean;
@@ -32,9 +32,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     onAddCommand,
     onReloadCommands,
     onOpenCommandsJson,
-    onOpenConfigJson,
+    onOpenSettingsJson,
     onShowAbout,
-    onOpenConfig,
+    onOpenSettings,
     hasResults,
     activeDescendantId,
 }) => {
@@ -127,7 +127,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                                 tabIndex={-1}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    onOpenConfig?.();
+                                    onOpenSettings?.();
                                 }}
                             >
                                 Settings
@@ -163,7 +163,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                                 type="button"
                                 role="menuitem"
                                 tabIndex={-1}
-                                onClick={onOpenConfigJson}
+                                onClick={onOpenSettingsJson}
                             >
                                 Open settings.json
                             </button>

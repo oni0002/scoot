@@ -112,7 +112,7 @@ pub fn run() {
                 }
             }
             // Load the command sources in the background: scanning them must not delay the
-            // hotkey and tray. The webview refetches when `config-reloaded` arrives.
+            // hotkey and tray. The webview refetches when `settings-reloaded` arrives.
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = crate::lifecycle::reload(&handle).await {
@@ -133,8 +133,8 @@ pub fn run() {
             crate::commands::usage::clear_usage,
             crate::commands::ipc::open_commands_json,
             // Settings
-            crate::settings::ipc::get_config,
-            crate::settings::ipc::save_config,
+            crate::settings::ipc::get_settings,
+            crate::settings::ipc::save_settings,
             crate::settings::ipc::ignore_command,
             crate::settings::ipc::unignore_command,
             crate::settings::ipc::set_external_alias,

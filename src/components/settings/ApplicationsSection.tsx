@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { TauriAPI } from '../../tauri';
 import { useNotificationContext } from '../../context/NotificationContext';
-import { Config } from '../../types';
+import { Settings } from '../../types';
 import { ListRow, Section } from '../SettingsLayout';
 
 interface ApplicationsSectionProps {
-    config: Config;
-    onChange: (config: Config) => void;
+    settings: Settings;
+    onChange: (settings: Settings) => void;
 }
 
-export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({ config, onChange }) => {
-    const apps = config.applications;
-    const update = (patch: Partial<Config['applications']>) =>
-        onChange({ ...config, applications: { ...apps, ...patch } });
+export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({ settings, onChange }) => {
+    const apps = settings.applications;
+    const update = (patch: Partial<Settings['applications']>) =>
+        onChange({ ...settings, applications: { ...apps, ...patch } });
 
     const { reportError } = useNotificationContext();
     const [newExtension, setNewExtension] = useState('');

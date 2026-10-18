@@ -74,8 +74,8 @@ pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::A
         ));
     }
 
-    if let Err(e) = app_handle.emit("config-reloaded", ()) {
-        log::error!("Failed to emit config-reloaded: {}", e);
+    if let Err(e) = app_handle.emit("settings-reloaded", ()) {
+        log::error!("Failed to emit settings-reloaded: {}", e);
     } else {
         log::info!("Reloaded settings and commands");
     }

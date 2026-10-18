@@ -41,7 +41,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 
 ## UI
 
-- スタイルは Tailwind 4 + daisyUI 5。設定は `tailwind.config.js` ではなく `src/App.css`(`@plugin "daisyui"`)に書く。テーマは自前の `scoot-light` / `scoot-dark` の2つだけ(daisyUI 組み込みテーマは `themes: false` で無効)。設定値は `system` / `light` / `dark` で、`src/theme.ts` の `THEME_OPTIONS` と `src-tauri/src/config/domain.rs` の `THEMES` の値の一覧を揃える。色を変えたら、全画面のコントラスト(AA 4.5:1)を測り直す。文字を薄くするのは `text-muted`(85%)と `text-subtle`(70%、行の説明用)の2段だけ。例外は、無効にした設定セクションを `disabled:opacity-60` でまとめて薄くすること(無効なコントロールは WCAG 2.x のコントラスト要件の対象外)。未知のテーマ名は読み込み時に既定へ丸める
+- スタイルは Tailwind 4 + daisyUI 5。設定は `tailwind.config.js` ではなく `src/App.css`(`@plugin "daisyui"`)に書く。テーマは自前の `scoot-light` / `scoot-dark` の2つだけ(daisyUI 組み込みテーマは `themes: false` で無効)。設定値は `system` / `light` / `dark` で、`src/theme.ts` の `THEME_OPTIONS` と `src-tauri/src/settings/domain.rs` の `THEMES` の値の一覧を揃える。色を変えたら、全画面のコントラスト(AA 4.5:1)を測り直す。文字を薄くするのは `text-muted`(85%)と `text-subtle`(70%、行の説明用)の2段だけ。例外は、無効にした設定セクションを `disabled:opacity-60` でまとめて薄くすること(無効なコントロールは WCAG 2.x のコントラスト要件の対象外)。未知のテーマ名は読み込み時に既定へ丸める
 - daisyUI 4 の `form-control` / `label-text` / `input-bordered` は v5 で廃止。フォームのラベルは Tailwind のユーティリティで組む
 - Tailwind 4 の `space-y-*` は、最初の要素の上余白(`margin-top`)を 0 にする。先頭に余白が要る要素(`.divider` など)を置くときは、コンテナに `pt-*` を持たせる
 - 新しいクラスを使うときは、v4 の記憶ではなく v5 のドキュメントで存在を確認する

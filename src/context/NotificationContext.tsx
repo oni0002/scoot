@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo, ReactNode } from 'react';
 import { useNotifications } from '../hooks/useNotifications';
 import { Notification, NotificationToast } from '../components/NotificationToast';
-import { useConfigTheme } from './ConfigContext';
+import { useSettingsTheme } from './SettingsContext';
 
 interface NotificationContextType {
     showSuccess: (message: string, duration?: number, action?: Notification['action']) => void;
@@ -19,7 +19,7 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const theme = useConfigTheme();
+    const theme = useSettingsTheme();
     const { notifications, removeNotification, showSuccess, showError, showWarning, reportError } =
         useNotifications();
 

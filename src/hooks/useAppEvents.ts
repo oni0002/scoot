@@ -7,9 +7,9 @@ import { NOTIFICATION_DURATION } from '../constants';
 
 interface UseAppEventsProps {
     handleAddCommand: () => void;
-    handleOpenConfig: () => void;
+    handleOpenSettings: () => void;
     loadCommands: () => void;
-    loadConfig: () => void;
+    loadSettings: () => void;
     showWarning: (message: string, duration?: number) => void;
     showError: (message: string, duration?: number) => void;
     setError: (error: string | null) => void;
@@ -17,9 +17,9 @@ interface UseAppEventsProps {
 
 export const useAppEvents = ({
     handleAddCommand,
-    handleOpenConfig,
+    handleOpenSettings,
     loadCommands,
-    loadConfig,
+    loadSettings,
     showWarning,
     showError,
     setError,
@@ -47,11 +47,11 @@ export const useAppEvents = ({
             try {
                 const eventHandlers = {
                     'open-add-command-dialog': handleAddCommand,
-                    'open-settings-dialog': handleOpenConfig,
-                    // The backend turns config file changes into a reload, so this is the only refetch
-                    'config-reloaded': () => {
+                    'open-settings-dialog': handleOpenSettings,
+                    // The backend turns settings file changes into a reload, so this is the only refetch
+                    'settings-reloaded': () => {
                         loadCommands();
-                        loadConfig();
+                        loadSettings();
                     },
                     // Sent only while the window is showing. settings.json or commands.json could not
                     // be read (the last good state stays in use), or the Hotkey could not be taken.
@@ -77,7 +77,7 @@ export const useAppEvents = ({
                 // Load only once subscribed, so a reload finishing during startup cannot be missed
                 if (isMounted) {
                     loadCommands();
-                    loadConfig();
+                    loadSettings();
                 }
             } catch (err) {
                 if (isMounted) {

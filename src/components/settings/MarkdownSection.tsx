@@ -1,19 +1,19 @@
 import React from 'react';
 import { TauriAPI } from '../../tauri';
 import { useNotificationContext } from '../../context/NotificationContext';
-import { Config } from '../../types';
+import { Settings } from '../../types';
 import { ListRow, Section } from '../SettingsLayout';
 
 interface MarkdownSectionProps {
-    config: Config;
-    onChange: (config: Config) => void;
+    settings: Settings;
+    onChange: (settings: Settings) => void;
 }
 
-export const MarkdownSection: React.FC<MarkdownSectionProps> = ({ config, onChange }) => {
+export const MarkdownSection: React.FC<MarkdownSectionProps> = ({ settings, onChange }) => {
     const { reportError } = useNotificationContext();
-    const md = config.markdown;
-    const update = (patch: Partial<Config['markdown']>) =>
-        onChange({ ...config, markdown: { ...md, ...patch } });
+    const md = settings.markdown;
+    const update = (patch: Partial<Settings['markdown']>) =>
+        onChange({ ...settings, markdown: { ...md, ...patch } });
 
     const addFile = async () => {
         try {

@@ -18,7 +18,7 @@ export interface Usage {
 
 export type UsageMap = Record<string, Usage>;
 
-export interface ApplicationConfig {
+export interface ApplicationSettings {
     enabled: boolean;
     directories: string[];
     extensions: string[];
@@ -27,22 +27,22 @@ export interface ApplicationConfig {
 /** The browsers bookmark.rs can read. */
 export const BROWSERS = ['brave', 'chrome', 'edge'] as const;
 
-export interface BookmarkConfig {
+export interface BookmarkSettings {
     enabled: boolean;
     browser: (typeof BROWSERS)[number];
 }
 
-export interface MarkdownConfig {
+export interface MarkdownSettings {
     enabled: boolean;
     paths: string[];
 }
 
-export interface Config {
+export interface Settings {
     maxResults: number;
     fuzzyThreshold: number;
-    bookmarks: BookmarkConfig;
-    applications: ApplicationConfig;
-    markdown: MarkdownConfig;
+    bookmarks: BookmarkSettings;
+    applications: ApplicationSettings;
+    markdown: MarkdownSettings;
     ignored: string[];
     /** Aliases of external commands, keyed by their `command` string. */
     aliases: Record<string, string>;

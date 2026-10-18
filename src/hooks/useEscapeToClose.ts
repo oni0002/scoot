@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 /**
- * Runs `onEscape` when Esc is pressed on a full screen (the config screen, the command form).
+ * Runs `onEscape` when Esc is pressed on a full screen (the settings screen, the command form).
  * An Esc that something closer already handled (`preventDefault`), or that belongs to an open
  * dialog, is left alone, so it never closes the screen behind it as well.
  */

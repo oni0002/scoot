@@ -7,7 +7,7 @@ use tauri::{Manager, State};
 
 /// Get settings
 #[tauri::command]
-pub async fn get_config(
+pub async fn get_settings(
     state: State<'_, SettingsState>,
 ) -> Result<Settings, crate::error::AppError> {
     state
@@ -19,7 +19,7 @@ pub async fn get_config(
 
 /// Save settings
 #[tauri::command]
-pub async fn save_config(
+pub async fn save_settings(
     settings: Settings,
     state: State<'_, SettingsState>,
 ) -> Result<(), crate::error::AppError> {
@@ -67,8 +67,8 @@ pub async fn ignore_command(
 
     // The registry is already up to date, so the webview only has to refetch; no rescan of the
     // sources is needed (the settings file watcher still triggers one for the new ignored list).
-    if let Err(e) = app_handle.emit("config-reloaded", ()) {
-        log::error!("Failed to emit config-reloaded after ignore: {}", e);
+    if let Err(e) = app_handle.emit("settings-reloaded", ()) {
+        log::error!("Failed to emit settings-reloaded after ignore: {}", e);
     }
 
     Ok(())
@@ -140,9 +140,9 @@ pub async fn set_external_alias(
         .save(&settings_snapshot)
         .await?;
 
-    if let Err(e) = app_handle.emit("config-reloaded", ()) {
+    if let Err(e) = app_handle.emit("settings-reloaded", ()) {
         log::error!(
-            "Failed to emit config-reloaded after setting an alias: {}",
+            "Failed to emit settings-reloaded after setting an alias: {}",
             e
         );
     }

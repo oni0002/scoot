@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { SearchWindow } from './components/SearchWindow';
 import { CommandForm } from './components/CommandForm';
-import { ConfigScreen } from './components/ConfigScreen';
+import { SettingsScreen } from './components/SettingsScreen';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { AliasDialog } from './components/AliasDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -11,7 +11,7 @@ import { NOTIFICATION_DURATION } from './constants';
 import { useAppEvents } from './hooks/useAppEvents';
 import { usePreventHide } from './hooks/usePreventHide';
 import { CommandProvider, useCommandContext } from './context/CommandContext';
-import { ConfigProvider, useConfigContext } from './context/ConfigContext';
+import { SettingsProvider, useSettingsContext } from './context/SettingsContext';
 import { daisyTheme } from './theme';
 import './App.css';
 
@@ -32,10 +32,10 @@ const AppContent = () => {
         clearUsage,
     } = useCommandContext();
 
-    const { theme, fuzzyThreshold, maxResults, usageHistory, frequentFirst, loadConfig } =
-        useConfigContext();
+    const { theme, fuzzyThreshold, maxResults, usageHistory, frequentFirst, loadSettings } =
+        useSettingsContext();
 
-    const [currentView, setCurrentView] = useState<'search' | 'form' | 'config'>('search');
+    const [currentView, setCurrentView] = useState<'search' | 'form' | 'settings'>('search');
     const [editingCommand, setEditingCommand] = useState<Command | undefined>(undefined);
     const [duplicatingCommand, setDuplicatingCommand] = useState<Command | undefined>(undefined);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -50,8 +50,8 @@ const AppContent = () => {
         setCurrentView('form');
     }, []);
 
-    const handleOpenConfig = useCallback(() => {
-        setCurrentView('config');
+    const handleOpenSettings = useCallback(() => {
+        setCurrentView('settings');
     }, []);
 
     const handleSaveCommand = useCallback(
@@ -119,7 +119,7 @@ const AppContent = () => {
     const handleIgnoreCommand = useCallback(
         async (command: Command) => {
             try {
-                // The backend announces config-reloaded, which refetches the list
+                // The backend announces settings-reloaded, which refetches the list
                 await TauriAPI.ignoreCommand(command.command);
                 showSuccess(`Ignored "${command.name}"`, NOTIFICATION_DURATION.UNDO, {
                     label: 'Undo',
@@ -148,7 +148,7 @@ const AppContent = () => {
     const handleSubmitAlias = useCallback(
         async (alias: string | null) => {
             if (!aliasingCommand) return;
-            // The backend announces config-reloaded, which refetches the list
+            // The backend announces settings-reloaded, which refetches the list
             await TauriAPI.setExternalAlias(aliasingCommand.command, alias);
             showSuccess(
                 alias
@@ -176,8 +176,8 @@ const AppContent = () => {
 
     const handleReloadCommands = useCallback(async () => {
         try {
-            await TauriAPI.reloadAll(); // emits config-reloaded, which refetches the list
-            showSuccess('Commands and config reloaded', 2000);
+            await TauriAPI.reloadAll(); // emits settings-reloaded, which refetches the list
+            showSuccess('Commands and settings reloaded', 2000);
         } catch (err) {
             reportError('reload configuration', err);
         }
@@ -186,9 +186,9 @@ const AppContent = () => {
     // 初期化とイベントリスナー設定
     useAppEvents({
         handleAddCommand,
-        handleOpenConfig,
+        handleOpenSettings,
         loadCommands,
-        loadConfig,
+        loadSettings,
         showWarning,
         showError,
         setError,
@@ -232,15 +232,15 @@ const AppContent = () => {
                     onAliasCommand={setAliasingCommand}
                     onIgnoreCommand={handleIgnoreCommand}
                     onReloadCommands={handleReloadCommands}
-                    onOpenConfig={handleOpenConfig}
+                    onOpenSettings={handleOpenSettings}
                     isDialogOpen={showDeleteDialog || Boolean(aliasingCommand)}
                 />
-            ) : currentView === 'config' ? (
-                <ConfigScreen
+            ) : currentView === 'settings' ? (
+                <SettingsScreen
                     onClearHistory={clearUsage}
                     onBack={() => {
                         setCurrentView('search');
-                        loadConfig();
+                        loadSettings();
                     }}
                 />
             ) : (
@@ -278,13 +278,13 @@ const AppContent = () => {
 function App() {
     return (
         <ErrorBoundary>
-            <ConfigProvider>
+            <SettingsProvider>
                 <NotificationProvider>
                     <CommandProvider>
                         <AppContent />
                     </CommandProvider>
                 </NotificationProvider>
-            </ConfigProvider>
+            </SettingsProvider>
         </ErrorBoundary>
     );
 }

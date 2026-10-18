@@ -1,4 +1,4 @@
-/** Values stored in settings.json. Keep in sync with `THEMES` in src-tauri/src/config/domain.rs. */
+/** Values stored in settings.json. Keep in sync with `THEMES` in src-tauri/src/settings/domain.rs. */
 export const THEME_OPTIONS = [
     { value: 'system', label: 'System' },
     { value: 'light', label: 'Light' },
@@ -7,5 +7,5 @@ export const THEME_OPTIONS = [
 
 const DAISY_THEME: Record<string, string> = { light: 'scoot-light', dark: 'scoot-dark' };
 
-/** The `data-theme` to set for a config value. `system` sets none, so the OS light/dark setting decides. */
+/** The `data-theme` to set for a settings value. `system` sets none, so the OS light/dark setting decides. */
 export const daisyTheme = (theme: string): string | undefined => DAISY_THEME[theme];

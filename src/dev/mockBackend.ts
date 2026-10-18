@@ -1,6 +1,6 @@
 import { emit } from '@tauri-apps/api/event';
 import { mockIPC, mockWindows } from '@tauri-apps/api/mocks';
-import { Command, Config } from '../types';
+import { Command, Settings } from '../types';
 
 // Dev-only stand-in for the Rust backend so the UI can be opened in a plain browser
 // (pnpm dev -> http://localhost:1420) for visual review and automated UI checks.
@@ -64,7 +64,7 @@ const externalCommands = (): Command[] => [
 const previewTheme = (): string | null =>
     typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('theme');
 
-const defaultConfig = (): Config => ({
+const defaultSettings = (): Settings => ({
     maxResults: 10,
     fuzzyThreshold: 0.5,
     bookmarks: { enabled: true, browser: 'brave' },
@@ -91,15 +91,15 @@ const defaultConfig = (): Config => ({
 
 export function createMockHandlers(): Record<string, Handler> {
     let users = userCommands();
-    let config = defaultConfig();
+    let settings = defaultSettings();
     let nextId = 100;
     const usage: Record<string, { count: number; lastUsed: number }> = {};
     let startupShortcut = false;
     const visibleExternal = () =>
         externalCommands()
-            .filter((c) => !config.ignored.includes(c.command))
+            .filter((c) => !settings.ignored.includes(c.command))
             .map((c) =>
-                config.aliases[c.command] ? { ...c, alias: config.aliases[c.command] } : c,
+                settings.aliases[c.command] ? { ...c, alias: settings.aliases[c.command] } : c,
             );
 
     return {
@@ -135,7 +135,7 @@ export function createMockHandlers(): Record<string, Handler> {
                     `File not found: '${found.command}'. Please check if the file exists and the path is correct.`,
                 );
             }
-            if (config.usageHistory)
+            if (settings.usageHistory)
                 usage[found.command] = {
                     count: (usage[found.command]?.count ?? 0) + 1,
                     lastUsed: Date.now(),
@@ -149,14 +149,14 @@ export function createMockHandlers(): Record<string, Handler> {
                 return { keepWindowOpen: true };
             }
             if (found.command === 'scoot://reload') {
-                await emit('config-reloaded');
+                await emit('settings-reloaded');
                 return { keepWindowOpen: true };
             }
             return { keepWindowOpen: false };
         },
         open_target: () => ({ keepWindowOpen: false }),
-        // Like the real backend, anything that reloads announces it with config-reloaded
-        reload_all: () => emit('config-reloaded'),
+        // Like the real backend, anything that reloads announces it with settings-reloaded
+        reload_all: () => emit('settings-reloaded'),
         hide_window: () => undefined,
         open_commands_json: () => undefined,
         open_config_json: () => undefined,
@@ -167,18 +167,18 @@ export function createMockHandlers(): Record<string, Handler> {
         set_startup_shortcut: ({ enabled }) => (startupShortcut = Boolean(enabled)),
         start_hotkey_capture: () => undefined,
         stop_hotkey_capture: () => undefined,
-        get_config: () => config,
-        save_config: ({ config: next }) => {
-            config = next as Config;
-            return emit('config-reloaded');
+        get_settings: () => settings,
+        save_settings: ({ settings: next }) => {
+            settings = next as Settings;
+            return emit('settings-reloaded');
         },
         ignore_command: ({ commandStr }) => {
-            config = { ...config, ignored: [...config.ignored, String(commandStr)] };
-            return emit('config-reloaded');
+            settings = { ...settings, ignored: [...settings.ignored, String(commandStr)] };
+            return emit('settings-reloaded');
         },
         unignore_command: ({ commandStr }) => {
-            config = { ...config, ignored: config.ignored.filter((c) => c !== commandStr) };
-            return emit('config-reloaded');
+            settings = { ...settings, ignored: settings.ignored.filter((c) => c !== commandStr) };
+            return emit('settings-reloaded');
         },
         set_external_alias: ({ commandStr, alias }) => {
             const key = String(commandStr);
@@ -189,11 +189,11 @@ export function createMockHandlers(): Record<string, Handler> {
             if (next && taken) {
                 throw new Error(`Alias '${next}' is already used by another command.`);
             }
-            const aliases = { ...config.aliases };
+            const aliases = { ...settings.aliases };
             if (next) aliases[key] = next;
             else delete aliases[key];
-            config = { ...config, aliases };
-            return emit('config-reloaded');
+            settings = { ...settings, aliases };
+            return emit('settings-reloaded');
         },
         'plugin:app|version': () => '0.2.10',
         'plugin:dialog|message': () => undefined,

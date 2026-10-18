@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { TauriAPI } from '../../tauri';
-import { Config } from '../../types';
+import { Settings } from '../../types';
 import { THEME_OPTIONS } from '../../theme';
 import { HotkeyCapture } from '../../hooks/useHotkeyCapture';
 import { useNotificationContext } from '../../context/NotificationContext';
@@ -9,14 +9,14 @@ import { Row, Section } from '../SettingsLayout';
 import { NumberInput } from './NumberInput';
 
 interface GeneralSectionProps {
-    config: Config;
-    onChange: (config: Config) => void;
+    settings: Settings;
+    onChange: (settings: Settings) => void;
     hotkey: HotkeyCapture;
     onClearHistory: () => Promise<void>;
 }
 
 export const GeneralSection: React.FC<GeneralSectionProps> = ({
-    config,
+    settings,
     onChange,
     hotkey,
     onClearHistory,
@@ -65,8 +65,8 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                     <select
                         id="cfg-theme"
                         className="select select-sm w-40"
-                        value={config.theme}
-                        onChange={(e) => onChange({ ...config, theme: e.target.value })}
+                        value={settings.theme}
+                        onChange={(e) => onChange({ ...settings, theme: e.target.value })}
                     >
                         {THEME_OPTIONS.map((t) => (
                             <option key={t.value} value={t.value}>
@@ -97,7 +97,7 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                     <input
                         id="cfg-hotkey"
                         className="input input-sm w-40 text-center cursor-pointer"
-                        value={hotkey.capturing ? 'Press a key...' : config.hotkey}
+                        value={hotkey.capturing ? 'Press a key...' : settings.hotkey}
                         readOnly
                         {...hotkey.inputProps}
                     />
@@ -111,8 +111,8 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                         id="cfg-max-results"
                         min={1}
                         max={100}
-                        value={config.maxResults}
-                        onChange={(maxResults) => onChange({ ...config, maxResults })}
+                        value={settings.maxResults}
+                        onChange={(maxResults) => onChange({ ...settings, maxResults })}
                     />
                 </Row>
                 <Row
@@ -128,13 +128,13 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                             max={1}
                             step={0.1}
                             className="range range-sm min-w-0 flex-1"
-                            value={config.fuzzyThreshold}
+                            value={settings.fuzzyThreshold}
                             onChange={(e) =>
-                                onChange({ ...config, fuzzyThreshold: Number(e.target.value) })
+                                onChange({ ...settings, fuzzyThreshold: Number(e.target.value) })
                             }
                         />
                         <span className="w-6 text-right text-sm tabular-nums">
-                            {config.fuzzyThreshold.toFixed(1)}
+                            {settings.fuzzyThreshold.toFixed(1)}
                         </span>
                     </div>
                 </Row>
@@ -147,9 +147,9 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                         id="cfg-reload"
                         min={1}
                         max={1440}
-                        value={config.reloadIntervalMinutes}
+                        value={settings.reloadIntervalMinutes}
                         onChange={(reloadIntervalMinutes) =>
-                            onChange({ ...config, reloadIntervalMinutes })
+                            onChange({ ...settings, reloadIntervalMinutes })
                         }
                     />
                 </Row>
@@ -162,15 +162,15 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                         id="cfg-usage-history"
                         type="checkbox"
                         className="toggle"
-                        checked={config.usageHistory}
-                        onChange={(e) => onChange({ ...config, usageHistory: e.target.checked })}
+                        checked={settings.usageHistory}
+                        onChange={(e) => onChange({ ...settings, usageHistory: e.target.checked })}
                     />
                 </Row>
                 <Row
                     label="Frequent commands"
                     htmlFor="cfg-frequent-first"
                     description={
-                        config.usageHistory
+                        settings.usageHistory
                             ? 'List the commands you run most before you type.'
                             : 'Needs usage history.'
                     }
@@ -179,9 +179,9 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                         id="cfg-frequent-first"
                         type="checkbox"
                         className="toggle"
-                        disabled={!config.usageHistory}
-                        checked={config.frequentFirst && config.usageHistory}
-                        onChange={(e) => onChange({ ...config, frequentFirst: e.target.checked })}
+                        disabled={!settings.usageHistory}
+                        checked={settings.frequentFirst && settings.usageHistory}
+                        onChange={(e) => onChange({ ...settings, frequentFirst: e.target.checked })}
                     />
                 </Row>
                 <Row label="Clear history" description="Forget which commands you have run.">

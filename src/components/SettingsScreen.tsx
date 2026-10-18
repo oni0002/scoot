@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { LuArrowLeft, LuFileJson } from 'react-icons/lu';
 import { TauriAPI } from '../tauri';
-import { Config } from '../types';
-import { useConfigContext } from '../context/ConfigContext';
+import { Settings } from '../types';
+import { useSettingsContext } from '../context/SettingsContext';
 import { useNotificationContext } from '../context/NotificationContext';
 import { useHotkeyCapture } from '../hooks/useHotkeyCapture';
 import { useEscapeToClose } from '../hooks/useEscapeToClose';
@@ -14,19 +14,19 @@ import { ApplicationsSection } from './settings/ApplicationsSection';
 import { MarkdownSection } from './settings/MarkdownSection';
 import { IgnoredSection } from './settings/IgnoredSection';
 
-interface ConfigScreenProps {
+interface SettingsScreenProps {
     onClearHistory: () => Promise<void>;
     onBack: () => void;
 }
 
-export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHistory }) => {
-    const { config } = useConfigContext();
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onClearHistory }) => {
+    const { settings } = useSettingsContext();
     const { showSuccess, reportError } = useNotificationContext();
     const [saveError, setSaveError] = useState<string | null>(null);
-    const [edited, setEdited] = useState<Config | null>(null);
-    const local = edited ?? config;
+    const [edited, setEdited] = useState<Settings | null>(null);
+    const local = edited ?? settings;
 
-    const change = useCallback((updated: Config) => {
+    const change = useCallback((updated: Settings) => {
         setEdited(updated);
         setSaveError(null);
     }, []);
@@ -38,16 +38,16 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
     // Settings are written when the screen closes. A failed write keeps the screen open, so the
     // edits are not lost behind a screen that looks saved.
     const saveEdits = useCallback(async (): Promise<boolean> => {
-        if (!edited || JSON.stringify(edited) === JSON.stringify(config)) return true;
+        if (!edited || JSON.stringify(edited) === JSON.stringify(settings)) return true;
         try {
-            await TauriAPI.saveConfig(edited);
+            await TauriAPI.saveSettings(edited);
         } catch (err) {
             setSaveError(getErrorMessage(err));
             return false;
         }
         showSuccess('Settings saved');
         return true;
-    }, [edited, config, showSuccess]);
+    }, [edited, settings, showSuccess]);
 
     // Esc pressed twice must not save twice, nor leave twice
     const busy = useRef(false);
@@ -63,13 +63,13 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
 
     // Saves first so the file is current, then leaves: an open screen would go stale as soon as
     // the file is edited.
-    const openConfigJson = async () => {
+    const openSettingsJson = async () => {
         if (busy.current) return;
         busy.current = true;
         try {
             if (!(await saveEdits())) return;
             try {
-                await TauriAPI.openConfigJson();
+                await TauriAPI.openSettingsJson();
             } catch (err) {
                 reportError('open settings.json', err);
                 return;
@@ -104,7 +104,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
                 <button
                     type="button"
                     className="btn btn-ghost btn-sm btn-square"
-                    onClick={openConfigJson}
+                    onClick={openSettingsJson}
                     aria-label="Open settings.json"
                     title="Open settings.json"
                 >
@@ -133,15 +133,15 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
                     Changes are saved when you go back.
                 </p>
                 <GeneralSection
-                    config={local}
+                    settings={local}
                     onChange={change}
                     hotkey={hotkey}
                     onClearHistory={onClearHistory}
                 />
-                <BookmarksSection config={local} onChange={change} />
-                <ApplicationsSection config={local} onChange={change} />
-                <MarkdownSection config={local} onChange={change} />
-                <IgnoredSection config={local} onChange={change} />
+                <BookmarksSection settings={local} onChange={change} />
+                <ApplicationsSection settings={local} onChange={change} />
+                <MarkdownSection settings={local} onChange={change} />
+                <IgnoredSection settings={local} onChange={change} />
             </div>
         </div>
     );

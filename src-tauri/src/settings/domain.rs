@@ -185,7 +185,7 @@ mod tests {
     }
 
     #[test]
-    fn default_config_is_valid() {
+    fn default_settings_are_valid() {
         let json = serde_json::to_string(&Settings::default()).unwrap();
         assert!(parse(&json).is_ok());
     }

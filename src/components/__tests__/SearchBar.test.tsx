@@ -18,7 +18,7 @@ const renderBar = () => {
             onAddCommand={noop}
             onReloadCommands={noop}
             onOpenCommandsJson={noop}
-            onOpenConfigJson={noop}
+            onOpenSettingsJson={noop}
             onShowAbout={noop}
             hasResults={false}
         />,
