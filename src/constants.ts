@@ -6,15 +6,9 @@ export const RESULT_HEADING_ID = 'search-results-heading';
 export const resultOptionId = (index: number) => `search-result-${index}`;
 
 export const NOTIFICATION_DURATION = {
-    DEFAULT: 3000,
     UNDO: 6000,
     LONG: 8000,
     VERY_LONG: 10000,
-    CRITICAL: 15000,
-};
-
-export const UI_TIMEOUTS = {
-    WINDOW_HIDE_DELAY: 100,
 };
 
 export const KEYBOARD_SHORTCUTS = {
