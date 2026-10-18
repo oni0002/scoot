@@ -165,7 +165,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                                 tabIndex={-1}
                                 onClick={onOpenConfigJson}
                             >
-                                Open config.json
+                                Open settings.json
                             </button>
                         </li>
                         <li

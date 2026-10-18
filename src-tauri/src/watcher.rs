@@ -10,11 +10,12 @@ pub struct FileWatcher {
 }
 
 /// File watcher
-/// Watches a file and asks for a reload when it changes. Bursts of events are folded into one
+/// Watches files in one folder and asks for a reload when one of them changes. Bursts of events are folded into one
 /// reload by the `request-reload` listener (see `lifecycle::setup_reload_listeners`).
 impl FileWatcher {
+    /// `file_paths` are all in the same folder
     pub fn new<P: AsRef<Path>>(
-        file_path: P,
+        file_paths: &[P],
         app_handle: tauri::AppHandle,
     ) -> Result<Self, crate::error::AppError> {
         // Channel to send events
@@ -35,34 +36,32 @@ impl FileWatcher {
             crate::error::AppError::System(format!("Failed to create file watcher: {}", e))
         })?;
 
-        let file_path = file_path.as_ref().to_path_buf();
+        let file_paths: Vec<_> = file_paths
+            .iter()
+            .map(|p| p.as_ref().to_path_buf())
+            .collect();
+        let watch_path = file_paths
+            .first()
+            .and_then(|p| p.parent())
+            .ok_or_else(|| crate::error::AppError::System("No file to watch".to_string()))?;
 
-        // Get the parent directory of the target file
-        let watch_path = if let Some(parent) = file_path.parent() {
-            parent
-        } else {
-            file_path.as_path()
-        };
-
-        // Watch the target file
         watcher
             .watch(watch_path, RecursiveMode::NonRecursive)
             .map_err(|e| crate::error::AppError::System(format!("Failed to watch file: {}", e)))?;
 
-        let file_name = file_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("")
-            .to_string();
+        let file_names: Vec<String> = file_paths
+            .iter()
+            .filter_map(|p| p.file_name()?.to_str().map(str::to_string))
+            .collect();
 
         // Process file change events in a separate thread
         thread::spawn(move || {
             while let Ok(event) = rx.recv() {
-                // Check if the event is for the target file
+                // Check if the event is for one of the watched files
                 let is_target_file = event.paths.iter().any(|path| {
                     path.file_name()
                         .and_then(|n| n.to_str())
-                        .is_some_and(|name| name == file_name)
+                        .is_some_and(|name| file_names.iter().any(|f| f == name))
                 });
 
                 if is_target_file {

@@ -67,7 +67,9 @@ Open the Settings screen from the 3-dot menu or via the `Open Settings` preset c
 
 Relative file paths in a Markdown file are taken from the folder that file is in. Links with other schemes (`javascript:`, `obsidian://`, ...) are skipped.
 
-The `config.json` and `commands.json` files are stored in the same directory as the `.exe` file. So is `usage.json`, the run history that nudges frequently and recently used commands up in search results; turn it off or clear it under Settings > General.
+The `settings.json` and `commands.json` files are stored in the same directory as the `.exe` file. So is `usage.json`, the run history that nudges frequently and recently used commands up in search results; turn it off or clear it under Settings > General.
+
+Up to 0.2.x the settings file was called `config.json`. The first start of a newer version renames it to `settings.json`; if both exist, `settings.json` is used. Going back to an older version creates a fresh `config.json`, so copy your values over by hand.
 
 ## User Custom Commands
 
@@ -83,7 +85,7 @@ You can add custom commands to expand Scoot's capabilities.
     - **Command**: The target path, URL, or shell command to execute
     - **Alias**: A short name for the command (e.g., `g`). Optional, except for commands that take arguments. Search matches it like the name.
 
-Applications, bookmarks and other commands that Scoot finds for you can have an alias too: open the ⋮ menu on a result (or press `Ctrl+L`) and choose **Alias**. It is saved in `config.json`.
+Applications, bookmarks and other commands that Scoot finds for you can have an alias too: open the ⋮ menu on a result (or press `Ctrl+L`) and choose **Alias**. It is saved in `settings.json`.
 
 ### Using Alias Arguments
 

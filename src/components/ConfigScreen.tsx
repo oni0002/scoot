@@ -71,7 +71,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
             try {
                 await TauriAPI.openConfigJson();
             } catch (err) {
-                reportError('open config.json', err);
+                reportError('open settings.json', err);
                 return;
             }
             onBack();
@@ -105,8 +105,8 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
                     type="button"
                     className="btn btn-ghost btn-sm btn-square"
                     onClick={openConfigJson}
-                    aria-label="Open config.json"
-                    title="Open config.json"
+                    aria-label="Open settings.json"
+                    title="Open settings.json"
                 >
                     <LuFileJson />
                 </button>

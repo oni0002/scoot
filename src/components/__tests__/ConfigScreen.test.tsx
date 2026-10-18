@@ -185,7 +185,7 @@ describe('ConfigScreen usage history', () => {
     });
 });
 
-describe('ConfigScreen open config.json', () => {
+describe('ConfigScreen open settings.json', () => {
     beforeEach(() => jest.mocked(TauriAPI.openConfigJson).mockReset());
 
     it('saves edits first, then opens the file and leaves the screen', async () => {
@@ -193,7 +193,7 @@ describe('ConfigScreen open config.json', () => {
         jest.mocked(TauriAPI.openConfigJson).mockResolvedValue();
         const onBack = renderScreen();
         await userEvent.selectOptions(await screen.findByLabelText('Theme'), 'light');
-        await userEvent.click(screen.getByRole('button', { name: 'Open config.json' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Open settings.json' }));
         await waitFor(() => expect(onBack).toHaveBeenCalled());
         expect(TauriAPI.saveConfig).toHaveBeenCalledWith(
             expect.objectContaining({ theme: 'light' }),
@@ -205,7 +205,7 @@ describe('ConfigScreen open config.json', () => {
         jest.mocked(TauriAPI.saveConfig).mockRejectedValue('Validation error: bad value');
         const onBack = renderScreen();
         await userEvent.selectOptions(await screen.findByLabelText('Theme'), 'light');
-        await userEvent.click(screen.getByRole('button', { name: 'Open config.json' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Open settings.json' }));
         expect(await screen.findByRole('alert')).toHaveTextContent('Could not save settings');
         expect(TauriAPI.openConfigJson).not.toHaveBeenCalled();
         expect(onBack).not.toHaveBeenCalled();
@@ -214,9 +214,9 @@ describe('ConfigScreen open config.json', () => {
     it('stays open and says why when the file cannot be opened', async () => {
         jest.mocked(TauriAPI.openConfigJson).mockRejectedValue(new Error('No editor'));
         const onBack = renderScreen();
-        await userEvent.click(await screen.findByRole('button', { name: 'Open config.json' }));
+        await userEvent.click(await screen.findByRole('button', { name: 'Open settings.json' }));
         expect(
-            await screen.findByText(/Could not open config.json: No editor/),
+            await screen.findByText(/Could not open settings.json: No editor/),
         ).toBeInTheDocument();
         expect(onBack).not.toHaveBeenCalled();
     });

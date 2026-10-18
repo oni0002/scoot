@@ -27,7 +27,7 @@ _Avoid_: Built-in command, internal command
 ### 引数とエイリアス
 
 **Alias**:
-Command に付けられる短い名前。どの Command にも付けられ、Fuzzy Search では名前と同じように照合される。Placeholder を持つ Command では必須で、ユーザーが `<alias> <args>` と入力すると Argument Mode に入り、引数がコマンドに渡される。外部ソースの Command(Bookmark など)には、行メニューから後付けできる(`config.json` の `aliases` に `command` 文字列をキーにして保存)。
+Command に付けられる短い名前。どの Command にも付けられ、Fuzzy Search では名前と同じように照合される。Placeholder を持つ Command では必須で、ユーザーが `<alias> <args>` と入力すると Argument Mode に入り、引数がコマンドに渡される。外部ソースの Command(Bookmark など)には、行メニューから後付けできる(`settings.json` の `aliases` に `command` 文字列をキーにして保存)。
 _Avoid_: Prompt, trigger, keyword
 
 **Placeholder**:
@@ -69,7 +69,7 @@ _Avoid_: Link, md link
 ### 設定・ライフサイクル
 
 **Config**:
-アプリの動作設定全体。ホットキー・テーマ・Fuzzy Search の閾値・各外部ソースの有効化と対象パスなどを含む。`config.json` に保存される。
+アプリの動作設定全体。ホットキー・テーマ・Fuzzy Search の閾値・各外部ソースの有効化と対象パスなどを含む。`settings.json` に保存される。
 _Avoid_: Settings, preferences
 
 **Hotkey**:
@@ -81,5 +81,5 @@ Config を GUI で編集するための画面。Scoot Command (OpenSettings) ま
 _Avoid_: Settings screen, preferences screen
 
 **Reload**:
-Config と全 Command ソースを再読み込みしてアプリの状態を最新化する操作。config.json の変更検知・タイマー・手動操作で発生する。commands.json は監視しない。Command は主に UI から追加するので、手で書き換えた分は手動またはタイマーの Reload で反映される。
+Config と全 Command ソースを再読み込みしてアプリの状態を最新化する操作。settings.json の変更検知・タイマー・手動操作で発生する。commands.json は監視しない。Command は主に UI から追加するので、手で書き換えた分は手動またはタイマーの Reload で反映される。
 _Avoid_: Refresh, restart

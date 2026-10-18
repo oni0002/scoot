@@ -85,7 +85,7 @@ pub fn get_scoot_commands() -> Vec<Command> {
             CATEGORY_SCOOT,
             SOURCE_SCOOT,
             CMD_SCOOT_OPEN_CONFIG,
-            "Open config.json configuration file",
+            "Open settings.json configuration file",
         ),
         Command::new(
             "Open Logs",

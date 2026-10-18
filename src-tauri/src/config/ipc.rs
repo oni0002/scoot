@@ -21,7 +21,7 @@ pub async fn save_config(
     config: Config,
     state: State<'_, ConfigState>,
 ) -> Result<(), crate::error::AppError> {
-    // Refuse values config.json could not load back, before they reach the state or the file
+    // Refuse values settings.json could not load back, before they reach the state or the file
     config.validate()?;
 
     // state
@@ -30,7 +30,7 @@ pub async fn save_config(
         *locked_config = config.clone();
     }
 
-    // config.json
+    // settings.json
     state.config_store.save(&config).await
 }
 
@@ -97,7 +97,7 @@ pub async fn unignore_command(
 }
 
 /// Set (or, with `None`, clear) the alias of an external command. Like `ignore_command` it is keyed
-/// by the `command` string and written to config.json at once; the registry is checked first so a
+/// by the `command` string and written to settings.json at once; the registry is checked first so a
 /// taken or malformed alias never reaches the file.
 #[tauri::command]
 pub async fn set_external_alias(
@@ -139,12 +139,12 @@ pub async fn set_external_alias(
     Ok(())
 }
 
-/// Open config.json
+/// Open settings.json
 #[tauri::command]
 pub async fn open_config_json(app_handle: tauri::AppHandle) -> Result<(), crate::error::AppError> {
     if let Some(state) = app_handle.try_state::<crate::state::ConfigState>() {
-        let config_path = state.config_store.get_config_path().to_string();
         let _ = state.config_store.load().await; // creates file with defaults if absent
+        let config_path = state.config_store.file_in_use().to_string();
         crate::os::open_path(&app_handle, &config_path)?;
     }
     Ok(())

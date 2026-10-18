@@ -1,5 +1,5 @@
 //! Launch at login: a shortcut to this exe in the user's Startup folder. The folder is the source
-//! of truth, so nothing is stored in config.json and the shortcut can also be removed by hand.
+//! of truth, so nothing is stored in settings.json and the shortcut can also be removed by hand.
 
 use crate::error::AppError;
 use std::path::{Path, PathBuf};

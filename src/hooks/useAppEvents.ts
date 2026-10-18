@@ -53,7 +53,7 @@ export const useAppEvents = ({
                         loadCommands();
                         loadConfig();
                     },
-                    // Sent only while the window is showing. config.json or commands.json could not
+                    // Sent only while the window is showing. settings.json or commands.json could not
                     // be read (the last good state stays in use), or the Hotkey could not be taken.
                     notice: (event: { payload: Notice }) => tell(event.payload),
                     'window-shown': () => {

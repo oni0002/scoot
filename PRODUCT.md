@@ -24,7 +24,7 @@ Compared with other Windows launchers (for example PowerToys Run, Flow Launcher)
 - Window: frameless, transparent, always on top, fixed 700x500, hidden from the taskbar.
 - Driven entirely from the keyboard: type to fuzzy search, `Tab` / `Shift+Tab` / arrow keys / `Ctrl+N` / `Ctrl+P` to select, `Enter` to run, `Esc` to clear or close, `Ctrl+C` to copy the selected command.
 - Search results come from several sources (user commands, bookmarks, applications, Markdown links, built-in Scoot commands) and are labeled by source.
-- State lives beside the executable: `config.json`, `commands.json`, and `logs/`. Settings and custom commands are edited in an in-app settings screen and add/edit command form.
+- State lives beside the executable: `settings.json`, `commands.json`, and `logs/`. Settings and custom commands are edited in an in-app settings screen and add/edit command form.
 
 ## Capabilities and Constraints
 - Command categories: `url`, `file`, `command` (shell), and `scoot` (built-in app actions such as settings, reload, quit). Sources: `user`, `bookmark`, `application`, `scoot`.

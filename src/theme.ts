@@ -1,4 +1,4 @@
-/** Values stored in config.json. Keep in sync with `THEMES` in src-tauri/src/config/domain.rs. */
+/** Values stored in settings.json. Keep in sync with `THEMES` in src-tauri/src/config/domain.rs. */
 export const THEME_OPTIONS = [
     { value: 'system', label: 'System' },
     { value: 'light', label: 'Light' },

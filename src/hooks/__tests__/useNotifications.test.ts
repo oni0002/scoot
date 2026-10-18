@@ -9,16 +9,16 @@ describe('useNotifications reportError', () => {
         const { result } = renderHook(() => useNotifications());
         const cause = new Error('Access is denied');
         act(() => {
-            result.current.reportError('open config.json', cause, 1234);
+            result.current.reportError('open settings.json', cause, 1234);
         });
 
         const [toast] = result.current.notifications;
         expect(toast).toMatchObject({
             type: 'error',
-            message: 'Could not open config.json: Access is denied',
+            message: 'Could not open settings.json: Access is denied',
             duration: 1234,
         });
-        expect(console.error).toHaveBeenCalledWith('Failed to open config.json:', cause);
+        expect(console.error).toHaveBeenCalledWith('Failed to open settings.json:', cause);
     });
 
     it('drops the backend error category from a string error', () => {

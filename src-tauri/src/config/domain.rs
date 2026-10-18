@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn default_application_directories_use_environment_variables() {
-        // config.json travels with the exe, so a drive letter or user name must not be baked in
+        // settings.json travels with the exe, so a drive letter or user name must not be baked in
         let dirs = ApplicationConfig::default().directories;
         assert!(!dirs.is_empty());
         assert!(dirs.iter().all(|d| d.starts_with('%')));

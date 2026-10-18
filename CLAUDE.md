@@ -6,7 +6,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 - キーワードでfuzzy search、Tab/Shift-Tabで選択、Enterで実行
 - カスタムコマンド(URL/Command/File)、Bookmark、ローカルアプリケーション、任意のMarkdownファイル内のリンクが対象
 - エイリアス + 引数(`g react` → `https://google.com/search?q=react`)
-- 軽量で省メモリ。ポータブル運用で、`config.json` / `commands.json` / `usage.json`(実行履歴) / `logs/` は exe と同じディレクトリに置く
+- 軽量で省メモリ。ポータブル運用で、`settings.json` / `commands.json` / `usage.json`(実行履歴) / `logs/` は exe と同じディレクトリに置く
 
 ## 設計方針
 
@@ -26,7 +26,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 
 - `src/` — フロントエンド。`components/`(UI)、`hooks/`(状態とロジック)、`context/`、`search.ts`(Fuse.js と、略称を拾う `boundaryMatch.ts` の合成)、`tauri.ts`(IPC呼び出しはここに集約)、`listen.ts`(バックエンドのイベント購読。解除が購読完了より先でも漏れない)
 - `src-tauri/src/commands/` — コマンドの `domain` / `registry`(メモリ上の一覧) / `store`(commands.json) / `loader`(各ソースの読み込み) / `execution` / `ipc`。`bookmark` / `application` / `markdown` が外部ソース
-- `src-tauri/src/config/` — 設定(config.json)
+- `src-tauri/src/config/` — 設定(settings.json)。0.2.x までの名前 `config.json` は、初回の読み込みで改名して読む(0.4.0 で外す。`docs/adr/0005`)
 - `src-tauri/src/` 直下 — `lifecycle`(reload・終了)、`window`、`shortcut`、`hotkey_capture`、`tray`、`system_theme`(タスクバーのテーマ。トレイアイコンの切り替え用)、`watcher`(ファイルの変更を `request-reload` にするだけ。まとめて1回の reload にするのは `lifecycle`)、`json`(JSON の読み込みと一時ファイル経由の書き込み。config / commands / usage の保存はここを通す)、`notices`(ユーザーのいない所で起きた問題の通知。ウィンドウが隠れている間は保存だけして、表示されたときにフロントが `get_notices` で受け取る) など
 - `design/logo/generate.mjs` — ロゴの SVG、`src-tauri/icons/` 一式(32px 以下は小サイズ用の形、トレイ用の単色アイコン)、UI が描くパス(`src/logo.ts`)を生成する。アイコンは手で編集せず、このスクリプトの寸法を変えて再生成する。`src-tauri/icons/` に残すのは Windows のビルドが読むものだけで、他のプラットフォーム向けの出力(Android・iOS・Microsoft Store・macOS・Linux)はスクリプトが消す
 
@@ -36,7 +36,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 - 検索欄に直接入力した URL/パスは `open_target` で開く。URL は許可スキーム(http/https/mailto/ftp)のみ
 - URL コマンドの引数はパーセントエンコードする。置換ロジックは Rust(`Command::substitute_args`)と TS(`substituteArgs`、プレビュー用)の2箇所にあるため、変更時は両方を揃える。両方が `src/__tests__/fixtures/substitute-cases.json` の同じケースを検証する
 - `source` は実行時のみ保持し、commands.json には保存しない
-- 外部ソースのコマンドに紐づく設定(`ignored` / `aliases`)は `command` 文字列をキーに config.json へ保存する。外部コマンドの ID は `DefaultHasher` のハッシュで、Rust のバージョンをまたいで同じ値になる保証がないので、永続化には使わない(`docs/adr/0003`)
+- 外部ソースのコマンドに紐づく設定(`ignored` / `aliases`)は `command` 文字列をキーに settings.json へ保存する。外部コマンドの ID は `DefaultHasher` のハッシュで、Rust のバージョンをまたいで同じ値になる保証がないので、永続化には使わない(`docs/adr/0003`)
 - 実行履歴(`usage.json`)は検索結果の並べ替えにだけ使い、キーは `command` 文字列(ID は外部コマンドで安定しないので使わない)。順位は `fuseScore - boost`(小さいほど上)で、`boost = 0.05 * w / (w + 3)`、`w = 回数 * 0.5^(最終使用からの日数 / 30)`。上限があるので、履歴だけで良く一致する候補を逆転させない。式は `src/search.ts` にあるので、変えるときは `search.test.ts` と揃える
 
 ## UI

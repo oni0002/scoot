@@ -25,7 +25,7 @@ pub fn open_url(app_handle: &AppHandle, url: &str) -> Result<(), crate::error::A
         .map_err(|e| crate::error::AppError::System(format!("Failed to open URL '{}': {}", url, e)))
 }
 
-/// The directory holding the exe. Scoot is portable: config.json, commands.json and logs/ live
+/// The directory holding the exe. Scoot is portable: settings.json, commands.json and logs/ live
 /// next to it.
 pub fn app_dir() -> PathBuf {
     std::env::current_exe()

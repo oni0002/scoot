@@ -236,7 +236,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         () => TauriAPI.openCommandsJson(),
         'open commands.json',
     );
-    const handleOpenConfigJson = menuHandler(() => TauriAPI.openConfigJson(), 'open config.json');
+    const handleOpenConfigJson = menuHandler(() => TauriAPI.openConfigJson(), 'open settings.json');
     const handleShowAbout = menuHandler(async () => {
         const version = await TauriAPI.getVersion();
         await TauriAPI.showMessage(

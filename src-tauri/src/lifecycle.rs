@@ -22,7 +22,7 @@ pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::
     Ok(())
 }
 
-/// Reload config and commands. A config.json that fails to load does not stop the commands from
+/// Reload config and commands. A settings.json that fails to load does not stop the commands from
 /// loading: the last good config stays in force, the webview is told, and the error is returned
 /// once everything else is done.
 pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::AppError> {

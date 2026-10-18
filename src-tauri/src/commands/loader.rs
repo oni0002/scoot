@@ -91,7 +91,7 @@ pub async fn reload(
     Ok(())
 }
 
-/// Give external commands the aliases saved in config.json. A hand-edited file can hold an alias
+/// Give external commands the aliases saved in settings.json. A hand-edited file can hold an alias
 /// twice, or one a user command already has; the user command wins, then the first external one.
 fn apply_aliases(
     external: &mut [Command],

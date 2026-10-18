@@ -22,7 +22,7 @@ pub fn setup_system_tray(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         None::<&str>,
     )?;
     let open_config_item =
-        MenuItem::with_id(app, "open_config", "Open config.json", true, None::<&str>)?;
+        MenuItem::with_id(app, "open_config", "Open settings.json", true, None::<&str>)?;
     let open_log_item = MenuItem::with_id(app, "open_log", "Open log", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
