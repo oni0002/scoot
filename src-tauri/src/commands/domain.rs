@@ -56,11 +56,6 @@ pub struct Command {
     pub show_window: Option<bool>,
 }
 
-/// Deserialize commands.json. The fields' own rules are checked per command by `Command::validate`.
-pub fn deserialize_json(json_str: &str) -> Result<Vec<Command>, crate::error::AppError> {
-    crate::json::parse(json_str)
-}
-
 /// Get the built-in commands for Scoot
 pub fn get_scoot_commands() -> Vec<Command> {
     vec![
@@ -264,15 +259,6 @@ impl Command {
             )));
         }
 
-        // Category length limit
-        let category_length = self.category.chars().count();
-        if category_length > 50 {
-            return Err(crate::error::AppError::Validation(format!(
-                "Command category is too long ({} characters). Maximum allowed is 50 characters.",
-                category_length
-            )));
-        }
-
         // Category validity check
         if !matches!(
             self.category.as_str(),
@@ -387,6 +373,20 @@ mod tests {
     }
 
     #[test]
+    fn only_the_known_categories_are_accepted() {
+        for category in ["url", "file", "command", "scoot"] {
+            let mut cmd = create_dummy_command("echo hi");
+            cmd.category = category.to_string();
+            assert!(cmd.validate().is_ok(), "{}", category);
+        }
+        for category in ["", "URL", "shell", &"x".repeat(80)] {
+            let mut cmd = create_dummy_command("echo hi");
+            cmd.category = category.to_string();
+            assert!(cmd.validate().is_err(), "{}", category);
+        }
+    }
+
+    #[test]
     fn placeholders_need_an_alias() {
         let mut cmd = create_dummy_command("echo {$1}");
         assert!(cmd.validate().is_err());
@@ -411,6 +411,6 @@ mod tests {
     fn test_missing_id_is_accepted() {
         let json =
             r#"[{"name": "test", "category": "url", "command": "http", "description": "desc"}]"#;
-        assert!(deserialize_json(json).is_ok());
+        assert!(crate::json::parse::<Vec<Command>>(json).is_ok());
     }
 }

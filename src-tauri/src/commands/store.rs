@@ -35,7 +35,7 @@ impl CommandStore {
             FileText::Text(content) => content,
         };
 
-        let mut commands = crate::commands::domain::deserialize_json(&content).map_err(|e| {
+        let mut commands = crate::json::parse::<Vec<Command>>(&content).map_err(|e| {
             crate::error::AppError::System(format!(
                 "Failed to parse commands.json: {}. The file may be corrupted.",
                 e
