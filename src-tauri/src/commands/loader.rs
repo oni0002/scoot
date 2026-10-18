@@ -2,10 +2,11 @@ use crate::commands::domain::Command;
 use crate::commands::registry::CommandRegistry;
 use crate::error::AppError;
 use std::collections::{BTreeMap, HashSet};
+use tauri::Runtime;
 
 /// Reload commands, bookmarks, and apps into the registry
-pub async fn reload(
-    app_handle: &tauri::AppHandle,
+pub async fn reload<R: Runtime>(
+    app_handle: &tauri::AppHandle<R>,
     command_store: &crate::commands::store::CommandStore,
     command_registry: &std::sync::Mutex<CommandRegistry>,
     settings: &crate::settings::domain::Settings,

@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 pub const ERROR: &str = "error";
 pub const WARNING: &str = "warning";
@@ -47,7 +47,12 @@ impl NoticeState {
 /// Keep the notice. If the window is showing, also send it to the page at once; if not, the page
 /// asks for it when the window is shown (`get_notices`). The page shows each one once; see
 /// `useAppEvents`.
-pub fn raise(app_handle: &AppHandle, source: &'static str, level: &'static str, message: String) {
+pub fn raise<R: Runtime>(
+    app_handle: &AppHandle<R>,
+    source: &'static str,
+    level: &'static str,
+    message: String,
+) {
     let notice = Notice {
         source,
         level,
@@ -62,7 +67,7 @@ pub fn raise(app_handle: &AppHandle, source: &'static str, level: &'static str, 
 }
 
 /// The cause is gone (a reload worked, a key was taken): stop reminding
-pub fn clear(app_handle: &AppHandle, source: &str) {
+pub fn clear<R: Runtime>(app_handle: &AppHandle<R>, source: &str) {
     if let Some(state) = app_handle.try_state::<NoticeState>() {
         state.clear(source);
     }

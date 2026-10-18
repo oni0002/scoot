@@ -1,5 +1,5 @@
 use crate::state::{CommandsState, SettingsState};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, Runtime};
 
 /// Reload settings and commands (IPC)
 #[tauri::command]
@@ -25,7 +25,9 @@ pub async fn quit_app(app_handle: tauri::AppHandle) -> Result<(), crate::error::
 /// Reload settings and commands. A settings.json that fails to load does not stop the commands from
 /// loading: the last good settings stays in force, the webview is told, and the error is returned
 /// once everything else is done.
-pub async fn reload(app_handle: &tauri::AppHandle) -> Result<(), crate::error::AppError> {
+pub async fn reload<R: Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+) -> Result<(), crate::error::AppError> {
     use tauri::Emitter;
 
     let Some(settings_state) = app_handle.try_state::<SettingsState>() else {

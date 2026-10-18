@@ -1,9 +1,9 @@
 use crate::settings::domain::DEFAULT_SHORTCUT;
-use tauri::{App, AppHandle, Manager};
+use tauri::{App, AppHandle, Manager, Runtime};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 /// The hotkey this app currently holds, as it was written when it was registered
-fn registered_hotkey(app_handle: &AppHandle) -> Option<String> {
+fn registered_hotkey<R: Runtime>(app_handle: &AppHandle<R>) -> Option<String> {
     let state = app_handle.try_state::<crate::state::ShortcutState>()?;
     let hotkey = state.shortcut.lock().ok()?.clone();
     hotkey
@@ -14,7 +14,7 @@ fn registered_hotkey(app_handle: &AppHandle) -> Option<String> {
 const NOTICE_SOURCE: &str = "hotkey";
 
 /// Note that `hotkey` is the one held now, which also means the last failure is over
-fn remember(app_handle: &AppHandle, hotkey: &str) {
+fn remember<R: Runtime>(app_handle: &AppHandle<R>, hotkey: &str) {
     if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
         if let Ok(mut registered) = state.shortcut.lock() {
             *registered = Some(hotkey.to_string());
@@ -35,13 +35,13 @@ fn remember(app_handle: &AppHandle, hotkey: &str) {
 /// * `app_handle` - Tauri AppHandle
 /// * `hotkey` - The hotkey to register
 /// * `handler` - The handler to execute when the hotkey is pressed
-pub fn register<F>(
-    app_handle: &AppHandle,
+pub fn register<R: Runtime, F>(
+    app_handle: &AppHandle<R>,
     hotkey: &str,
     handler: F,
 ) -> Result<(), crate::error::AppError>
 where
-    F: Fn(&AppHandle) + Send + Sync + 'static,
+    F: Fn(&AppHandle<R>) + Send + Sync + 'static,
 {
     let previous = registered_hotkey(app_handle);
     if previous.as_deref() == Some(hotkey) && app_handle.global_shortcut().is_registered(hotkey) {
@@ -90,7 +90,7 @@ where
 
 /// Let go of the hotkey while one is being captured: a registered key never reaches the window.
 /// `resume` takes it again.
-pub fn suspend(app_handle: &AppHandle) {
+pub fn suspend<R: Runtime>(app_handle: &AppHandle<R>) {
     if let Some(held) = app_handle
         .try_state::<crate::state::ShortcutState>()
         .and_then(|state| state.suspend())
@@ -102,7 +102,7 @@ pub fn suspend(app_handle: &AppHandle) {
 
 /// Take back the hotkey `suspend` let go of. It is the one that worked before, not the saved
 /// one: the saved hotkey can be unavailable, and an edit made in the settings is not saved yet.
-pub fn resume(app_handle: &AppHandle) {
+pub fn resume<R: Runtime>(app_handle: &AppHandle<R>) {
     let resumed = app_handle
         .try_state::<crate::state::ShortcutState>()
         .and_then(|state| state.resume());
@@ -114,7 +114,7 @@ pub fn resume(app_handle: &AppHandle) {
 }
 
 /// The hotkey from the loaded settings, or the default when it cannot be read
-pub fn configured_hotkey(app_handle: &AppHandle) -> String {
+pub fn configured_hotkey<R: Runtime>(app_handle: &AppHandle<R>) -> String {
     app_handle
         .try_state::<crate::state::SettingsState>()
         .and_then(|state| state.settings.lock().ok().map(|c| c.hotkey.clone()))
@@ -127,8 +127,8 @@ pub fn setup_shortcuts(app: &App) -> Result<(), crate::error::AppError> {
 }
 
 /// Register global shortcuts
-pub fn setup_global_shortcuts(
-    app_handle: &tauri::AppHandle,
+pub fn setup_global_shortcuts<R: Runtime>(
+    app_handle: &tauri::AppHandle<R>,
     hotkey: &str,
 ) -> Result<(), crate::error::AppError> {
     register(app_handle, hotkey, move |h| {

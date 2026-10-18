@@ -44,6 +44,10 @@ windows-sys = { version = "0.61", features = [
 # Already in the tree through tauri; used for the COM shell link that makes the startup shortcut
 windows = { version = "0.62", features = ["Win32_System_Com", "Win32_UI_Shell"] }
 
+[dev-dependencies]
+# A mock runtime, so code that needs an AppHandle can be tested
+tauri = { version = "2.11", features = ["test"] }
+
 [profile.release]
 codegen-units = 1
 lto = true

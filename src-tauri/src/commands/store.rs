@@ -9,11 +9,12 @@ pub struct CommandStore {
 
 impl CommandStore {
     pub(crate) fn new() -> Self {
+        Self::in_dir(&crate::os::app_dir())
+    }
+
+    pub fn in_dir(dir: &std::path::Path) -> Self {
         Self {
-            commands_path: crate::os::app_dir()
-                .join("commands.json")
-                .to_string_lossy()
-                .into_owned(),
+            commands_path: dir.join("commands.json").to_string_lossy().into_owned(),
         }
     }
 

@@ -20,7 +20,7 @@ impl SettingsStore {
         Self::in_dir(&crate::os::app_dir())
     }
 
-    fn in_dir(dir: &std::path::Path) -> Self {
+    pub fn in_dir(dir: &std::path::Path) -> Self {
         let path = |name: &str| dir.join(name).to_string_lossy().into_owned();
         Self {
             settings_path: path(SETTINGS_FILE),
