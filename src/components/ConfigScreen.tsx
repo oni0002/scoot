@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LuArrowLeft } from 'react-icons/lu';
+import { LuArrowLeft, LuFileJson } from 'react-icons/lu';
+import { TauriAPI } from '../tauri';
 import { Config } from '../types';
 import { useConfigContext } from '../context/ConfigContext';
 import { useNotificationContext } from '../context/NotificationContext';
@@ -19,7 +20,7 @@ interface ConfigScreenProps {
 
 export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHistory }) => {
     const { config, saveConfig } = useConfigContext();
-    const { showSuccess } = useNotificationContext();
+    const { showSuccess, showError } = useNotificationContext();
     const [saveError, setSaveError] = useState<string | null>(null);
     const [edited, setEdited] = useState<Config | null>(null);
     const local = edited ?? config;
@@ -35,20 +36,34 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
 
     // Settings are written when the screen closes. A failed write keeps the screen open, so the
     // edits are not lost behind a screen that looks saved.
-    const handleBack = useCallback(async () => {
-        if (!edited || JSON.stringify(edited) === JSON.stringify(config)) {
-            onBack();
-            return;
-        }
+    const saveEdits = useCallback(async (): Promise<boolean> => {
+        if (!edited || JSON.stringify(edited) === JSON.stringify(config)) return true;
         try {
             await saveConfig(edited);
         } catch (err) {
             setSaveError(getErrorMessage(err));
-            return;
+            return false;
         }
         showSuccess('Settings saved');
+        return true;
+    }, [edited, config, saveConfig, showSuccess]);
+
+    const handleBack = useCallback(async () => {
+        if (await saveEdits()) onBack();
+    }, [saveEdits, onBack]);
+
+    // Saves first so the file is current, then leaves: an open screen would go stale as soon as
+    // the file is edited.
+    const openConfigJson = async () => {
+        if (!(await saveEdits())) return;
+        try {
+            await TauriAPI.openConfigJson();
+        } catch (err) {
+            showError(`Could not open config.json: ${getErrorMessage(err)}`);
+            return;
+        }
         onBack();
-    }, [edited, config, saveConfig, showSuccess, onBack]);
+    };
 
     // While the hotkey field is capturing, Esc cancels the capture instead of closing the screen
     const capturing = hotkey.capturing;
@@ -79,7 +94,16 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
                 >
                     <LuArrowLeft />
                 </button>
-                <h3>Settings</h3>
+                <h3 className="flex-1">Settings</h3>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-sm btn-square"
+                    onClick={openConfigJson}
+                    aria-label="Open config.json"
+                    title="Open config.json"
+                >
+                    <LuFileJson />
+                </button>
             </div>
 
             {saveError && (

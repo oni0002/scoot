@@ -146,6 +146,43 @@ describe('ConfigScreen usage history', () => {
     });
 });
 
+describe('ConfigScreen open config.json', () => {
+    beforeEach(() => jest.mocked(TauriAPI.openConfigJson).mockReset());
+
+    it('saves edits first, then opens the file and leaves the screen', async () => {
+        jest.mocked(TauriAPI.saveConfig).mockResolvedValue();
+        jest.mocked(TauriAPI.openConfigJson).mockResolvedValue();
+        const onBack = renderScreen();
+        await userEvent.selectOptions(await screen.findByLabelText('Theme'), 'light');
+        await userEvent.click(screen.getByRole('button', { name: 'Open config.json' }));
+        await waitFor(() => expect(onBack).toHaveBeenCalled());
+        expect(TauriAPI.saveConfig).toHaveBeenCalledWith(
+            expect.objectContaining({ theme: 'light' }),
+        );
+        expect(TauriAPI.openConfigJson).toHaveBeenCalled();
+    });
+
+    it('does not open the file while the edits cannot be saved', async () => {
+        jest.mocked(TauriAPI.saveConfig).mockRejectedValue('Validation error: bad value');
+        const onBack = renderScreen();
+        await userEvent.selectOptions(await screen.findByLabelText('Theme'), 'light');
+        await userEvent.click(screen.getByRole('button', { name: 'Open config.json' }));
+        expect(await screen.findByRole('alert')).toHaveTextContent('Could not save settings');
+        expect(TauriAPI.openConfigJson).not.toHaveBeenCalled();
+        expect(onBack).not.toHaveBeenCalled();
+    });
+
+    it('stays open and says why when the file cannot be opened', async () => {
+        jest.mocked(TauriAPI.openConfigJson).mockRejectedValue(new Error('No editor'));
+        const onBack = renderScreen();
+        await userEvent.click(await screen.findByRole('button', { name: 'Open config.json' }));
+        expect(
+            await screen.findByText(/Could not open config.json: No editor/),
+        ).toBeInTheDocument();
+        expect(onBack).not.toHaveBeenCalled();
+    });
+});
+
 describe('ConfigScreen startup shortcut', () => {
     const startupSwitch = () => screen.findByRole('checkbox', { name: 'Run at startup' });
 
