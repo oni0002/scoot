@@ -64,6 +64,14 @@ export const TauriAPI = {
         return await invoke('leave_modal');
     },
 
+    async getStartupShortcut(): Promise<boolean> {
+        return await invoke<boolean>('get_startup_shortcut');
+    },
+
+    async setStartupShortcut(enabled: boolean): Promise<boolean> {
+        return await invoke<boolean>('set_startup_shortcut', { enabled });
+    },
+
     async startHotkeyCapture(): Promise<void> {
         return await invoke('start_hotkey_capture');
     },

@@ -58,6 +58,8 @@ const renderScreen = (
 beforeEach(() => {
     jest.mocked(TauriAPI.getConfig).mockResolvedValue(config);
     jest.mocked(TauriAPI.saveConfig).mockReset();
+    jest.mocked(TauriAPI.getStartupShortcut).mockResolvedValue(false);
+    jest.mocked(TauriAPI.setStartupShortcut).mockReset();
 });
 
 describe('ConfigScreen closing', () => {
@@ -141,5 +143,33 @@ describe('ConfigScreen usage history', () => {
         );
         await waitFor(() => expect(onClearHistory).toHaveBeenCalledTimes(1));
         expect(await screen.findByText('History cleared')).toBeInTheDocument();
+    });
+});
+
+describe('ConfigScreen startup shortcut', () => {
+    it('creates the shortcut at once, without waiting for the screen to close', async () => {
+        jest.mocked(TauriAPI.setStartupShortcut).mockResolvedValue(true);
+        renderScreen();
+        await userEvent.click(await screen.findByRole('button', { name: 'Create shortcut' }));
+        expect(TauriAPI.setStartupShortcut).toHaveBeenCalledWith(true);
+        expect(await screen.findByRole('button', { name: 'Remove shortcut' })).toBeEnabled();
+        expect(TauriAPI.saveConfig).not.toHaveBeenCalled();
+    });
+
+    it('offers to remove a shortcut that already exists', async () => {
+        jest.mocked(TauriAPI.getStartupShortcut).mockResolvedValue(true);
+        jest.mocked(TauriAPI.setStartupShortcut).mockResolvedValue(false);
+        renderScreen();
+        await userEvent.click(await screen.findByRole('button', { name: 'Remove shortcut' }));
+        expect(TauriAPI.setStartupShortcut).toHaveBeenCalledWith(false);
+        expect(await screen.findByRole('button', { name: 'Create shortcut' })).toBeEnabled();
+    });
+
+    it('says why it failed and keeps the button as it was', async () => {
+        jest.mocked(TauriAPI.setStartupShortcut).mockRejectedValue(new Error('Access is denied'));
+        renderScreen();
+        await userEvent.click(await screen.findByRole('button', { name: 'Create shortcut' }));
+        expect(await screen.findByText(/Access is denied/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Create shortcut' })).toBeEnabled();
     });
 });

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { TauriAPI } from '../../tauri';
 import { Config } from '../../types';
 import { THEME_OPTIONS } from '../../theme';
 import { HotkeyCapture } from '../../hooks/useHotkeyCapture';
@@ -22,6 +23,30 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
 }) => {
     const { showSuccess, showError } = useNotificationContext();
     const [confirmingClear, setConfirmingClear] = useState(false);
+    // null until the Startup folder has been checked
+    const [startupShortcut, setStartupShortcut] = useState<boolean | null>(null);
+    const [startupBusy, setStartupBusy] = useState(false);
+
+    useEffect(() => {
+        TauriAPI.getStartupShortcut()
+            .then((exists) => setStartupShortcut(Boolean(exists)))
+            .catch(() => setStartupShortcut(false));
+    }, []);
+
+    // Like clearing history, this takes effect at once, not when the screen closes
+    const toggleStartupShortcut = async () => {
+        if (startupShortcut === null) return;
+        setStartupBusy(true);
+        try {
+            setStartupShortcut(await TauriAPI.setStartupShortcut(!startupShortcut));
+        } catch (err) {
+            showError(
+                `Could not ${startupShortcut ? 'remove' : 'create'} the startup shortcut: ${getErrorMessage(err)}`,
+            );
+        } finally {
+            setStartupBusy(false);
+        }
+    };
 
     // Clearing takes effect at once, not with the other settings when the screen closes
     const clearHistory = async () => {
@@ -49,6 +74,19 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                             </option>
                         ))}
                     </select>
+                </Row>
+                <Row
+                    label="Launch at login"
+                    description="Puts a shortcut to this exe in the Windows Startup folder. Create it again if you move Scoot."
+                >
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-outline"
+                        disabled={startupShortcut === null || startupBusy}
+                        onClick={toggleStartupShortcut}
+                    >
+                        {startupShortcut ? 'Remove shortcut' : 'Create shortcut'}
+                    </button>
                 </Row>
                 <Row
                     label="Hotkey"

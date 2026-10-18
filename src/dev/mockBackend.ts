@@ -94,6 +94,7 @@ export function createMockHandlers(): Record<string, Handler> {
     let config = defaultConfig();
     let nextId = 100;
     const usage: Record<string, { count: number; lastUsed: number }> = {};
+    let startupShortcut = false;
     const visibleExternal = () =>
         externalCommands()
             .filter((c) => !config.ignored.includes(c.command))
@@ -162,6 +163,8 @@ export function createMockHandlers(): Record<string, Handler> {
         quit_app: () => undefined,
         enter_modal: () => undefined,
         leave_modal: () => undefined,
+        get_startup_shortcut: () => startupShortcut,
+        set_startup_shortcut: ({ enabled }) => (startupShortcut = Boolean(enabled)),
         start_hotkey_capture: () => undefined,
         stop_hotkey_capture: () => undefined,
         get_config: () => config,
