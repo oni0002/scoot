@@ -37,6 +37,10 @@ export const useAppEvents = ({
                         loadCommands();
                         loadConfig();
                     },
+                    // config.json or commands.json could not be read; the last good state stays in use
+                    'config-load-error': (event: { payload: string }) => {
+                        showError(event.payload, NOTIFICATION_DURATION.VERY_LONG);
+                    },
                     'shortcut-registered': (event: { payload: string }) => {
                         showSuccess(`Global shortcut: ${event.payload}`);
                     },
