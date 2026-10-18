@@ -13,7 +13,7 @@ export const Section: React.FC<SectionProps> = ({ title, enabled, children }) =>
     const headingId = useId();
     return (
         <section aria-labelledby={headingId} className="mt-6 first:mt-2">
-            <div className="mb-2 flex min-h-8 items-center justify-between">
+            <div className="mb-2 flex min-h-8 items-center justify-between px-3">
                 <h4 id={headingId} className="text-sm font-semibold">
                     {title}
                 </h4>
