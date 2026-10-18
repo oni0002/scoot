@@ -4,7 +4,7 @@
 
 ## Language
 
-_Avoid_ は、コード上の名前・内部向けの文書・コミットで避ける言い換えの指針。画面に出る文言と、それを説明する利用者向けの文書(README)は、利用者に自然な語を使ってよい(例: 画面の見出しは "Settings"、Ignored の欄は "Hidden from search"、Hotkey の通知は "Global shortcut")。
+_Avoid_ は、コード上の名前・内部向けの文書・コミットで避ける言い換えの指針。画面に出る文言と、それを説明する利用者向けの文書(README)は、利用者に自然な語を使ってよい(例: Ignored の欄は "Hidden from search"、Hotkey の通知は "Global shortcut")。
 
 ### コアエンティティ
 
@@ -68,18 +68,18 @@ _Avoid_: Link, md link
 
 ### 設定・ライフサイクル
 
-**Config**:
+**Settings**:
 アプリの動作設定全体。ホットキー・テーマ・Fuzzy Search の閾値・各外部ソースの有効化と対象パスなどを含む。`settings.json` に保存される。
-_Avoid_: Settings, preferences
+_Avoid_: Config, configuration, preferences
 
 **Hotkey**:
 アプリをどこからでも呼び出すグローバルキーボードショートカット。OS レベルで登録される。
 _Avoid_: Shortcut (ファイルショートカットと混同するため), keybinding
 
-**Config Screen**:
-Config を GUI で編集するための画面。Scoot Command (OpenSettings) または3点メニューから開く。変更は画面を閉じるとき(Esc・戻る)にまとめて保存される。保存に失敗したら画面は閉じず、理由を表示する。`ignored` の削除・各外部ソースの有効化・パス設定・テーマ・Hotkey などを編集できる。
-_Avoid_: Settings screen, preferences screen
+**Settings Screen**:
+Settings を GUI で編集するための画面。Scoot Command (OpenSettings) または3点メニューから開く。変更は画面を閉じるとき(Esc・戻る)にまとめて保存される。保存に失敗したら画面は閉じず、理由を表示する。`ignored` の削除・各外部ソースの有効化・パス設定・テーマ・Hotkey などを編集できる。
+_Avoid_: Config screen, preferences screen
 
 **Reload**:
-Config と全 Command ソースを再読み込みしてアプリの状態を最新化する操作。settings.json の変更検知・タイマー・手動操作で発生する。commands.json は監視しない。Command は主に UI から追加するので、手で書き換えた分は手動またはタイマーの Reload で反映される。
+Settings と全 Command ソースを再読み込みしてアプリの状態を最新化する操作。settings.json の変更検知・タイマー・手動操作で発生する。commands.json は監視しない。Command は主に UI から追加するので、手で書き換えた分は手動またはタイマーの Reload で反映される。
 _Avoid_: Refresh, restart

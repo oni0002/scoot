@@ -28,7 +28,7 @@ A simple, fast, and keyboard-centric command launcher for Windows.
 | `↑`/`↓`, `Tab`/`Shift+Tab`, `Ctrl+N`/`P` | Navigate search results                                       |
 | `Ctrl+C`                                 | Copy selected command to clipboard (when no text is selected) |
 
-## Configuration
+## Settings
 
 Open the Settings screen from the 3-dot menu or via the `Open Settings` preset command. Settings are saved automatically on close.
 
