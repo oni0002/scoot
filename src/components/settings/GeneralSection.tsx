@@ -153,12 +153,16 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                         id="cfg-reload"
                         type="number"
                         min={1}
+                        max={1440}
                         className="input input-sm w-24"
                         value={config.reloadIntervalMinutes}
                         onChange={(e) =>
                             onChange({
                                 ...config,
-                                reloadIntervalMinutes: Math.max(1, Number(e.target.value)),
+                                reloadIntervalMinutes: Math.max(
+                                    1,
+                                    Math.min(1440, Number(e.target.value)),
+                                ),
                             })
                         }
                     />

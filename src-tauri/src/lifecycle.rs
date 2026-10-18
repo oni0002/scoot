@@ -154,7 +154,7 @@ pub fn start_periodic_reload(app_handle: tauri::AppHandle) {
         loop {
             let interval_minutes = if let Some(state) = app_handle.try_state::<ConfigState>() {
                 if let Ok(config) = state.config.lock() {
-                    std::cmp::max(config.reload_interval_minutes, 1)
+                    config.reload_interval_minutes
                 } else {
                     30
                 }

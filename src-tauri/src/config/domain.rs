@@ -13,6 +13,8 @@ static HOTKEY_RE: LazyLock<Regex> = LazyLock::new(|| {
 pub const DEFAULT_THEME: &str = "system";
 const THEMES: [&str; 3] = ["system", "light", "dark"];
 pub const DEFAULT_SHORTCUT: &str = "Alt+Space";
+/// One day. Keep in sync with the input's `max` in src/components/settings/GeneralSection.tsx.
+const MAX_RELOAD_INTERVAL_MINUTES: u64 = 24 * 60;
 
 /// Config struct
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -148,6 +150,12 @@ impl Config {
                 self.fuzzy_threshold
             ));
         }
+        if !(1..=MAX_RELOAD_INTERVAL_MINUTES).contains(&self.reload_interval_minutes) {
+            return fail(format!(
+                "reloadIntervalMinutes must be between 1 and {} (got {}).",
+                MAX_RELOAD_INTERVAL_MINUTES, self.reload_interval_minutes
+            ));
+        }
         if !THEMES.contains(&self.theme.as_str()) {
             return fail(format!(
                 "theme must be one of {} (got '{}').",
@@ -230,6 +238,16 @@ mod tests {
         assert!(parse(r#"{"maxResults": 100}"#).is_ok());
         assert!(parse(r#"{"maxResults": 0}"#).is_err());
         assert!(parse(r#"{"maxResults": 101}"#).is_err());
+    }
+
+    #[test]
+    fn reload_interval_must_be_within_a_day() {
+        assert!(parse(r#"{"reloadIntervalMinutes": 1}"#).is_ok());
+        assert!(parse(r#"{"reloadIntervalMinutes": 1440}"#).is_ok());
+        assert!(parse(r#"{"reloadIntervalMinutes": 0}"#).is_err());
+        assert!(parse(r#"{"reloadIntervalMinutes": 1441}"#).is_err());
+        // Large enough to overflow when turned into seconds
+        assert!(parse(r#"{"reloadIntervalMinutes": 18446744073709551615}"#).is_err());
     }
 
     #[test]
