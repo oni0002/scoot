@@ -20,7 +20,7 @@ interface ConfigScreenProps {
 }
 
 export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHistory }) => {
-    const { config, saveConfig } = useConfigContext();
+    const { config } = useConfigContext();
     const { showSuccess, reportError } = useNotificationContext();
     const [saveError, setSaveError] = useState<string | null>(null);
     const [edited, setEdited] = useState<Config | null>(null);
@@ -40,14 +40,14 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({ onBack, onClearHisto
     const saveEdits = useCallback(async (): Promise<boolean> => {
         if (!edited || JSON.stringify(edited) === JSON.stringify(config)) return true;
         try {
-            await saveConfig(edited);
+            await TauriAPI.saveConfig(edited);
         } catch (err) {
             setSaveError(getErrorMessage(err));
             return false;
         }
         showSuccess('Settings saved');
         return true;
-    }, [edited, config, saveConfig, showSuccess]);
+    }, [edited, config, showSuccess]);
 
     const handleBack = useCallback(async () => {
         if (await saveEdits()) onBack();

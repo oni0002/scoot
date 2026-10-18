@@ -10,7 +10,6 @@ interface ConfigContextType {
     usageHistory: boolean;
     frequentFirst: boolean;
     loadConfig: () => Promise<void>;
-    saveConfig: (config: Config) => Promise<void>;
 }
 
 // What Config::default gives in src-tauri/src/config/domain.rs, used until the real config arrives
@@ -34,10 +33,6 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
         }
     }, []);
 
-    const saveConfig = useCallback(async (updated: Config) => {
-        await TauriAPI.saveConfig(updated);
-    }, []);
-
     const value = useMemo(
         () => ({
             config,
@@ -47,9 +42,8 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
             usageHistory: config?.usageHistory ?? true,
             frequentFirst: config?.frequentFirst ?? true,
             loadConfig,
-            saveConfig,
         }),
-        [config, loadConfig, saveConfig],
+        [config, loadConfig],
     );
 
     return <ConfigContext.Provider value={value}>{children}</ConfigContext.Provider>;
