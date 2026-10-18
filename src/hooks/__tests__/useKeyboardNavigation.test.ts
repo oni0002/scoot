@@ -49,6 +49,23 @@ describe('while composing text (IME)', () => {
     });
 });
 
+describe('Ctrl+letter shortcuts with Caps Lock on', () => {
+    it.each([
+        ['N', 'moveSelection', 'down'],
+        ['P', 'moveSelection', 'up'],
+    ] as const)('Ctrl+%s moves the selection', (key, fn, direction) => {
+        const { props, press } = setup();
+        press(key, { ctrlKey: true });
+        expect(props[fn]).toHaveBeenCalledWith(direction);
+    });
+
+    it('Ctrl+C copies the selected command', () => {
+        const { props, press } = setup();
+        press('C', { ctrlKey: true });
+        expect(props.copySelectedCommand).toHaveBeenCalled();
+    });
+});
+
 describe('Esc', () => {
     it('clears what was typed', () => {
         const { props, press } = setup(); // query is "d"

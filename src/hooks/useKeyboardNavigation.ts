@@ -32,17 +32,19 @@ export const useKeyboardNavigation = ({
             if (e.nativeEvent.isComposing) return;
 
             if (e.ctrlKey) {
-                if (KEYBOARD_SHORTCUTS.MOVE_DOWN_ALT.includes(e.key)) {
+                // With Caps Lock or Shift the letter arrives in capitals
+                const key = e.key.toLowerCase();
+                if (KEYBOARD_SHORTCUTS.MOVE_DOWN_ALT.includes(key)) {
                     e.preventDefault();
                     moveSelection('down');
                     return;
                 }
-                if (KEYBOARD_SHORTCUTS.MOVE_UP_ALT.includes(e.key)) {
+                if (KEYBOARD_SHORTCUTS.MOVE_UP_ALT.includes(key)) {
                     e.preventDefault();
                     moveSelection('up');
                     return;
                 }
-                if (KEYBOARD_SHORTCUTS.COPY.includes(e.key)) {
+                if (KEYBOARD_SHORTCUTS.COPY.includes(key)) {
                     const input = inputRef.current;
                     const hasSelection = input && input.selectionStart !== input.selectionEnd;
                     if (!hasSelection) {
@@ -51,7 +53,7 @@ export const useKeyboardNavigation = ({
                     }
                     return;
                 }
-                const rowAction = e.altKey ? undefined : ROW_ACTION_BY_KEY[e.key.toLowerCase()];
+                const rowAction = e.altKey ? undefined : ROW_ACTION_BY_KEY[key];
                 if (rowAction) {
                     e.preventDefault();
                     onRowAction?.(rowAction);
