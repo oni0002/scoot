@@ -92,8 +92,11 @@ pub fn run() {
             crate::lifecycle::start_periodic_reload(app.handle().clone());
             // Set up system tray
             crate::tray::setup_system_tray(app)?;
-            // Set up global shortcuts
-            crate::shortcut::setup_shortcuts(app)?;
+            // Set up global shortcuts. A Hotkey another app holds must not stop Scoot from starting:
+            // the tray still opens it, and the page reports the failure once it is up.
+            if let Err(e) = crate::shortcut::setup_shortcuts(app) {
+                log::warn!("Starting without a Hotkey: {}", e);
+            }
             // Install window subclass to suppress WM_SYSCOMMAND SC_KEYMENU
             // during hotkey capture (prevents Alt+Space from opening system menu).
             #[cfg(target_os = "windows")]
