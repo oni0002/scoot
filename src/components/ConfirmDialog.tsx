@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useId, useRef, useEffect } from 'react';
 import { usePreventHide } from '../hooks/usePreventHide';
 
 interface ConfirmDialogProps {
@@ -26,6 +26,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     onCancel,
 }) => {
     const dialogRef = useRef<HTMLDialogElement>(null);
+    const titleId = useId();
 
     usePreventHide(isOpen);
 
@@ -59,9 +60,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     };
 
     return (
-        <dialog ref={dialogRef} className="modal scrollbar-gutter-auto">
+        <dialog ref={dialogRef} className="modal scrollbar-gutter-auto" aria-labelledby={titleId}>
             <div className="modal-box rounded-lg p-4 w-96 max-w-none scrollbar-gutter-auto">
-                <h3 className="mb-2">{title}</h3>
+                <h3 id={titleId} className="mb-2">
+                    {title}
+                </h3>
                 <p className="py-2 text-sm">{children}</p>
 
                 <div className="modal-action">
@@ -83,7 +86,9 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 </div>
             </div>
             <form method="dialog" className="modal-backdrop">
-                <button>close</button>
+                <button tabIndex={-1} aria-label="Close">
+                    close
+                </button>
             </form>
         </dialog>
     );

@@ -147,29 +147,34 @@ describe('ConfigScreen usage history', () => {
 });
 
 describe('ConfigScreen startup shortcut', () => {
+    const startupSwitch = () => screen.findByRole('checkbox', { name: 'Run at startup' });
+
     it('creates the shortcut at once, without waiting for the screen to close', async () => {
         jest.mocked(TauriAPI.setStartupShortcut).mockResolvedValue(true);
         renderScreen();
-        await userEvent.click(await screen.findByRole('button', { name: 'Create shortcut' }));
+        await userEvent.click(await startupSwitch());
         expect(TauriAPI.setStartupShortcut).toHaveBeenCalledWith(true);
-        expect(await screen.findByRole('button', { name: 'Remove shortcut' })).toBeEnabled();
+        expect(await screen.findByText('Scoot will run at startup')).toBeInTheDocument();
+        expect(await startupSwitch()).toBeChecked();
         expect(TauriAPI.saveConfig).not.toHaveBeenCalled();
     });
 
-    it('offers to remove a shortcut that already exists', async () => {
+    it('shows a shortcut that already exists as on, and removes it when switched off', async () => {
         jest.mocked(TauriAPI.getStartupShortcut).mockResolvedValue(true);
         jest.mocked(TauriAPI.setStartupShortcut).mockResolvedValue(false);
         renderScreen();
-        await userEvent.click(await screen.findByRole('button', { name: 'Remove shortcut' }));
+        const toggle = await startupSwitch();
+        await waitFor(() => expect(toggle).toBeChecked());
+        await userEvent.click(toggle);
         expect(TauriAPI.setStartupShortcut).toHaveBeenCalledWith(false);
-        expect(await screen.findByRole('button', { name: 'Create shortcut' })).toBeEnabled();
+        await waitFor(() => expect(toggle).not.toBeChecked());
     });
 
-    it('says why it failed and keeps the button as it was', async () => {
+    it('says why it failed and keeps the switch as it was', async () => {
         jest.mocked(TauriAPI.setStartupShortcut).mockRejectedValue(new Error('Access is denied'));
         renderScreen();
-        await userEvent.click(await screen.findByRole('button', { name: 'Create shortcut' }));
+        await userEvent.click(await startupSwitch());
         expect(await screen.findByText(/Access is denied/)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Create shortcut' })).toBeEnabled();
+        expect(await startupSwitch()).not.toBeChecked();
     });
 });

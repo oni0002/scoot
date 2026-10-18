@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Command } from '../types';
 import { getErrorMessage } from '../error';
 import { usePreventHide } from '../hooks/usePreventHide';
@@ -13,6 +13,7 @@ interface AliasDialogProps {
 
 const AliasDialogBody: React.FC<Required<AliasDialogProps>> = ({ command, onSubmit, onCancel }) => {
     const dialogRef = useRef<HTMLDialogElement>(null);
+    const titleId = useId();
     const [value, setValue] = useState(command.alias ?? '');
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
@@ -45,12 +46,14 @@ const AliasDialogBody: React.FC<Required<AliasDialogProps>> = ({ command, onSubm
     };
 
     return (
-        <dialog ref={dialogRef} className="modal scrollbar-gutter-auto">
+        <dialog ref={dialogRef} className="modal scrollbar-gutter-auto" aria-labelledby={titleId}>
             <form
                 onSubmit={handleSubmit}
                 className="modal-box rounded-lg p-4 w-96 max-w-none scrollbar-gutter-auto"
             >
-                <h3 className="mb-2">Alias</h3>
+                <h3 id={titleId} className="mb-2">
+                    Alias
+                </h3>
                 <label htmlFor="alias-dialog-input" className="block px-1 py-2 text-sm truncate">
                     A short name for <span className="font-semibold">{command.name}</span>
                 </label>
@@ -100,7 +103,9 @@ const AliasDialogBody: React.FC<Required<AliasDialogProps>> = ({ command, onSubm
                 </div>
             </form>
             <form method="dialog" className="modal-backdrop">
-                <button>close</button>
+                <button tabIndex={-1} aria-label="Close">
+                    close
+                </button>
             </form>
         </dialog>
     );

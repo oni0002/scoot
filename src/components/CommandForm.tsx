@@ -14,12 +14,12 @@ interface CommandFormProps {
 }
 
 // A duplicate starts from the original's values but is a new command: no id, and no alias since
-// an alias must stay unique.
+// an alias must stay unique. The name gets " copy" so the two rows can be told apart.
 const toFormData = (command?: Command, template?: Command) => {
     const source = command ?? template;
     return {
         id: command?.id ?? '',
-        name: source?.name ?? '',
+        name: command ? command.name : template ? `${template.name} copy` : '',
         category: source?.category ?? 'url',
         command: source?.command ?? '',
         description: source?.description ?? '',
@@ -176,7 +176,9 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                 >
                     <LuArrowLeft />
                 </button>
-                <h3>{command ? 'Edit command' : 'Add new command'}</h3>
+                <h3>
+                    {command ? 'Edit command' : template ? 'Duplicate command' : 'Add new command'}
+                </h3>
             </div>
 
             {/* Body */}

@@ -118,13 +118,14 @@ describe('CommandForm duplicating', () => {
     it('starts from the original but saves a new command without its id or alias', async () => {
         const onSave = jest.fn();
         render(<CommandForm template={template} onSave={onSave} onCancel={jest.fn()} />);
-        expect(screen.getByLabelText(/name/i)).toHaveValue('git status');
+        expect(screen.getByRole('heading', { name: 'Duplicate command' })).toBeInTheDocument();
+        expect(screen.getByLabelText(/name/i)).toHaveValue('git status copy');
         expect(screen.getByLabelText(/alias/i)).toHaveValue('');
 
         await userEvent.type(screen.getByLabelText(/alias/i), 'gs');
         await userEvent.click(screen.getByRole('button', { name: 'Add' }));
         expect(onSave).toHaveBeenCalledWith(
-            expect.objectContaining({ id: '', name: 'git status', alias: 'gs' }),
+            expect.objectContaining({ id: '', name: 'git status copy', alias: 'gs' }),
         );
     });
 });

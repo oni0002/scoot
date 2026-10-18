@@ -38,7 +38,9 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
         if (startupShortcut === null) return;
         setStartupBusy(true);
         try {
-            setStartupShortcut(await TauriAPI.setStartupShortcut(!startupShortcut));
+            const created = await TauriAPI.setStartupShortcut(!startupShortcut);
+            setStartupShortcut(created);
+            showSuccess(created ? 'Scoot will run at startup' : 'Scoot will not run at startup');
         } catch (err) {
             showError(
                 `Could not ${startupShortcut ? 'remove' : 'create'} the startup shortcut: ${getErrorMessage(err)}`,
@@ -76,17 +78,18 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                     </select>
                 </Row>
                 <Row
-                    label="Launch at login"
-                    description="Puts a shortcut to this exe in the Windows Startup folder. Create it again if you move Scoot."
+                    label="Run at startup"
+                    htmlFor="cfg-startup"
+                    description="Adds a shortcut to the Startup folder. Turn it off and on again if you move Scoot."
                 >
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-outline"
+                    <input
+                        id="cfg-startup"
+                        type="checkbox"
+                        className="toggle"
+                        checked={startupShortcut === true}
                         disabled={startupShortcut === null || startupBusy}
-                        onClick={toggleStartupShortcut}
-                    >
-                        {startupShortcut ? 'Remove shortcut' : 'Create shortcut'}
-                    </button>
+                        onChange={toggleStartupShortcut}
+                    />
                 </Row>
                 <Row
                     label="Hotkey"
