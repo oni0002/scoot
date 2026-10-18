@@ -7,7 +7,6 @@ interface UseAppEventsProps {
     handleOpenConfig: () => void;
     loadCommands: () => void;
     loadConfig: () => void;
-    showSuccess: (message: string) => void;
     showWarning: (message: string) => void;
     showError: (message: string, duration?: number) => void;
     setError: (error: string | null) => void;
@@ -18,7 +17,6 @@ export const useAppEvents = ({
     handleOpenConfig,
     loadCommands,
     loadConfig,
-    showSuccess,
     showWarning,
     showError,
     setError,
@@ -41,11 +39,9 @@ export const useAppEvents = ({
                     'config-load-error': (event: { payload: string }) => {
                         showError(event.payload, NOTIFICATION_DURATION.VERY_LONG);
                     },
-                    'shortcut-registered': (event: { payload: string }) => {
-                        showSuccess(`Global shortcut: ${event.payload}`);
-                    },
-                    'shortcut-warning': () => {
-                        showWarning('Use system tray to open.');
+                    // The Hotkey could not be taken (another app holds it); the message says which
+                    'shortcut-warning': (event: { payload: string }) => {
+                        showWarning(event.payload);
                     },
                 };
 

@@ -189,7 +189,6 @@ const AppContent = () => {
         handleOpenConfig,
         loadCommands,
         loadConfig,
-        showSuccess,
         showWarning,
         showError,
         setError,

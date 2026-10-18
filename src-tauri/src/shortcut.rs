@@ -2,7 +2,27 @@ use crate::config::domain::DEFAULT_SHORTCUT;
 use tauri::{App, AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
-/// Register a global shortcut
+/// The hotkey this app currently holds, as it was written when it was registered
+fn registered_hotkey(app_handle: &AppHandle) -> Option<String> {
+    let state = app_handle.try_state::<crate::state::ShortcutState>()?;
+    let hotkey = state.shortcut.lock().ok()?.clone();
+    hotkey
+}
+
+fn remember(app_handle: &AppHandle, hotkey: &str) {
+    if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
+        if let Ok(mut registered) = state.shortcut.lock() {
+            *registered = Some(hotkey.to_string());
+        }
+    }
+}
+
+/// Register a global shortcut, replacing the one registered before.
+///
+/// The new key is taken first and the old one released only once that worked, so a key another
+/// app holds never leaves Scoot without a hotkey. A key that cannot be taken is reported to the
+/// webview as `shortcut-warning`; success is silent, since this also runs when a hotkey capture
+/// ends and on every reload.
 ///
 /// ## args
 ///
@@ -17,69 +37,45 @@ pub fn register<F>(
 where
     F: Fn(&AppHandle) + Send + Sync + 'static,
 {
-    let app_handle_clone = app_handle.clone();
-
-    // Check if the shortcut is already registered
-    if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
-        let lock = match state.shortcut.lock() {
-            Ok(l) => l,
-            Err(e) => {
-                log::error!("Failed to lock shortcut state: {}", e);
-                return Err(crate::error::AppError::lock(e));
-            }
-        };
-        if let Some(current) = lock.as_ref() {
-            if current == hotkey && app_handle.global_shortcut().is_registered(hotkey) {
-                log::debug!("Shortcut {} is already registered.", hotkey);
-                return Ok(());
-            }
-        }
+    let previous = registered_hotkey(app_handle);
+    if previous.as_deref() == Some(hotkey) && app_handle.global_shortcut().is_registered(hotkey) {
+        log::debug!("Shortcut {} is already registered.", hotkey);
+        return Ok(());
     }
 
-    // Unregister existing shortcut
-    unregister(app_handle);
-
-    // Register event handler
-    if let Err(e) =
+    let app_handle_clone = app_handle.clone();
+    // on_shortcut registers the key with the OS as well as the handler
+    let registration =
         app_handle
             .global_shortcut()
             .on_shortcut(hotkey, move |_app, _shortcut, event| {
                 if matches!(event.state, ShortcutState::Pressed) {
                     handler(&app_handle_clone);
                 }
-            })
-    {
-        log::error!("Failed to set shortcut handler for {}: {}", hotkey, e);
-        return Err(crate::error::AppError::System(e.to_string()));
-    }
+            });
 
-    // Register the shortcut with the OS
-    match app_handle.global_shortcut().register(hotkey) {
-        Ok(_) => {
-            // Update the state
-            if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
-                if let Ok(mut registered) = state.shortcut.lock() {
-                    *registered = Some(hotkey.to_string());
-                }
+    match registration {
+        Ok(()) => {
+            if let Some(old) = previous.filter(|old| old != hotkey) {
+                log::debug!("Unregistering shortcut: {}", old);
+                let _ = app_handle.global_shortcut().unregister(old.as_str());
             }
-            let _ = app_handle.emit("shortcut-registered", hotkey);
+            remember(app_handle, hotkey);
             log::debug!("Global shortcut registered: {}", hotkey);
             Ok(())
         }
+        // The same key written differently ("alt+space"): already ours
+        Err(_) if app_handle.global_shortcut().is_registered(hotkey) => {
+            remember(app_handle, hotkey);
+            Ok(())
+        }
         Err(e) => {
-            // If the hotkey is already registered, consider it a success
-            if app_handle.global_shortcut().is_registered(hotkey) {
-                if let Some(state) = app_handle.try_state::<crate::state::ShortcutState>() {
-                    if let Ok(mut registered) = state.shortcut.lock() {
-                        *registered = Some(hotkey.to_string());
-                    }
-                }
-                Ok(())
-            } else {
-                log::error!("Failed to register hotkey {}: {}", hotkey, e);
-                let _ = app_handle.emit("shortcut-warning", format!("{} not available", hotkey));
-                Err(crate::error::AppError::System(e.to_string()))
-            }
+            log::error!("Failed to register hotkey {}: {}", hotkey, e);
+            let _ = app_handle.emit(
+                "shortcut-warning",
+                format!("{hotkey} is not available. Pick another Hotkey in Settings."),
+            );
+            Err(crate::error::AppError::System(e.to_string()))
         }
     }
 }
@@ -99,6 +95,7 @@ pub fn unregister(app_handle: &AppHandle) {
         let _ = app_handle.global_shortcut().unregister_all();
     }
 }
+
 /// The hotkey from the loaded config, or the default when it cannot be read
 pub fn configured_hotkey(app_handle: &AppHandle) -> String {
     app_handle
