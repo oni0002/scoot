@@ -1,7 +1,13 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Command } from '../types';
 import { TauriAPI } from '../tauri';
-import { NOTIFICATION_DURATION, SLOW_RUN_MS, resultOptionId } from '../constants';
+import {
+    NOTIFICATION_DURATION,
+    RELOADED_MESSAGE,
+    SCOOT_RELOAD,
+    SLOW_RUN_MS,
+    resultOptionId,
+} from '../constants';
 import { RowAction, rowActionsFor } from '../rowActions';
 import { hasPlaceholders, parseArgs, substituteArgs } from '../command';
 import { SearchBar } from './SearchBar';
@@ -49,7 +55,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     isDialogOpen = false,
 }) => {
     const { commands, usage, executeCommand: rawExecuteCommand } = useCommandContext();
-    const { reportError, showProgress } = useNotificationContext();
+    const { reportError, showProgress, showSuccess } = useNotificationContext();
 
     const executeContextCommand = useCallback(
         async (command: Command, args: string[]) => {
@@ -59,7 +65,10 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
                 stopProgress = showProgress(`Running "${command.name}"…`);
             }, SLOW_RUN_MS);
             try {
-                return await rawExecuteCommand(command, args);
+                const keepWindowOpen = await rawExecuteCommand(command, args);
+                // The window stays open and nothing else shows that the reload finished
+                if (command.command === SCOOT_RELOAD) showSuccess(RELOADED_MESSAGE, 2000);
+                return keepWindowOpen;
             } catch (err) {
                 reportError(
                     `run "${command.name}"`,
@@ -75,7 +84,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
                 stopProgress?.();
             }
         },
-        [rawExecuteCommand, reportError, showProgress, onEditCommand],
+        [rawExecuteCommand, reportError, showProgress, showSuccess, onEditCommand],
     );
 
     const searchState = useSearchState(

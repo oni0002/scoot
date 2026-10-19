@@ -15,6 +15,9 @@ export const NOTIFICATION_DURATION = {
     PROGRESS_MAX: 120000,
 };
 
+export const SCOOT_RELOAD = 'scoot://reload';
+export const RELOADED_MESSAGE = 'Commands and settings reloaded';
+
 /** How long a command may run before the launcher says it is still working. */
 export const SLOW_RUN_MS = 400;
 

@@ -90,7 +90,9 @@ export const useSearchState = (
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- query-driven mode transition is intentional
         setSearchMode((prev) => {
-            if (!query || prev.mode === 'argument') return prev;
+            // This closure can hold a query that resetState has since cleared (a reload does both
+            // at once); idle means nothing is typed, so there is nothing to search again
+            if (prev.mode !== 'search') return prev;
             return computeMode(query);
         });
     }, [commands, fuzzyThreshold, maxResults]); // eslint-disable-line react-hooks/exhaustive-deps

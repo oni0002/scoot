@@ -7,7 +7,7 @@ import { AliasDialog } from './components/AliasDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Command } from './types';
 import { TauriAPI } from './tauri';
-import { NOTIFICATION_DURATION } from './constants';
+import { NOTIFICATION_DURATION, RELOADED_MESSAGE } from './constants';
 import { useAppEvents } from './hooks/useAppEvents';
 import { usePreventHide } from './hooks/usePreventHide';
 import { CommandProvider, useCommandContext } from './context/CommandContext';
@@ -177,7 +177,7 @@ const AppContent = () => {
     const handleReloadCommands = useCallback(async () => {
         try {
             await TauriAPI.reloadAll(); // emits settings-reloaded, which refetches the list
-            showSuccess('Commands and settings reloaded', 2000);
+            showSuccess(RELOADED_MESSAGE, 2000);
         } catch (err) {
             reportError('reload configuration', err);
         }
