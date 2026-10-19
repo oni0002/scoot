@@ -11,7 +11,12 @@ export const NOTIFICATION_DURATION = {
     UNDO: 6000,
     LONG: 8000,
     VERY_LONG: 10000,
+    /** A progress toast is removed by its caller; this only keeps it from outliving a hung call. */
+    PROGRESS_MAX: 120000,
 };
+
+/** How long a command may run before the launcher says it is still working. */
+export const SLOW_RUN_MS = 400;
 
 export const KEYBOARD_SHORTCUTS = {
     MOVE_DOWN: ['ArrowDown'],

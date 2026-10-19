@@ -5,7 +5,7 @@ import { LuX, LuCheck, LuTriangleAlert, LuCircleX } from 'react-icons/lu';
 
 export interface Notification {
     id: string;
-    type: 'success' | 'error' | 'warning';
+    type: 'success' | 'error' | 'warning' | 'progress';
     message: string;
     duration?: number;
     /** A single follow-up the user can take from the toast, e.g. Undo. */
@@ -18,6 +18,7 @@ const TYPE_STYLE: Record<Notification['type'], { icon: React.ReactNode; classNam
     success: { icon: <LuCheck />, className: 'text-success' },
     error: { icon: <LuCircleX />, className: 'text-error' },
     warning: { icon: <LuTriangleAlert />, className: 'text-warning' },
+    progress: { icon: <span className="loading loading-spinner loading-xs" />, className: '' },
 };
 
 interface NotificationToastProps {

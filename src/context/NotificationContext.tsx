@@ -7,6 +7,8 @@ interface NotificationContextType {
     showSuccess: (message: string, duration?: number, action?: Notification['action']) => void;
     showError: (message: string, duration?: number, action?: Notification['action']) => void;
     showWarning: (message: string, duration?: number) => void;
+    /** Shows a spinner toast until the returned function is called. */
+    showProgress: (message: string) => () => void;
     /** Logs a failure and shows "Could not <what>: <the reason>". */
     reportError: (
         what: string,
@@ -20,12 +22,19 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const theme = useSettingsTheme();
-    const { notifications, removeNotification, showSuccess, showError, showWarning, reportError } =
-        useNotifications();
+    const {
+        notifications,
+        removeNotification,
+        showSuccess,
+        showError,
+        showWarning,
+        showProgress,
+        reportError,
+    } = useNotifications();
 
     const value = useMemo(
-        () => ({ showSuccess, showError, showWarning, reportError }),
-        [showSuccess, showError, showWarning, reportError],
+        () => ({ showSuccess, showError, showWarning, showProgress, reportError }),
+        [showSuccess, showError, showWarning, showProgress, reportError],
     );
 
     return (

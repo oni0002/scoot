@@ -61,6 +61,15 @@ export const useNotifications = () => {
         [addNotification],
     );
 
+    /** A toast for work still running. It stays until the returned function is called. */
+    const showProgress = useCallback(
+        (message: string) => {
+            const id = addNotification('progress', message, NOTIFICATION_DURATION.PROGRESS_MAX);
+            return () => removeNotification(id);
+        },
+        [addNotification, removeNotification],
+    );
+
     /** Logs a failure and tells the user: "Could not <what>: <the reason>". */
     const reportError = useCallback(
         (what: string, err: unknown, duration?: number, action?: Notification['action']) => {
@@ -76,6 +85,7 @@ export const useNotifications = () => {
         showSuccess,
         showError,
         showWarning,
+        showProgress,
         reportError,
     };
 };

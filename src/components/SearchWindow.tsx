@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Command } from '../types';
 import { TauriAPI } from '../tauri';
-import { NOTIFICATION_DURATION, resultOptionId } from '../constants';
+import { NOTIFICATION_DURATION, SLOW_RUN_MS, resultOptionId } from '../constants';
 import { RowAction, rowActionsFor } from '../rowActions';
 import { hasPlaceholders, parseArgs, substituteArgs } from '../command';
 import { SearchBar } from './SearchBar';
@@ -49,10 +49,15 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     isDialogOpen = false,
 }) => {
     const { commands, usage, executeCommand: rawExecuteCommand } = useCommandContext();
-    const { reportError } = useNotificationContext();
+    const { reportError, showProgress } = useNotificationContext();
 
     const executeContextCommand = useCallback(
         async (command: Command, args: string[]) => {
+            // A slow target (a network path, a reload reading slow sources) would otherwise look hung
+            let stopProgress: (() => void) | undefined;
+            const timer = setTimeout(() => {
+                stopProgress = showProgress(`Running "${command.name}"…`);
+            }, SLOW_RUN_MS);
             try {
                 return await rawExecuteCommand(command, args);
             } catch (err) {
@@ -65,9 +70,12 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
                         : undefined,
                 );
                 return null;
+            } finally {
+                clearTimeout(timer);
+                stopProgress?.();
             }
         },
-        [rawExecuteCommand, reportError, onEditCommand],
+        [rawExecuteCommand, reportError, showProgress, onEditCommand],
     );
 
     const searchState = useSearchState(
