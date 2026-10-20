@@ -103,7 +103,9 @@ mod reload {
         std::fs::write(dir.join("settings.json"), r#"{ "maxResults": 7 }"#).unwrap();
         reload(app.handle()).await.unwrap();
 
-        assert!(held_notices(&app).is_empty());
+        // Only the settings notice is this test's business: every reload also registers the real
+        // Hotkey, which the tests running beside this one (and a running Scoot) may hold
+        assert!(held_notices(&app).iter().all(|n| n.source != "settings"));
         assert_eq!(
             app.state::<SettingsState>()
                 .settings
