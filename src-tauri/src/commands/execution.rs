@@ -88,8 +88,9 @@ async fn run_command(
     };
 
     // Scoot command (check by source)
+    // Decided by the template, not the filled-in text: an argument must not become a Scoot command
     if command.source == crate::commands::domain::SOURCE_SCOOT
-        || final_command.starts_with("scoot://")
+        || command.command.starts_with("scoot://")
     {
         return execute_scoot_command(app_handle, &final_command).await;
     }
@@ -275,7 +276,8 @@ async fn execute_shell_command(
     // Set the working directory
     if let Some(dir) = working_dir {
         // Remove double quotes if present
-        let trimmed_dir = dir.trim();
+        let expanded_dir = crate::os::expand_env_vars(dir.trim());
+        let trimmed_dir = expanded_dir.trim();
         let clean_dir =
             if trimmed_dir.starts_with('"') && trimmed_dir.ends_with('"') && trimmed_dir.len() >= 2
             {

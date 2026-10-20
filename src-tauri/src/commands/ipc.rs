@@ -24,6 +24,7 @@ pub async fn add_command(
     command.id.clear();
     let (id, commands) = {
         let mut manager = state.commands.lock().map_err(AppError::lock)?;
+        manager.ensure_writable()?;
         // Validate
         manager.validate_command(&command)?;
 
@@ -48,6 +49,7 @@ pub async fn update_command(
     command.source = crate::commands::domain::SOURCE_USER.to_string();
     let commands = {
         let mut manager = state.commands.lock().map_err(AppError::lock)?;
+        manager.ensure_writable()?;
         // Validate
         manager.validate_command(&command)?;
 
@@ -70,6 +72,7 @@ pub async fn delete_command(
 ) -> Result<(), crate::error::AppError> {
     let commands = {
         let mut manager = state.commands.lock().map_err(AppError::lock)?;
+        manager.ensure_writable()?;
         // Delete command
         manager.delete_user_command(&id)?;
         manager.get_user_commands()

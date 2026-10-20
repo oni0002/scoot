@@ -39,8 +39,21 @@ pub fn log_dir() -> PathBuf {
     app_dir().join("logs")
 }
 
-/// Expand Windows environment variables like %APPDATA%
+/// `path` with a leading `~` replaced by the user profile. Only `~` alone or before a separator:
+/// `PROGRA~1` and `~name` are not home directories.
+fn home_prefix(path: &str) -> Option<String> {
+    let rest = path.strip_prefix('~')?;
+    if !(rest.is_empty() || rest.starts_with(['/', '\\'])) {
+        return None;
+    }
+    let home = std::env::var("USERPROFILE").ok()?;
+    Some(format!("{home}{rest}"))
+}
+
+/// Expand Windows environment variables like %APPDATA%, and a leading `~` to the user profile
 pub fn expand_env_vars(path: &str) -> String {
+    let home = home_prefix(path);
+    let path = home.as_deref().unwrap_or(path);
     ENV_VAR_RE
         .replace_all(path, |caps: &regex::Captures| {
             let key = &caps[1];
@@ -53,6 +66,16 @@ pub fn expand_env_vars(path: &str) -> String {
 mod tests {
     use super::*;
     use std::env;
+
+    #[test]
+    fn test_expand_home() {
+        env::set_var("USERPROFILE", r"C:\Users\me");
+        assert_eq!(expand_env_vars("~"), r"C:\Users\me");
+        assert_eq!(expand_env_vars("~/docs"), r"C:\Users\me/docs");
+        assert_eq!(expand_env_vars(r"~\docs"), r"C:\Users\me\docs");
+        assert_eq!(expand_env_vars("~name/x"), "~name/x");
+        assert_eq!(expand_env_vars("a/~/b"), "a/~/b");
+    }
 
     #[test]
     fn test_expand_existing_var() {

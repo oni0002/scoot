@@ -56,21 +56,22 @@ pub async fn reload<R: Runtime>(
         },
     );
 
-    let mut commands = match commands_result {
-        Ok(cmds) => {
+    // None: commands.json could not be read, so the commands already loaded stay as they are
+    let commands = match commands_result {
+        Ok(mut cmds) => {
             crate::notices::clear(app_handle, "commands");
-            cmds
+            for cmd in &mut cmds {
+                cmd.source = crate::commands::domain::SOURCE_USER.to_string();
+            }
+            Some(cmds)
         }
         Err(e) => {
             let msg = format!("Failed to load commands.json: {}", e);
             log::error!("{}", msg);
             crate::notices::raise(app_handle, "commands", crate::notices::ERROR, msg);
-            Vec::new()
+            None
         }
     };
-    for cmd in &mut commands {
-        cmd.source = crate::commands::domain::SOURCE_USER.to_string();
-    }
 
     let ignored: HashSet<&str> = settings.ignored.iter().map(String::as_str).collect();
     let mut external: Vec<Command> = bookmarks
@@ -80,14 +81,21 @@ pub async fn reload<R: Runtime>(
         .chain(crate::commands::domain::get_scoot_commands())
         .filter(|c| !ignored.contains(c.command.as_str()))
         .collect();
-    let user_aliases: HashSet<&str> = commands.iter().filter_map(|c| c.alias.as_deref()).collect();
+    let mut manager = command_registry.lock().map_err(AppError::lock)?;
+    let user_aliases: HashSet<String> = match &commands {
+        Some(commands) => commands.iter().filter_map(|c| c.alias.clone()).collect(),
+        None => manager.user_aliases(),
+    };
+    let user_aliases: HashSet<&str> = user_aliases.iter().map(String::as_str).collect();
     apply_aliases(&mut external, &settings.aliases, &user_aliases);
 
-    let mut manager = command_registry.lock().map_err(AppError::lock)?;
     // External first: user commands are checked against their aliases, and `apply_aliases` has
     // already given way to every alias a user command holds.
     manager.set_external_commands(external);
-    manager.set_user_commands(commands);
+    manager.set_load_failed(commands.is_none());
+    if let Some(commands) = commands {
+        manager.set_user_commands(commands);
+    }
 
     Ok(())
 }

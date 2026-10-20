@@ -34,6 +34,9 @@ pub async fn read_text(path: &str) -> Result<FileText, AppError> {
 /// Write through a temp file in the same directory and rename it over `path`, so neither the
 /// file watcher nor a reader ever sees a half-written file.
 pub async fn write_atomic(path: &str, content: impl AsRef<[u8]>) -> Result<(), AppError> {
+    // Two writes of one file would share the temp file; the files are small and rarely written
+    static WRITING: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+    let _writing = WRITING.lock().await;
     let temp = format!("{}.tmp", path);
     let write = async {
         tokio::fs::write(&temp, content).await?;

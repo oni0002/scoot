@@ -12,6 +12,9 @@ pub struct CommandRegistry {
     external_index: HashMap<String, usize>, // id → position in external_commands
     command_index: HashMap<String, String>, // command string → id
     alias_index: HashMap<String, String>, // alias string → id
+    /// commands.json could not be read, and the commands held here are from before. A save would
+    /// overwrite the file the user is still fixing, so edits are refused until a load works.
+    load_failed: bool,
 }
 
 impl CommandRegistry {
@@ -60,6 +63,30 @@ impl CommandRegistry {
             .enumerate()
             .map(|(i, c)| (c.id.clone(), i))
             .collect();
+    }
+
+    pub fn set_load_failed(&mut self, failed: bool) {
+        self.load_failed = failed;
+    }
+
+    /// Every edit of the user commands ends in a save of commands.json; refuse them while that
+    /// file is unreadable
+    pub fn ensure_writable(&self) -> Result<(), crate::error::AppError> {
+        if self.load_failed {
+            return Err(crate::error::AppError::System(
+                "commands.json could not be read. Fix it and Reload before editing commands."
+                    .to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    /// The aliases user commands hold
+    pub fn user_aliases(&self) -> HashSet<String> {
+        self.user_commands
+            .iter()
+            .filter_map(|c| c.alias.clone())
+            .collect()
     }
 
     pub fn add_user_command(&mut self, mut command: Command) -> String {
@@ -466,6 +493,16 @@ mod tests {
         // A reload that no longer finds it forgets it
         manager.set_user_commands(Vec::new());
         assert!(manager.get_user_commands().is_empty());
+    }
+
+    #[test]
+    fn edits_are_refused_while_commands_json_is_unreadable() {
+        let mut manager = CommandRegistry::default();
+        assert!(manager.ensure_writable().is_ok());
+        manager.set_load_failed(true);
+        assert!(manager.ensure_writable().is_err());
+        manager.set_load_failed(false);
+        assert!(manager.ensure_writable().is_ok());
     }
 
     #[test]

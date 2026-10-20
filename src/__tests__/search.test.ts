@@ -48,6 +48,8 @@ describe('detectDirectOpen', () => {
 
     it('detects home-relative path', () => {
         expect(detectDirectOpen('~/documents')?.category).toBe('file');
+        expect(detectDirectOpen('~\\documents')?.category).toBe('file');
+        expect(detectDirectOpen('~name')).toBeNull();
     });
 
     it('trims whitespace before matching', () => {

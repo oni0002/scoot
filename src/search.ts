@@ -115,7 +115,7 @@ function boundaryScore(hit: BoundaryMatch, query: string): number {
 const URL_PATTERN = /^(https?:\/\/|ftp:\/\/|mailto:)/i;
 const UNC_PATH_PATTERN = /^\\\\/i;
 const WIN_ABS_PATH_PATTERN = /^[A-Za-z]:\\/i;
-const UNIX_ABS_PATH_PATTERN = /^(\/|~\/)/i;
+const UNIX_ABS_PATH_PATTERN = /^(\/|~[/\\])/;
 
 export function detectDirectOpen(query: string): Command | null {
     const trimmed = query.trim();

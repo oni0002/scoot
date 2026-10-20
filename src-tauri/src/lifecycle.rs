@@ -155,21 +155,31 @@ pub fn setup_reload_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error
     Ok(())
 }
 
+/// How often the periodic reload checks whether its interval has passed. The interval is read
+/// each time, so a change in Settings takes effect within this much.
+const PERIODIC_CHECK: std::time::Duration = std::time::Duration::from_secs(60);
+
 /// Start background task for periodic global reload
 pub fn start_periodic_reload(app_handle: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
+        let mut last_reload = std::time::Instant::now();
         loop {
-            let interval_minutes = if let Some(state) = app_handle.try_state::<SettingsState>() {
-                if let Ok(settings) = state.settings.lock() {
-                    settings.reload_interval_minutes
-                } else {
-                    30
-                }
-            } else {
-                30
-            };
+            tokio::time::sleep(PERIODIC_CHECK).await;
 
-            tokio::time::sleep(std::time::Duration::from_secs(interval_minutes * 60)).await;
+            let interval_minutes = app_handle
+                .try_state::<SettingsState>()
+                .and_then(|state| {
+                    state
+                        .settings
+                        .lock()
+                        .ok()
+                        .map(|s| s.reload_interval_minutes)
+                })
+                .unwrap_or(30);
+            if last_reload.elapsed() < std::time::Duration::from_secs(interval_minutes * 60) {
+                continue;
+            }
+            last_reload = std::time::Instant::now();
 
             log::debug!("Executing scheduled global reload...");
 
