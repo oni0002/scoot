@@ -6,8 +6,17 @@ use std::collections::HashSet;
 use std::path::Path;
 use std::sync::LazyLock;
 
-static LINK_RE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(!?)\[([^\]]+)\]\(([^)]+)\)").expect("invalid regex"));
+/// `[text](target)`. The text may hold one level of brackets and the target one level of
+/// parentheses (`https://en.wikipedia.org/wiki/Rust_(language)`). A target may contain spaces:
+/// Windows paths do, and they are written as they are.
+static LINK_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(!?)\[((?:[^\[\]]|\[[^\]]*\])+)\]\(((?:[^()]|\([^()]*\))+)\)")
+        .expect("invalid regex")
+});
+
+/// A title after the target: `[text](target "title")`
+static TITLE_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"\s+"[^"]*"$"#).expect("invalid regex"));
 
 /// `scheme:` at the start of a link. At least two characters, so a drive letter (`C:\`) is not one.
 static SCHEME_RE: LazyLock<Regex> =
@@ -92,12 +101,41 @@ fn resolve_target(target: &str, directory: &Path) -> Option<(&'static str, Strin
     Some((CATEGORY_FILE, full.to_string_lossy().into_owned()))
 }
 
-/// The (text, target) of every link in a Markdown document, skipping images and in-page anchors
+/// The document without its fenced code blocks, which show links rather than make them
+fn without_code_blocks(content: &str) -> String {
+    let mut fence: Option<&str> = None;
+    let mut kept = String::with_capacity(content.len());
+    for line in content.lines() {
+        let marker = ["```", "~~~"]
+            .into_iter()
+            .find(|m| line.trim_start().starts_with(m));
+        match (fence, marker) {
+            (None, Some(m)) => fence = Some(m),
+            (Some(open), Some(m)) if open == m => fence = None,
+            (None, None) => {
+                kept.push_str(line);
+                kept.push('\n');
+            }
+            _ => {}
+        }
+    }
+    kept
+}
+
+/// The (text, target) of every link in a Markdown document, skipping images, in-page anchors and
+/// anything inside a fenced code block
 fn parse_links(content: &str) -> Vec<(String, String)> {
     LINK_RE
-        .captures_iter(content)
+        .captures_iter(&without_code_blocks(content))
         .filter(|cap| &cap[1] != "!")
-        .map(|cap| (cap[2].to_string(), cap[3].trim().to_string()))
+        .map(|cap| {
+            let target = TITLE_RE.replace(cap[3].trim(), "");
+            let target = target
+                .strip_prefix('<')
+                .and_then(|t| t.strip_suffix('>'))
+                .unwrap_or(&target);
+            (cap[2].to_string(), target.to_string())
+        })
         .filter(|(_, url)| !url.starts_with('#'))
         .collect()
 }
@@ -126,6 +164,37 @@ mod tests {
                 ("Local File".to_string(), r"C:\path\to\file.txt".to_string()),
             ]
         );
+    }
+
+    #[test]
+    fn parse_links_reads_nested_brackets_and_parentheses() {
+        let content = "[Rust](https://en.wikipedia.org/wiki/Rust_(language)) \
+            [a [b] c](https://example.com) \
+            [Docs](C:\\My Docs\\a.txt) \
+            [Titled](https://example.com \"the title\") \
+            [Angle](<D:\\x\\y.txt>)";
+
+        assert_eq!(
+            parse_links(content),
+            vec![
+                (
+                    "Rust".to_string(),
+                    "https://en.wikipedia.org/wiki/Rust_(language)".to_string()
+                ),
+                ("a [b] c".to_string(), "https://example.com".to_string()),
+                ("Docs".to_string(), r"C:\My Docs\a.txt".to_string()),
+                ("Titled".to_string(), "https://example.com".to_string()),
+                ("Angle".to_string(), r"D:\x\y.txt".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn parse_links_ignores_fenced_code_blocks() {
+        let content = "[in](https://a.example)\n```md\n[code](https://b.example)\n```\n~~~\n[tilde](https://c.example)\n~~~\n[out](https://d.example)";
+
+        let names: Vec<String> = parse_links(content).into_iter().map(|(n, _)| n).collect();
+        assert_eq!(names, ["in", "out"]);
     }
 
     fn resolve(target: &str) -> Option<(&'static str, String)> {
