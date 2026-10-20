@@ -121,38 +121,83 @@ fn show_and_emit(app_handle: &AppHandle, event: &str) -> Result<(), crate::error
         .map_err(|e| crate::error::AppError::System(format!("Failed to emit {}: {}", event, e)))
 }
 
-/// How long `request-reload` events must stay quiet before the reload runs. An editor saves in
-/// several steps, and the app's own save is followed by a file event; the reload should read the
-/// finished file, once.
+/// How long reload events must stay quiet before the reload runs. An editor saves in several
+/// steps, and the app's own save is followed by a file event; the reload should read the finished
+/// file, once.
 const RELOAD_QUIET_PERIOD: std::time::Duration = std::time::Duration::from_millis(300);
 
-/// Setup reload event listeners
-pub fn setup_reload_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+/// Event for a reload that must happen (the sources have to be scanned again)
+pub const REQUEST_RELOAD: &str = "request-reload";
+/// Event for a change seen in settings.json. It reloads only when the file differs from the
+/// settings in memory: the app's own saves already updated them.
+pub const SETTINGS_FILE_CHANGED: &str = "settings-file-changed";
+
+/// Run `action` once the `event` has been quiet for `RELOAD_QUIET_PERIOD`
+fn on_quiet<F, Fut>(app: &tauri::App, event: &'static str, action: F)
+where
+    F: Fn(tauri::AppHandle) -> Fut + Send + Sync + 'static,
+    Fut: std::future::Future<Output = ()> + Send + 'static,
+{
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::sync::Arc;
     use tauri::Listener;
 
     let app_handle = app.handle().clone();
     let latest_request = Arc::new(AtomicU64::new(0));
+    let action = Arc::new(action);
 
-    app.listen("request-reload", move |_event| {
-        log::debug!("Received request-reload event");
+    app.listen(event, move |_event| {
+        log::debug!("Received {} event", event);
         let this_request = latest_request.fetch_add(1, Ordering::SeqCst) + 1;
         let latest_request = latest_request.clone();
         let handle = app_handle.clone();
+        let action = action.clone();
         tauri::async_runtime::spawn(async move {
             tokio::time::sleep(RELOAD_QUIET_PERIOD).await;
-            // A newer request is waiting; it will do the reload
+            // A newer request is waiting; it will do the work
             if latest_request.load(Ordering::SeqCst) != this_request {
                 return;
             }
-            if let Err(e) = reload(&handle).await {
-                log::error!("Failed to reload configuration: {}", e);
-            }
+            action(handle).await;
         });
     });
+}
 
+/// Setup reload event listeners
+pub fn setup_reload_listeners(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    on_quiet(app, REQUEST_RELOAD, |handle| async move {
+        if let Err(e) = reload(&handle).await {
+            log::error!("Failed to reload configuration: {}", e);
+        }
+    });
+    on_quiet(app, SETTINGS_FILE_CHANGED, |handle| async move {
+        if let Err(e) = reload_if_settings_differ(&handle).await {
+            log::error!("Failed to reload configuration: {}", e);
+        }
+    });
     Ok(())
+}
+
+/// Reload unless settings.json holds what is already in memory, as it does after the app's own
+/// save. Rescanning bookmarks and applications for that would be wasted work.
+pub async fn reload_if_settings_differ<R: Runtime>(
+    app_handle: &AppHandle<R>,
+) -> Result<(), crate::error::AppError> {
+    if let Some(state) = app_handle.try_state::<SettingsState>() {
+        if let Ok(on_disk) = state.settings_store.load().await {
+            let unchanged = state
+                .settings
+                .lock()
+                .map_err(crate::error::AppError::lock)?
+                .eq(&on_disk);
+            if unchanged {
+                // A file fixed back to the last good settings still ends the error it raised
+                crate::notices::clear(app_handle, "settings");
+                return Ok(());
+            }
+        }
+    }
+    reload(app_handle).await
 }
 
 /// How often the periodic reload checks whether its interval has passed. The interval is read

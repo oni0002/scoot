@@ -115,6 +115,43 @@ mod reload {
     }
 
     #[tokio::test]
+    async fn a_commands_file_that_stops_parsing_keeps_the_commands_and_refuses_edits() {
+        let dir = temp_dir();
+        std::fs::write(dir.join("settings.json"), "{}").unwrap();
+        std::fs::write(dir.join("commands.json"), ONE_COMMAND).unwrap();
+        let app = app_in(&dir);
+        reload(app.handle()).await.unwrap();
+
+        std::fs::write(dir.join("commands.json"), "[ not json").unwrap();
+        reload(app.handle()).await.unwrap();
+
+        assert!(command_names(&app).contains(&"Docs".to_string()));
+        let state = app.state::<CommandsState>();
+        assert!(state.commands.lock().unwrap().ensure_writable().is_err());
+
+        std::fs::write(dir.join("commands.json"), ONE_COMMAND).unwrap();
+        reload(app.handle()).await.unwrap();
+        assert!(state.commands.lock().unwrap().ensure_writable().is_ok());
+    }
+
+    #[tokio::test]
+    async fn a_settings_file_equal_to_the_settings_in_memory_does_not_rescan() {
+        use scoot_lib::lifecycle::reload_if_settings_differ;
+        let dir = temp_dir();
+        std::fs::write(dir.join("settings.json"), "{}").unwrap();
+        let app = app_in(&dir);
+        reload(app.handle()).await.unwrap();
+
+        // A command added by hand is only seen by a reload that really runs
+        std::fs::write(dir.join("commands.json"), ONE_COMMAND).unwrap();
+        reload_if_settings_differ(app.handle()).await.unwrap();
+        assert!(!command_names(&app).contains(&"Docs".to_string()));
+
+        std::fs::write(dir.join("settings.json"), r#"{ "maxResults": 7 }"#).unwrap();
+        reload_if_settings_differ(app.handle()).await.unwrap();
+        assert!(command_names(&app).contains(&"Docs".to_string()));
+    }
+    #[tokio::test]
     async fn a_commands_file_that_will_not_parse_leaves_its_own_notice() {
         let dir = temp_dir();
         std::fs::write(dir.join("settings.json"), "{}").unwrap();

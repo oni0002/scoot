@@ -97,7 +97,7 @@ pub async fn unignore_command(
         .save(&settings_snapshot)
         .await?;
 
-    if let Err(e) = app_handle.emit("request-reload", ()) {
+    if let Err(e) = app_handle.emit(crate::lifecycle::REQUEST_RELOAD, ()) {
         log::error!("Failed to emit request-reload after unignore: {}", e);
     }
 

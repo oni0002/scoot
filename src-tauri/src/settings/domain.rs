@@ -17,7 +17,7 @@ pub const DEFAULT_SHORTCUT: &str = "Alt+Space";
 const MAX_RELOAD_INTERVAL_MINUTES: u64 = 24 * 60;
 
 /// Settings struct
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
     pub max_results: usize,
@@ -39,7 +39,7 @@ pub struct Settings {
 }
 
 /// Bookmark settings struct
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct BookmarkSettings {
     pub enabled: bool,
@@ -47,7 +47,7 @@ pub struct BookmarkSettings {
 }
 
 /// Application settings struct
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct ApplicationSettings {
     pub enabled: bool,
@@ -70,7 +70,7 @@ impl Default for ApplicationSettings {
 }
 
 /// Markdown settings struct
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct MarkdownSettings {
     pub enabled: bool,

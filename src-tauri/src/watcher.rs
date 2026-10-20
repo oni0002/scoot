@@ -11,7 +11,7 @@ pub struct FileWatcher {
 
 /// File watcher
 /// Watches files in one folder and asks for a reload when one of them changes. Bursts of events are folded into one
-/// reload by the `request-reload` listener (see `lifecycle::setup_reload_listeners`).
+/// reload by the `settings-file-changed` listener (see `lifecycle::setup_reload_listeners`).
 impl FileWatcher {
     /// `file_paths` are all in the same folder
     pub fn new<P: AsRef<Path>>(
@@ -69,8 +69,8 @@ impl FileWatcher {
                     // was removed, ConfigStore will regenerate the defaults.
                     log::debug!("Config file event ({:?}): {:?}", event.kind, event.paths);
 
-                    if let Err(e) = app_handle.emit("request-reload", ()) {
-                        log::error!("Failed to request a reload: {}", e);
+                    if let Err(e) = app_handle.emit(crate::lifecycle::SETTINGS_FILE_CHANGED, ()) {
+                        log::error!("Failed to report a settings.json change: {}", e);
                     }
                 }
             }
