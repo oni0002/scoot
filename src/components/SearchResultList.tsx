@@ -75,7 +75,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                     {heading && (
                         <p
                             id={RESULT_HEADING_ID}
-                            className="px-2 pt-1 pb-2.5 text-xs font-medium tracking-wide text-muted select-none"
+                            className="px-2 pt-1 pb-2.5 text-xs font-medium tracking-wide text-subtle select-none"
                         >
                             {heading}
                         </p>
