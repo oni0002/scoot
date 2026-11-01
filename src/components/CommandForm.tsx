@@ -21,6 +21,9 @@ const CATEGORY_COPY: Record<string, { label: string; placeholder: string; requir
     command: { label: 'Command', placeholder: 'Command line', required: 'Command is required' },
 };
 
+// 既定のアプリではなく指定したプログラムで開けるのは url と file だけ
+const OPEN_WITH_CATEGORIES = ['url', 'file'];
+
 const FieldLabel: React.FC<{ htmlFor: string; children: React.ReactNode }> = ({
     htmlFor,
     children,
@@ -50,6 +53,8 @@ const toFormData = (command?: Command, template?: Command) => {
         alias: command?.alias ?? '',
         workingDir: source?.workingDir ?? '',
         showWindow: source?.showWindow ?? false,
+        openWith: source?.openWith ?? '',
+        openArgs: source?.openArgs ?? '',
     };
 };
 
@@ -111,6 +116,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
         }
 
         const isCmdCategory = formData.category.trim() === 'command';
+        const canOpenWith = OPEN_WITH_CATEGORIES.includes(formData.category.trim());
 
         const commandToSave: Command = {
             id: formData.id,
@@ -121,6 +127,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             alias: formData.alias.trim() || undefined,
             workingDir: isCmdCategory ? formData.workingDir.trim() || undefined : undefined,
             showWindow: isCmdCategory ? formData.showWindow : undefined,
+            openWith: canOpenWith ? formData.openWith.trim() || undefined : undefined,
+            openArgs: canOpenWith ? formData.openArgs.trim() || undefined : undefined,
         };
 
         // A second Enter before the first save is answered would add the command again, and be
@@ -272,6 +280,35 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                             <FieldError message={errors.alias} />
                         </div>
                     </div>
+
+                    {OPEN_WITH_CATEGORIES.includes(formData.category) && (
+                        <div className="flex gap-2">
+                            <div className="flex flex-col flex-1">
+                                <FieldLabel htmlFor="cf-open-with">Open with</FieldLabel>
+                                <input
+                                    id="cf-open-with"
+                                    autoComplete="off"
+                                    type="text"
+                                    value={formData.openWith}
+                                    onChange={(e) => handleInputChange('openWith', e.target.value)}
+                                    placeholder="C:path	orowser.exe"
+                                    className="input input-sm w-full"
+                                />
+                            </div>
+                            <div className="flex flex-col flex-1">
+                                <FieldLabel htmlFor="cf-open-args">Arguments</FieldLabel>
+                                <input
+                                    id="cf-open-args"
+                                    autoComplete="off"
+                                    type="text"
+                                    value={formData.openArgs}
+                                    onChange={(e) => handleInputChange('openArgs', e.target.value)}
+                                    placeholder="--incognito"
+                                    className="input input-sm w-full"
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     {formData.category === 'command' && (
                         <>

@@ -30,7 +30,10 @@ const userCommands = (): Command[] => [
         { alias: 'd' },
     ),
     cmd('u2', 'download', 'file', 'user', 'C:\\Users\\demo\\Downloads', ''),
-    cmd('u3', 'GitHub', 'url', 'user', 'https://github.com', 'Code hosting'),
+    cmd('u3', 'GitHub', 'url', 'user', 'https://github.com', 'Code hosting', {
+        openWith: 'C:\\Program Files\\Mozilla Firefox\\firefox.exe',
+        openArgs: '-private-window',
+    }),
     cmd('u4', 'Deploy staging', 'command', 'user', 'pnpm deploy:staging', 'Build and push', {
         workingDir: 'C:\\work\\app',
         showWindow: true,

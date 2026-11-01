@@ -8,6 +8,8 @@ export interface Command {
     alias?: string;
     workingDir?: string;
     showWindow?: boolean;
+    openWith?: string;
+    openArgs?: string;
 }
 
 /** How often and how recently a command was run, keyed by the `command` string (ids of external commands do not last). */

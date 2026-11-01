@@ -163,3 +163,35 @@ describe('CommandForm saving', () => {
         expect(screen.getByRole('button', { name: 'Add' })).toBeEnabled();
     });
 });
+
+describe('CommandForm open with', () => {
+    it.each([
+        ['url', true],
+        ['file', true],
+        ['command', false],
+    ])('shows the program and its arguments for %s: %s', async (category, shown) => {
+        render(<CommandForm onSave={jest.fn()} onCancel={jest.fn()} />);
+        await userEvent.selectOptions(screen.getByLabelText(/category/i), category);
+        expect(!!screen.queryByLabelText('Open with')).toBe(shown);
+        expect(!!screen.queryByLabelText('Arguments')).toBe(shown);
+    });
+
+    it('saves both, and drops them once the category no longer takes them', async () => {
+        const onSave = jest.fn();
+        render(<CommandForm onSave={onSave} onCancel={jest.fn()} />);
+        await userEvent.type(screen.getByLabelText(/name/i), 'Private');
+        await userEvent.type(screen.getByLabelText('URL *'), 'https://a.dev');
+        await userEvent.type(screen.getByLabelText('Open with'), ' chrome.exe ');
+        await userEvent.type(screen.getByLabelText('Arguments'), '--incognito');
+        await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+        expect(onSave).toHaveBeenLastCalledWith(
+            expect.objectContaining({ openWith: 'chrome.exe', openArgs: '--incognito' }),
+        );
+
+        await userEvent.selectOptions(screen.getByLabelText(/category/i), 'command');
+        await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+        expect(onSave).toHaveBeenLastCalledWith(
+            expect.objectContaining({ openWith: undefined, openArgs: undefined }),
+        );
+    });
+});
