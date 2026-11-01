@@ -59,9 +59,27 @@ export const Row: React.FC<RowProps> = ({ label, htmlFor, description, children 
     </div>
 );
 
-/** リストの値を載せる面と Add ボタン。Files and Folders の表も使い、他のリストとずれないようにする */
+/** リストの値を載せる面・行の区切り・行の余白と文字・Add ボタン・削除ボタン。単列のリストと Files and Folders の表が同じ見た目になるよう、両方がここを使う */
 export const LIST_SURFACE = 'rounded-md bg-base-100';
+export const ROW_DIVIDER = 'border-base-content/10';
+export const LIST_ROW = `flex items-center gap-2 border-t px-2 py-1 text-[0.6875rem] first:border-t-0 ${ROW_DIVIDER}`;
 export const ADD_BUTTON = 'btn btn-primary btn-xs mt-2';
+
+/** 値を消すボタン。name は押す対象の名前(アクセシブルな名前に使う) */
+export const RemoveButton: React.FC<{ name: string; onClick: () => void }> = ({
+    name,
+    onClick,
+}) => (
+    <button
+        type="button"
+        className="btn btn-ghost btn-xs btn-square flex-none"
+        onClick={onClick}
+        aria-label={`Remove ${name}`}
+        title="Remove"
+    >
+        <LuX size={14} />
+    </button>
+);
 
 interface ListRowProps {
     label: string;
@@ -96,25 +114,16 @@ export const ListRow: React.FC<ListRowProps> = ({
                 {label}
             </p>
             {description && <p className="text-xs text-subtle">{description}</p>}
-            <ul className="mt-2 space-y-1" aria-labelledby={labelId}>
+            <ul className={`mt-2 ${LIST_SURFACE}`} aria-labelledby={labelId}>
                 {items.map((item, i) => (
                     // Paths wrap instead of truncating: the end of a path is the part that matters
-                    <li key={i} className={`flex items-start gap-2 py-1 pl-2 pr-1 ${LIST_SURFACE}`}>
-                        <span className="min-w-0 flex-1 break-all py-0.5 font-mono text-xs leading-5">
-                            {item}
-                        </span>
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-xs btn-square flex-none"
-                            onClick={() => onRemove(i)}
-                            aria-label={`Remove ${item}`}
-                        >
-                            <LuX size={14} />
-                        </button>
+                    <li key={i} className={LIST_ROW}>
+                        <span className="min-w-0 flex-1 break-all font-mono leading-5">{item}</span>
+                        <RemoveButton name={item} onClick={() => onRemove(i)} />
                     </li>
                 ))}
                 {items.length === 0 && emptyText && (
-                    <li className="px-1 py-1 text-xs text-subtle">{emptyText}</li>
+                    <li className={`${LIST_ROW} text-subtle`}>{emptyText}</li>
                 )}
                 {extra}
             </ul>
@@ -159,7 +168,7 @@ export const TextListRow: React.FC<TextListRowProps> = ({
             addDisabled={draft !== null}
             extra={
                 draft !== null && (
-                    <li className={`flex items-center gap-2 py-1 pl-2 pr-1 ${LIST_SURFACE}`}>
+                    <li className={LIST_ROW}>
                         <input
                             autoFocus
                             autoComplete="off"

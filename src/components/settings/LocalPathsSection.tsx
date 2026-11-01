@@ -1,9 +1,16 @@
 import React, { useRef, useState } from 'react';
-import { LuCheck, LuFolder, LuPencil, LuX } from 'react-icons/lu';
+import { LuCheck, LuFolder, LuPencil } from 'react-icons/lu';
 import { TauriAPI } from '../../tauri';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { LocalPathEntry, Settings } from '../../types';
-import { ADD_BUTTON, LIST_SURFACE, Section, TextListRow } from '../SettingsLayout';
+import {
+    ADD_BUTTON,
+    LIST_SURFACE,
+    ROW_DIVIDER,
+    RemoveButton,
+    Section,
+    TextListRow,
+} from '../SettingsLayout';
 import { NumberInput } from './NumberInput';
 
 interface LocalPathsSectionProps {
@@ -117,8 +124,8 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                             <col className="w-20" />
                             <col className="w-20" />
                         </colgroup>
-                        <thead className="text-xs text-subtle">
-                            <tr className="border-base-content/10">
+                        <thead className="text-xs text-subtle [&_th]:font-normal">
+                            <tr className={ROW_DIVIDER}>
                                 <th>Path</th>
                                 <th>Depth</th>
                                 <th>Extensions</th>
@@ -133,7 +140,7 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                                 const isEditing = editing === i;
                                 const name = entry.path || 'new path';
                                 return (
-                                    <tr key={i} className="border-base-content/10">
+                                    <tr key={i} className={ROW_DIVIDER}>
                                         <td>
                                             {isEditing ? (
                                                 <div className="flex items-center gap-1">
@@ -242,15 +249,10 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                                                         <LuPencil size={14} />
                                                     )}
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-ghost btn-xs btn-square"
+                                                <RemoveButton
+                                                    name={name}
                                                     onClick={() => removeEntry(i)}
-                                                    aria-label={`Remove ${name}`}
-                                                    title="Remove"
-                                                >
-                                                    <LuX size={14} />
-                                                </button>
+                                                />
                                             </div>
                                         </td>
                                     </tr>
