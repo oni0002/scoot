@@ -36,7 +36,9 @@ A feature belongs in Scoot when it helps with *call it, find a Command, run it*,
 | Launch at login | **Done as a shortcut in the Startup folder**, made from a switch on the Config Screen. The folder is the source of truth, so nothing goes into `config.json` and the user can see and delete it. `windows` is already in the tree through Tauri; `windows-sys` has no COM interfaces. Moving the exe means switching it off and on again. |
 | Web search when nothing matches | **Rejected.** With the default threshold something nearly always matches, so a "no result" fallback would hardly show, and an always-present row would be noise. `g <keyword>` already does this on purpose, and a short word the user wants to look up should show its normal results. |
 | Clipboard as an argument (`{$clip}`) | **Deferred.** Clipboard text is not typed by the user, so in a `command` Command it would be an injection path; a Placeholder also forces an Alias and Argument Mode, which a clipboard-only Command does not want; and it has to be added to both `substitute_args` and `substituteArgs`. Revisit only if it can be limited to URL Commands. |
-| Run as administrator / reveal in folder by modifier key | **Deferred.** Useful, but not needed yet. |
+| Run as administrator | **Done** as a per-Command setting, `runAsAdmin`, not a modifier key: elevation is a property of the Command, and a key chord is easy to hit by accident and cannot be discovered. It goes through UAC with PowerShell `Start-Process -Verb RunAs`, the command passed encoded so nothing needs quoting. The launch is fire-and-forget, so a declined prompt is not reported. |
+| Reveal in folder by modifier key | **Deferred.** Useful, but not needed yet. |
+| Shell selection (cmd/pwsh/WSL) and per-Command environment variables | **Rejected.** The Command is a shell string, so `cmd /c ...`, `wsl ...` and `$env:X='1'; ...` already cover it. |
 | Firefox bookmarks | **Deferred.** Needs a SQLite reader for `places.sqlite`; see the dependency rule above. |
 
 ## Consequences
