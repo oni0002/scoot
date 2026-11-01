@@ -61,9 +61,9 @@ pub async fn open_target(
 ) -> Result<ExecuteResult, crate::error::AppError> {
     let target = target.trim();
     if is_url_scheme_allowed(target) {
-        execute_url(&app_handle, target).await?;
+        execute_url(&app_handle, target, None).await?;
     } else {
-        execute_local_file(&app_handle, target).await?;
+        execute_local_file(&app_handle, target, None).await?;
     }
     Ok(ExecuteResult::hide())
 }
@@ -95,11 +95,19 @@ async fn run_command(
         return execute_scoot_command(app_handle, &final_command).await;
     }
 
+    // 渡すのは保存済みの固定引数だけ。検索欄の入力は URL の置換にしか入らない
+    let open_with = command
+        .open_with
+        .as_deref()
+        .map(|program| (program, command.open_args.as_deref()));
+
     // Other commands - dispatch by category
     let result = match command.category.as_str() {
-        crate::commands::domain::CATEGORY_URL => execute_url(app_handle, &final_command).await,
+        crate::commands::domain::CATEGORY_URL => {
+            execute_url(app_handle, &final_command, open_with).await
+        }
         crate::commands::domain::CATEGORY_FILE => {
-            execute_local_file(app_handle, &final_command).await
+            execute_local_file(app_handle, &final_command, open_with).await
         }
         crate::commands::domain::CATEGORY_COMMAND => {
             execute_shell_command(
@@ -171,6 +179,7 @@ pub(crate) fn is_url_scheme_allowed(url: &str) -> bool {
 async fn execute_url(
     app_handle: &tauri::AppHandle,
     url: &str,
+    open_with: Option<(&str, Option<&str>)>,
 ) -> Result<(), crate::error::AppError> {
     log::debug!("Opening URL: {}", url);
 
@@ -179,6 +188,10 @@ async fn execute_url(
             "URL scheme not allowed: '{}'. Allowed schemes: http, https, mailto, ftp.",
             url
         )));
+    }
+
+    if let Some((program, args)) = open_with {
+        return crate::os::open_with(program, args, url).inspect_err(|e| log::error!("{}", e));
     }
 
     crate::os::open_url(app_handle, url).map_err(|e| {
@@ -198,6 +211,7 @@ async fn execute_url(
 async fn execute_local_file(
     app_handle: &tauri::AppHandle,
     file_path: &str,
+    open_with: Option<(&str, Option<&str>)>,
 ) -> Result<(), crate::error::AppError> {
     log::debug!("Opening file: {}", file_path);
 
@@ -217,6 +231,11 @@ async fn execute_local_file(
         };
         log::error!("Error: {}", error_msg);
         return Err(crate::error::AppError::CommandExecution(error_msg));
+    }
+
+    if let Some((program, args)) = open_with {
+        return crate::os::open_with(program, args, &expanded_path)
+            .inspect_err(|e| log::error!("{}", e));
     }
 
     // Open file

@@ -54,6 +54,25 @@ pub struct Command {
     pub working_dir: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub show_window: Option<bool>,
+    /// url / file を開くプログラム。未設定なら既定のアプリで開く
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "blank_as_none"
+    )]
+    pub open_with: Option<String>,
+    /// open_with に対象より前に渡す固定の引数
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "blank_as_none"
+    )]
+    pub open_args: Option<String>,
+}
+
+/// 空白だけの文字列は未設定として扱う
+fn blank_as_none<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Option<String>, D::Error> {
+    Ok(Option::<String>::deserialize(d)?.filter(|s| !s.trim().is_empty()))
 }
 
 /// Get the built-in commands for Scoot
@@ -175,6 +194,8 @@ impl Command {
             alias: None,
             working_dir: None,
             show_window: None,
+            open_with: None,
+            open_args: None,
         }
     }
 
@@ -297,6 +318,14 @@ impl Command {
             None => {}
         }
 
+        if (self.open_with.is_some() || self.open_args.is_some())
+            && !matches!(self.category.as_str(), CATEGORY_URL | CATEGORY_FILE)
+        {
+            return Err(crate::error::AppError::Validation(
+                "Open with is only available for url and file commands.".to_string(),
+            ));
+        }
+
         // Scoot command validation
         if self.command.starts_with("scoot://") && !SCOOT_COMMANDS.contains(&self.command.as_str())
         {
@@ -326,6 +355,8 @@ mod tests {
             alias: None,
             working_dir: None,
             show_window: None,
+            open_with: None,
+            open_args: None,
         }
     }
 
@@ -384,6 +415,41 @@ mod tests {
             cmd.category = category.to_string();
             assert!(cmd.validate().is_err(), "{}", category);
         }
+    }
+
+    #[test]
+    fn open_with_is_only_for_url_and_file() {
+        for (category, ok) in [
+            ("url", true),
+            ("file", true),
+            ("command", false),
+            ("scoot", false),
+        ] {
+            let mut cmd = create_dummy_command("echo hi");
+            cmd.category = category.to_string();
+            cmd.open_with = Some("chrome.exe".to_string());
+            assert_eq!(cmd.validate().is_ok(), ok, "{}", category);
+            cmd.open_with = None;
+            cmd.open_args = Some("--incognito".to_string());
+            assert_eq!(cmd.validate().is_ok(), ok, "{}", category);
+        }
+    }
+
+    #[test]
+    fn open_with_fields_serialize_camel_case_and_blank_means_unset() {
+        let json = r#"{"name":"n","category":"url","command":"https://a.b","description":"",
+            "openWith":"chrome.exe","openArgs":"--incognito"}"#;
+        let cmd: Command = crate::json::parse(json).unwrap();
+        let out = serde_json::to_value(&cmd).unwrap();
+        assert_eq!(out["openWith"], "chrome.exe");
+        assert_eq!(out["openArgs"], "--incognito");
+
+        let blank = r#"{"name":"n","category":"url","command":"https://a.b","description":"",
+            "openWith":"  ","openArgs":""}"#;
+        let cmd: Command = crate::json::parse(blank).unwrap();
+        assert!(cmd.open_with.is_none() && cmd.open_args.is_none());
+        let out = serde_json::to_value(&cmd).unwrap();
+        assert!(out.get("openWith").is_none() && out.get("openArgs").is_none());
     }
 
     #[test]

@@ -66,3 +66,27 @@ impl CommandStore {
         &self.commands_path
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn open_with_is_saved_and_source_is_not() {
+        let dir = std::env::temp_dir().join(format!("scoot-store-{}", nanoid::nanoid!()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let store = CommandStore::in_dir(&dir);
+        let mut cmd = Command::new("Private", "url", "user", "https://example.com", "");
+        cmd.id = "a".to_string();
+        cmd.open_with = Some("chrome.exe".to_string());
+        cmd.open_args = Some("--incognito".to_string());
+        store.save(&[cmd]).await.unwrap();
+
+        let text = std::fs::read_to_string(store.get_path()).unwrap();
+        assert!(!text.contains("source"));
+        let loaded = store.load().await.unwrap();
+        assert_eq!(loaded[0].open_with.as_deref(), Some("chrome.exe"));
+        assert_eq!(loaded[0].open_args.as_deref(), Some("--incognito"));
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+}
