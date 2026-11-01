@@ -72,21 +72,29 @@ Relative file paths in a Markdown file are taken from the folder that file is in
 
 **Files and Folders**
 
-| Setting         | Description                                                                             | Default                          |
-| --------------- | --------------------------------------------------------------------------------------- | -------------------------------- |
-| Enabled         | List files and folders under the directories below                                      | `false`                          |
-| Directories     | Folders to scan. `~` and `%VARIABLES%` are expanded                                     | `[]`                             |
-| Depth           | Folder levels to scan below each directory, 1 to 10 (1 is its direct contents)          | `3`                              |
-| Extensions      | File types to list, without the dot. `*` lists every file; an empty list lists no files | `[]`                             |
-| Include folders | List folders as well as files                                                           | `true`                           |
-| Excluded names  | File and folder names skipped with everything inside, in any case                       | `node_modules`, `target`         |
+| Setting        | Description                                                       | Default                  |
+| -------------- | ----------------------------------------------------------------- | ------------------------ |
+| Enabled        | List files and folders under the directories in the table         | `false`                  |
+| Directories    | A table with one row per folder; each row sets the columns below  | (none)                   |
+| Excluded names | File and folder names skipped with everything inside, in any case | `node_modules`, `target` |
 
-The settings apply to every directory in the list. Two ways to use it:
+Each row of the Directories table has its own settings. Type a path and press Enter, or choose a folder; the new row starts with the defaults.
 
-| Goal                            | Directories   | Depth | Extensions | Include folders |
-| ------------------------------- | ------------- | ----- | ---------- | --------------- |
-| Open a project folder by name   | `~\Projects`  | `2`   | (empty)    | on              |
-| Find documents in a docs folder | `~\Documents` | `3`   | `md, pdf`  | off             |
+| Column     | Description                                                                             | Default |
+| ---------- | --------------------------------------------------------------------------------------- | ------- |
+| Path       | The folder to scan. `~` and `%VARIABLES%` are expanded                                  |         |
+| Depth      | Folder levels to scan below it, 1 to 10 (1 is its direct contents)                      | `3`     |
+| Extensions | File types to list, without the dot. `*` lists every file; an empty list lists no files | (empty) |
+| Folders    | List folders as well as files                                                           | on      |
+
+For example, these two rows open any project folder by name and find notes and PDFs under Documents:
+
+| Path          | Depth | Extensions | Folders |
+| ------------- | ----- | ---------- | ------- |
+| `~\Projects`  | `2`   | (empty)    | on      |
+| `~\Documents` | `4`   | `md, pdf`  | off     |
+
+When two rows overlap, a path either row lists appears once. A file or folder you already added as a File command is not listed again; your command is the one shown.
 
 Scoot lists at most 5000 files and folders across all directories, shallowest first. If there are more, it stops there and shows a notice: lower Depth, add Excluded names, or narrow Extensions. Symbolic links and junctions are not followed, and hidden and system files are skipped, as is anything whose name starts with a dot (`.git`, `.env`). The folders are not watched: new files show up at the next reload (the Reload Interval, or the `Reload` command). This is not a search of the whole disk.
 
