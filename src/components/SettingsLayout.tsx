@@ -59,6 +59,10 @@ export const Row: React.FC<RowProps> = ({ label, htmlFor, description, children 
     </div>
 );
 
+/** リストの値を載せる面と Add ボタン。Files and Folders の表も使い、他のリストとずれないようにする */
+export const LIST_SURFACE = 'rounded-md bg-base-100';
+export const ADD_BUTTON = 'btn btn-primary btn-xs mt-2';
+
 interface ListRowProps {
     label: string;
     description?: string;
@@ -95,10 +99,7 @@ export const ListRow: React.FC<ListRowProps> = ({
             <ul className="mt-2 space-y-1" aria-labelledby={labelId}>
                 {items.map((item, i) => (
                     // Paths wrap instead of truncating: the end of a path is the part that matters
-                    <li
-                        key={i}
-                        className="flex items-start gap-2 rounded-md bg-base-100 py-1 pl-2 pr-1"
-                    >
+                    <li key={i} className={`flex items-start gap-2 py-1 pl-2 pr-1 ${LIST_SURFACE}`}>
                         <span className="min-w-0 flex-1 break-all py-0.5 font-mono text-xs leading-5">
                             {item}
                         </span>
@@ -118,12 +119,7 @@ export const ListRow: React.FC<ListRowProps> = ({
                 {extra}
             </ul>
             {addLabel && (
-                <button
-                    type="button"
-                    className="btn btn-primary btn-xs mt-2"
-                    onClick={onAdd}
-                    disabled={addDisabled}
-                >
+                <button type="button" className={ADD_BUTTON} onClick={onAdd} disabled={addDisabled}>
                     {addLabel}
                 </button>
             )}
@@ -163,7 +159,7 @@ export const TextListRow: React.FC<TextListRowProps> = ({
             addDisabled={draft !== null}
             extra={
                 draft !== null && (
-                    <li className="flex items-center gap-2 rounded-md bg-base-100 py-1 pl-2 pr-1">
+                    <li className={`flex items-center gap-2 py-1 pl-2 pr-1 ${LIST_SURFACE}`}>
                         <input
                             autoFocus
                             autoComplete="off"

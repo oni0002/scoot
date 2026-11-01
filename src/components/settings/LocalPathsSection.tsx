@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { LuCheck, LuFolder, LuPencil, LuX } from 'react-icons/lu';
 import { TauriAPI } from '../../tauri';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { LocalPathEntry, Settings } from '../../types';
-import { Section, TextListRow } from '../SettingsLayout';
+import { ADD_BUTTON, LIST_SURFACE, Section, TextListRow } from '../SettingsLayout';
 import { NumberInput } from './NumberInput';
 
 interface LocalPathsSectionProps {
@@ -53,7 +53,6 @@ const ExtensionsInput: React.FC<{
 
 export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, onChange }) => {
     const { reportError } = useNotificationContext();
-    const [newPath, setNewPath] = useState('');
     const local = settings.localPaths;
     const update = (patch: Partial<Settings['localPaths']>) =>
         onChange({ ...settings, localPaths: { ...local, ...patch } });
@@ -61,29 +60,42 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
         update({ entries: local.entries.map((e, i) => (i === index ? { ...e, ...patch } : e)) });
     // 編集中の行の位置。行を消したら、この位置も一緒にずらす
     const [editing, setEditing] = useState<number | null>(null);
+    // 足したばかりの行の位置。パス欄が開いたときに一度だけフォーカスする(Edit ボタンのフォーカスは奪わない)
+    const focusPath = useRef<number | null>(null);
     const removeEntry = (index: number) => {
         update({ entries: local.entries.filter((_, i) => i !== index) });
         setEditing((e) => (e === null || e === index ? null : e > index ? e - 1 : e));
     };
+    // 編集する行を切り替える。離れる行のパスは前後の空白を落とし、空なら黙って捨てる(保存時の検証で弾かれるため)
+    const switchEdit = (next: number | null) => {
+        let target = next;
+        if (editing !== null && editing !== next) {
+            const path = local.entries[editing].path.trim();
+            if (path) {
+                updateEntry(editing, { path });
+            } else {
+                update({ entries: local.entries.filter((_, i) => i !== editing) });
+                if (target !== null && target > editing) target -= 1;
+            }
+        }
+        setEditing(target);
+    };
     // 既定値は src-tauri/src/settings/domain.rs の LocalPathEntry::default と揃える。足した行は編集で開く
-    const addEntry = (path: string) => {
+    const addEntry = () => {
         update({
-            entries: [...local.entries, { path, depth: 3, extensions: [], includeFolders: true }],
+            entries: [
+                ...local.entries,
+                { path: '', depth: 3, extensions: [], includeFolders: true },
+            ],
         });
+        focusPath.current = local.entries.length;
         setEditing(local.entries.length);
     };
 
-    const addTyped = () => {
-        const path = newPath.trim();
-        if (!path) return;
-        addEntry(path);
-        setNewPath('');
-    };
-
-    const chooseDirectory = async () => {
+    const chooseDirectory = async (index: number) => {
         try {
             const selected = await TauriAPI.pickPath(true);
-            if (selected) addEntry(selected);
+            if (selected) updateEntry(index, { path: selected });
         } catch (err) {
             reportError('choose a folder', err);
         }
@@ -94,16 +106,23 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
             title="Files and Folders"
             enabled={{ value: local.enabled, onChange: (enabled) => update({ enabled }) }}
         >
-            <div className="px-1.5 py-1.5">
-                {/* 狭いウィンドウでは表だけ横にスクロールする。700px の窓では収まる */}
-                <div className="overflow-x-auto">
-                    <table className="table table-xs">
+            <div className="px-3 py-2.5">
+                {/* 狭いウィンドウでは表だけ横にスクロールする。列幅は固定で、表示と編集で動かさない */}
+                <div className={`overflow-x-auto ${LIST_SURFACE}`}>
+                    <table className="table table-xs min-w-[34rem] table-fixed">
+                        <colgroup>
+                            <col />
+                            <col className="w-20" />
+                            <col className="w-48" />
+                            <col className="w-20" />
+                            <col className="w-20" />
+                        </colgroup>
                         <thead className="text-xs text-subtle">
-                            <tr>
+                            <tr className="border-base-content/10">
                                 <th>Path</th>
-                                <th className="w-16">Depth</th>
-                                <th className="w-48">Extensions</th>
-                                <th className="w-16">Folders</th>
+                                <th>Depth</th>
+                                <th>Extensions</th>
+                                <th>Folders</th>
                                 <th>
                                     <span className="sr-only">Actions</span>
                                 </th>
@@ -112,23 +131,55 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                         <tbody>
                             {local.entries.map((entry, i) => {
                                 const isEditing = editing === i;
+                                const name = entry.path || 'new path';
                                 return (
-                                    <tr key={i} className="hover:bg-base-content/[0.04]">
-                                        {/* 余りの幅を取り、長いパスは頭を省いて末尾(大事な部分)を見せる */}
-                                        <td className="w-full min-w-32 max-w-0">
-                                            <span
-                                                dir="rtl"
-                                                className="block truncate text-left font-mono"
-                                                title={entry.path}
-                                            >
-                                                <span dir="ltr">{entry.path}</span>
-                                            </span>
+                                    <tr key={i} className="border-base-content/10">
+                                        <td>
+                                            {isEditing ? (
+                                                <div className="flex items-center gap-1">
+                                                    <input
+                                                        type="text"
+                                                        autoComplete="off"
+                                                        className="input input-xs min-w-0 flex-1 font-mono"
+                                                        aria-label="Path"
+                                                        placeholder="Add a folder path"
+                                                        value={entry.path}
+                                                        ref={(el) => {
+                                                            if (el && focusPath.current === i) {
+                                                                focusPath.current = null;
+                                                                el.focus();
+                                                            }
+                                                        }}
+                                                        onChange={(e) =>
+                                                            updateEntry(i, { path: e.target.value })
+                                                        }
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-xs btn-square flex-none"
+                                                        onClick={() => chooseDirectory(i)}
+                                                        aria-label="Choose a folder"
+                                                        title="Choose a folder"
+                                                    >
+                                                        <LuFolder size={14} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                // 長いパスは頭を省いて末尾(大事な部分)を見せる
+                                                <span
+                                                    dir="rtl"
+                                                    className="block truncate text-left font-mono"
+                                                    title={entry.path}
+                                                >
+                                                    <span dir="ltr">{entry.path}</span>
+                                                </span>
+                                            )}
                                         </td>
                                         <td>
                                             {isEditing ? (
                                                 // max は src-tauri/src/settings/domain.rs の MAX_LOCAL_PATH_DEPTH と揃える
                                                 <NumberInput
-                                                    aria-label={`Depth for ${entry.path}`}
+                                                    aria-label={`Depth for ${name}`}
                                                     className="input-xs w-14"
                                                     min={1}
                                                     max={10}
@@ -142,14 +193,16 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                                         <td>
                                             {isEditing ? (
                                                 <ExtensionsInput
-                                                    label={`Extensions for ${entry.path}`}
+                                                    label={`Extensions for ${name}`}
                                                     value={entry.extensions}
                                                     onChange={(extensions) =>
                                                         updateEntry(i, { extensions })
                                                     }
                                                 />
                                             ) : entry.extensions.length > 0 ? (
-                                                entry.extensions.join(', ')
+                                                <span className="block truncate">
+                                                    {entry.extensions.join(', ')}
+                                                </span>
                                             ) : (
                                                 <span className="italic text-subtle">No files</span>
                                             )}
@@ -159,7 +212,7 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                                                 <input
                                                     type="checkbox"
                                                     className="checkbox checkbox-sm"
-                                                    aria-label={`Folders for ${entry.path}`}
+                                                    aria-label={`Folders for ${name}`}
                                                     checked={entry.includeFolders}
                                                     onChange={(e) =>
                                                         updateEntry(i, {
@@ -179,8 +232,8 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                                                 <button
                                                     type="button"
                                                     className="btn btn-ghost btn-xs btn-square"
-                                                    onClick={() => setEditing(isEditing ? null : i)}
-                                                    aria-label={`${isEditing ? 'Done editing' : 'Edit'} ${entry.path}`}
+                                                    onClick={() => switchEdit(isEditing ? null : i)}
+                                                    aria-label={`${isEditing ? 'Done editing' : 'Edit'} ${name}`}
                                                     title={isEditing ? 'Done' : 'Edit'}
                                                 >
                                                     {isEditing ? (
@@ -193,7 +246,7 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                                                     type="button"
                                                     className="btn btn-ghost btn-xs btn-square"
                                                     onClick={() => removeEntry(i)}
-                                                    aria-label={`Remove ${entry.path}`}
+                                                    aria-label={`Remove ${name}`}
                                                     title="Remove"
                                                 >
                                                     <LuX size={14} />
@@ -206,37 +259,15 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                         </tbody>
                     </table>
                 </div>
-                <div className="mt-1 flex items-center gap-1 px-2">
-                    <input
-                        type="text"
-                        autoComplete="off"
-                        className="input input-xs min-w-0 flex-1 font-mono"
-                        placeholder="Add a folder path"
-                        aria-label="New directory"
-                        value={newPath}
-                        onChange={(e) => setNewPath(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') addTyped();
-                        }}
-                    />
-                    <button
-                        type="button"
-                        className="btn btn-ghost btn-xs btn-square"
-                        onClick={chooseDirectory}
-                        aria-label="Choose a folder"
-                        title="Choose a folder"
-                    >
-                        <LuFolder size={14} />
-                    </button>
-                    <button
-                        type="button"
-                        className="btn btn-primary btn-xs"
-                        onClick={addTyped}
-                        disabled={!newPath.trim()}
-                    >
-                        Add directory
-                    </button>
-                </div>
+                {/* 空のパスの行が開いている間は、もう1行足さない */}
+                <button
+                    type="button"
+                    className={ADD_BUTTON}
+                    onClick={addEntry}
+                    disabled={local.entries.some((e) => !e.path.trim())}
+                >
+                    Add path
+                </button>
             </div>
             <TextListRow
                 label="Excluded names"

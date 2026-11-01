@@ -39,9 +39,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onClearH
     // Settings are written when the screen closes. A failed write keeps the screen open, so the
     // edits are not lost behind a screen that looks saved.
     const saveEdits = useCallback(async (): Promise<boolean> => {
-        if (!edited || JSON.stringify(edited) === JSON.stringify(settings)) return true;
+        if (!edited) return true;
+        // 空のパスの行は保存時の検証で弾かれるので、黙って捨てる。残すパスは前後の空白を落とす
+        const entries = edited.localPaths.entries
+            .map((e) => ({ ...e, path: e.path.trim() }))
+            .filter((e) => e.path);
+        const toSave = { ...edited, localPaths: { ...edited.localPaths, entries } };
+        if (JSON.stringify(toSave) === JSON.stringify(settings)) return true;
         try {
-            await TauriAPI.saveSettings(edited);
+            await TauriAPI.saveSettings(toSave);
         } catch (err) {
             setSaveError(getErrorMessage(err));
             return false;
