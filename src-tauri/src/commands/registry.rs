@@ -89,37 +89,41 @@ impl CommandRegistry {
             .collect()
     }
 
-    pub fn add_user_command(&mut self, mut command: Command) -> String {
-        Self::assign_id(&mut command);
-        let id = command.id.clone();
-        self.command_index
-            .insert(command.command.clone(), id.clone());
-        if let Some(ref a) = command.alias {
-            self.alias_index.insert(a.clone(), id.clone());
-        }
-        self.user_commands.push(command);
-        id
-    }
-
-    pub fn update_user_command(&mut self, command: Command) -> Result<(), crate::error::AppError> {
-        let position = self
-            .user_commands
-            .iter()
-            .position(|c| c.id == command.id)
-            .ok_or_else(|| crate::error::AppError::NotFound("Command not found".to_string()))?;
-        // Remove old index entries
-        let old = &self.user_commands[position];
-        self.command_index.remove(&old.command);
-        if let Some(ref a) = old.alias {
-            self.alias_index.remove(a);
-        }
-        // Insert new index entries
+    fn index_user_command(&mut self, command: &Command) {
         self.command_index
             .insert(command.command.clone(), command.id.clone());
         if let Some(ref a) = command.alias {
             self.alias_index.insert(a.clone(), command.id.clone());
         }
-        self.user_commands[position] = command;
+    }
+
+    fn unindex_user_command(&mut self, command: &Command) {
+        self.command_index.remove(&command.command);
+        if let Some(ref a) = command.alias {
+            self.alias_index.remove(a);
+        }
+    }
+
+    fn user_position(&self, id: &str) -> Result<usize, crate::error::AppError> {
+        self.user_commands
+            .iter()
+            .position(|c| c.id == id)
+            .ok_or_else(|| crate::error::AppError::NotFound("Command not found".to_string()))
+    }
+
+    pub fn add_user_command(&mut self, mut command: Command) -> String {
+        Self::assign_id(&mut command);
+        self.index_user_command(&command);
+        let id = command.id.clone();
+        self.user_commands.push(command);
+        id
+    }
+
+    pub fn update_user_command(&mut self, command: Command) -> Result<(), crate::error::AppError> {
+        let position = self.user_position(&command.id)?;
+        let old = std::mem::replace(&mut self.user_commands[position], command.clone());
+        self.unindex_user_command(&old);
+        self.index_user_command(&command);
         Ok(())
     }
 
@@ -144,16 +148,9 @@ impl CommandRegistry {
     }
 
     pub fn delete_user_command(&mut self, id: &str) -> Result<(), crate::error::AppError> {
-        let position = self
-            .user_commands
-            .iter()
-            .position(|c| c.id == id)
-            .ok_or_else(|| crate::error::AppError::NotFound("Command not found".to_string()))?;
+        let position = self.user_position(id)?;
         let command = self.user_commands.remove(position);
-        self.command_index.remove(&command.command);
-        if let Some(ref a) = command.alias {
-            self.alias_index.remove(a);
-        }
+        self.unindex_user_command(&command);
         Ok(())
     }
 
