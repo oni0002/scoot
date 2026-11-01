@@ -78,7 +78,7 @@ Relative file paths in a Markdown file are taken from the folder that file is in
 | Directories    | A table with one row per folder; each row sets the columns below  | (none)                   |
 | Excluded names | File and folder names skipped with everything inside, in any case | `node_modules`, `target` |
 
-Each row of the Directories table has its own settings. Type a path and press Enter, or choose a folder; the new row starts with the defaults.
+Each row of the Directories table has its own settings. Type a path and press Enter, or choose a folder; the new row starts with the defaults and opens for editing. Press the pencil on a row to change its depth, extensions or folders, and the check to finish.
 
 | Column     | Description                                                                             | Default |
 | ---------- | --------------------------------------------------------------------------------------- | ------- |

@@ -182,12 +182,32 @@ describe('SettingsScreen files and folders', () => {
 
     const projects = 'C:\\Users\\demo\\Projects';
     const documents = 'C:\\Users\\demo\\Documents';
+    const edit = (files: HTMLElement, path: string) =>
+        userEvent.click(within(files).getByRole('button', { name: `Edit ${path}` }));
+    const done = (files: HTMLElement, path: string) =>
+        userEvent.click(within(files).getByRole('button', { name: `Done editing ${path}` }));
+
+    it('shows rows as text, without inputs', async () => {
+        renderScreen();
+        const files = await section();
+        const rows = within(files).getAllByRole('row');
+        expect(within(rows[1]).getByText('No files')).toBeInTheDocument();
+        expect(within(rows[1]).getByText('Yes')).toBeInTheDocument();
+        expect(within(rows[2]).getByText('md, pdf')).toBeInTheDocument();
+        expect(within(rows[2]).getByText('No')).toBeInTheDocument();
+        expect(within(files).queryByLabelText(`Depth for ${projects}`)).not.toBeInTheDocument();
+        expect(
+            within(files).queryByLabelText(`Extensions for ${projects}`),
+        ).not.toBeInTheDocument();
+        expect(within(files).queryByLabelText(`Folders for ${projects}`)).not.toBeInTheDocument();
+    });
 
     it('saves each row on its own, and the excluded names, only when leaving', async () => {
         jest.mocked(TauriAPI.saveSettings).mockResolvedValue();
         renderScreen();
         const files = await section();
 
+        await edit(files, projects);
         const depth = within(files).getByLabelText(`Depth for ${projects}`);
         await userEvent.clear(depth);
         await userEvent.type(depth, '4');
@@ -195,7 +215,10 @@ describe('SettingsScreen files and folders', () => {
             within(files).getByLabelText(`Extensions for ${projects}`),
             'txt, .PDF * txt',
         );
+        await done(files, projects);
+        await edit(files, documents);
         await userEvent.click(within(files).getByLabelText(`Folders for ${documents}`));
+        await done(files, documents);
         await userEvent.click(within(files).getByRole('button', { name: 'Remove target' }));
         await userEvent.click(within(files).getByRole('button', { name: 'Add name' }));
         await userEvent.type(within(files).getByLabelText('New excluded name'), 'dist{Enter}');
@@ -228,27 +251,81 @@ describe('SettingsScreen files and folders', () => {
         );
     });
 
-    it('shows the extensions as saved once the field is left', async () => {
+    it('saves the values of a row that is still being edited on Esc', async () => {
+        jest.mocked(TauriAPI.saveSettings).mockResolvedValue();
         renderScreen();
         const files = await section();
+        await edit(files, documents);
+        const extensions = within(files).getByLabelText(`Extensions for ${documents}`);
+        await userEvent.clear(extensions);
+        await userEvent.type(extensions, 'txt{Escape}');
+        await waitFor(() =>
+            expect(TauriAPI.saveSettings).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    localPaths: expect.objectContaining({
+                        entries: [
+                            expect.objectContaining({ path: projects }),
+                            expect.objectContaining({ path: documents, extensions: ['txt'] }),
+                        ],
+                    }),
+                }),
+            ),
+        );
+    });
+
+    it('shows the extensions as saved once the field is left, and in the row once done', async () => {
+        renderScreen();
+        const files = await section();
+        await edit(files, documents);
         const extensions = within(files).getByLabelText(`Extensions for ${documents}`);
         expect(extensions).toHaveValue('md, pdf');
         await userEvent.clear(extensions);
         await userEvent.type(extensions, '.md,,  MD txt');
         await userEvent.tab();
         expect(extensions).toHaveValue('md, txt');
+        await done(files, documents);
+        expect(within(files).queryByLabelText(`Extensions for ${documents}`)).toBeNull();
+        expect(within(files).getByText('md, txt')).toBeInTheDocument();
     });
 
-    it('says an entry with no extensions lists no files', async () => {
+    it('keeps focus on the edit button when a row opens and closes', async () => {
         renderScreen();
         const files = await section();
-        expect(within(files).getByLabelText(`Extensions for ${projects}`)).toHaveAttribute(
-            'placeholder',
-            'No files',
-        );
+        await edit(files, projects);
+        expect(
+            within(files).getByRole('button', { name: `Done editing ${projects}` }),
+        ).toHaveFocus();
+        await done(files, projects);
+        expect(within(files).getByRole('button', { name: `Edit ${projects}` })).toHaveFocus();
     });
 
-    it('adds a typed path or a chosen folder as a row with the default rule', async () => {
+    it('keeps the edited row when an earlier one is removed, and drops a removed one', async () => {
+        renderScreen();
+        const files = await section();
+        await edit(files, documents);
+        await userEvent.click(within(files).getByRole('button', { name: `Remove ${projects}` }));
+        // 消した行より後ろの編集中の行は、位置が前にずれても編集中のまま
+        expect(within(files).getByLabelText(`Depth for ${documents}`)).toBeInTheDocument();
+
+        await userEvent.click(within(files).getByRole('button', { name: `Remove ${documents}` }));
+        await userEvent.type(within(files).getByLabelText('New directory'), 'D:\\Next{Enter}');
+        // 消した行の編集は引き継がれず、足した行だけが編集で開く
+        expect(within(files).getAllByLabelText(/^Depth for /)).toHaveLength(1);
+        expect(within(files).getByLabelText('Depth for D:\\Next')).toBeInTheDocument();
+    });
+
+    it('does not open another row for editing when an earlier one is removed', async () => {
+        renderScreen();
+        const files = await section();
+        await edit(files, projects);
+        await userEvent.click(within(files).getByRole('button', { name: `Remove ${projects}` }));
+        expect(within(files).queryByLabelText(/^Depth for /)).not.toBeInTheDocument();
+        expect(
+            within(files).getByRole('button', { name: `Edit ${documents}` }),
+        ).toBeInTheDocument();
+    });
+
+    it('adds a typed path or a chosen folder as a row in edit mode with the default rule', async () => {
         jest.mocked(TauriAPI.saveSettings).mockResolvedValue();
         jest.mocked(TauriAPI.pickPath).mockResolvedValue('D:\\Picked');
         renderScreen();
@@ -256,8 +333,10 @@ describe('SettingsScreen files and folders', () => {
         const field = within(files).getByLabelText('New directory');
         await userEvent.type(field, '  ~\\Notes {Enter}');
         expect(field).toHaveValue('');
+        expect(within(files).getByLabelText('Depth for ~\\Notes')).toBeInTheDocument();
         await userEvent.click(within(files).getByRole('button', { name: 'Choose a folder' }));
         await within(files).findByLabelText('Depth for D:\\Picked');
+        expect(within(files).getAllByLabelText(/^Depth for /)).toHaveLength(1);
         await userEvent.click(within(files).getByRole('button', { name: `Remove ${projects}` }));
 
         await userEvent.keyboard('{Escape}');
@@ -287,10 +366,12 @@ describe('SettingsScreen files and folders', () => {
     it('disables its fields while switched off', async () => {
         renderScreen();
         const files = await section();
+        await edit(files, projects);
         await userEvent.click(
             within(files).getByRole('checkbox', { name: 'Enable Files and Folders' }),
         );
         expect(within(files).getByLabelText(`Depth for ${projects}`)).toBeDisabled();
+        expect(within(files).getByRole('button', { name: `Edit ${documents}` })).toBeDisabled();
         expect(within(files).getByLabelText('New directory')).toBeDisabled();
         expect(within(files).getByRole('button', { name: 'Choose a folder' })).toBeDisabled();
     });

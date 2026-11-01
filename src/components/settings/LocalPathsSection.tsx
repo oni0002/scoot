@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LuFolder, LuX } from 'react-icons/lu';
+import { LuCheck, LuFolder, LuPencil, LuX } from 'react-icons/lu';
 import { TauriAPI } from '../../tauri';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { LocalPathEntry, Settings } from '../../types';
@@ -59,11 +59,19 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
         onChange({ ...settings, localPaths: { ...local, ...patch } });
     const updateEntry = (index: number, patch: Partial<LocalPathEntry>) =>
         update({ entries: local.entries.map((e, i) => (i === index ? { ...e, ...patch } : e)) });
-    // 既定値は src-tauri/src/settings/domain.rs の LocalPathEntry::default と揃える
-    const addEntry = (path: string) =>
+    // 編集中の行の位置。行を消したら、この位置も一緒にずらす
+    const [editing, setEditing] = useState<number | null>(null);
+    const removeEntry = (index: number) => {
+        update({ entries: local.entries.filter((_, i) => i !== index) });
+        setEditing((e) => (e === null || e === index ? null : e > index ? e - 1 : e));
+    };
+    // 既定値は src-tauri/src/settings/domain.rs の LocalPathEntry::default と揃える。足した行は編集で開く
+    const addEntry = (path: string) => {
         update({
             entries: [...local.entries, { path, depth: 3, extensions: [], includeFolders: true }],
         });
+        setEditing(local.entries.length);
+    };
 
     const addTyped = () => {
         const path = newPath.trim();
@@ -93,76 +101,108 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                         <thead className="text-xs text-subtle">
                             <tr>
                                 <th>Path</th>
-                                <th>Depth</th>
-                                <th>Extensions</th>
-                                <th>Folders</th>
+                                <th className="w-16">Depth</th>
+                                <th className="w-48">Extensions</th>
+                                <th className="w-16">Folders</th>
                                 <th>
-                                    <span className="sr-only">Remove</span>
+                                    <span className="sr-only">Actions</span>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {local.entries.map((entry, i) => (
-                                <tr key={i}>
-                                    {/* 余りの幅を取り、長いパスは頭を省いて末尾(大事な部分)を見せる */}
-                                    <td className="w-full min-w-32 max-w-0">
-                                        <span
-                                            dir="rtl"
-                                            className="block truncate text-left font-mono"
-                                            title={entry.path}
-                                        >
-                                            <span dir="ltr">{entry.path}</span>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {/* max は src-tauri/src/settings/domain.rs の MAX_LOCAL_PATH_DEPTH と揃える */}
-                                        <NumberInput
-                                            aria-label={`Depth for ${entry.path}`}
-                                            className="input-xs w-14"
-                                            min={1}
-                                            max={10}
-                                            value={entry.depth}
-                                            onChange={(depth) => updateEntry(i, { depth })}
-                                        />
-                                    </td>
-                                    <td>
-                                        <ExtensionsInput
-                                            label={`Extensions for ${entry.path}`}
-                                            value={entry.extensions}
-                                            onChange={(extensions) =>
-                                                updateEntry(i, { extensions })
-                                            }
-                                        />
-                                    </td>
-                                    <td className="text-center">
-                                        <input
-                                            type="checkbox"
-                                            className="checkbox checkbox-sm"
-                                            aria-label={`Folders for ${entry.path}`}
-                                            checked={entry.includeFolders}
-                                            onChange={(e) =>
-                                                updateEntry(i, { includeFolders: e.target.checked })
-                                            }
-                                        />
-                                    </td>
-                                    <td>
-                                        <button
-                                            type="button"
-                                            className="btn btn-ghost btn-xs btn-square"
-                                            onClick={() =>
-                                                update({
-                                                    entries: local.entries.filter(
-                                                        (_, j) => j !== i,
-                                                    ),
-                                                })
-                                            }
-                                            aria-label={`Remove ${entry.path}`}
-                                        >
-                                            <LuX size={14} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {local.entries.map((entry, i) => {
+                                const isEditing = editing === i;
+                                return (
+                                    <tr key={i} className="hover:bg-base-content/[0.04]">
+                                        {/* 余りの幅を取り、長いパスは頭を省いて末尾(大事な部分)を見せる */}
+                                        <td className="w-full min-w-32 max-w-0">
+                                            <span
+                                                dir="rtl"
+                                                className="block truncate text-left font-mono"
+                                                title={entry.path}
+                                            >
+                                                <span dir="ltr">{entry.path}</span>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {isEditing ? (
+                                                // max は src-tauri/src/settings/domain.rs の MAX_LOCAL_PATH_DEPTH と揃える
+                                                <NumberInput
+                                                    aria-label={`Depth for ${entry.path}`}
+                                                    className="input-xs w-14"
+                                                    min={1}
+                                                    max={10}
+                                                    value={entry.depth}
+                                                    onChange={(depth) => updateEntry(i, { depth })}
+                                                />
+                                            ) : (
+                                                entry.depth
+                                            )}
+                                        </td>
+                                        <td>
+                                            {isEditing ? (
+                                                <ExtensionsInput
+                                                    label={`Extensions for ${entry.path}`}
+                                                    value={entry.extensions}
+                                                    onChange={(extensions) =>
+                                                        updateEntry(i, { extensions })
+                                                    }
+                                                />
+                                            ) : entry.extensions.length > 0 ? (
+                                                entry.extensions.join(', ')
+                                            ) : (
+                                                <span className="italic text-subtle">No files</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {isEditing ? (
+                                                <input
+                                                    type="checkbox"
+                                                    className="checkbox checkbox-sm"
+                                                    aria-label={`Folders for ${entry.path}`}
+                                                    checked={entry.includeFolders}
+                                                    onChange={(e) =>
+                                                        updateEntry(i, {
+                                                            includeFolders: e.target.checked,
+                                                        })
+                                                    }
+                                                />
+                                            ) : entry.includeFolders ? (
+                                                'Yes'
+                                            ) : (
+                                                'No'
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div className="flex justify-end gap-0.5">
+                                                {/* 編集と完了は同じボタンにして、押した後もフォーカスを保つ */}
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-xs btn-square"
+                                                    onClick={() => setEditing(isEditing ? null : i)}
+                                                    aria-label={`${isEditing ? 'Done editing' : 'Edit'} ${entry.path}`}
+                                                    title={isEditing ? 'Done' : 'Edit'}
+                                                >
+                                                    {isEditing ? (
+                                                        <LuCheck size={14} />
+                                                    ) : (
+                                                        <LuPencil size={14} />
+                                                    )}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-xs btn-square"
+                                                    onClick={() => removeEntry(i)}
+                                                    aria-label={`Remove ${entry.path}`}
+                                                    title="Remove"
+                                                >
+                                                    <LuX size={14} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
