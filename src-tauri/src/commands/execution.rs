@@ -295,15 +295,18 @@ fn encode_powershell_script(script: &str) -> String {
     out
 }
 
-/// 管理者として実行するための PowerShell 起動(プログラム名と引数)。
-/// ユーザーのコマンドは -EncodedCommand で渡すので、クォートのエスケープが要らない
+/// Start-Process 経由の PowerShell 起動(プログラム名と引数)。
+/// ユーザーのコマンドは -EncodedCommand で渡すので、クォートのエスケープが要らない。
+/// 窓を出すときは、GUI アプリの子に直接 -NoExit を付けると標準入力が空で即終了するので、
+/// 新しいコンソールを持つ Start-Process 経由にする
 #[cfg(target_os = "windows")]
-fn elevated_launch(
+fn start_process_launch(
     command: &str,
     working_dir: Option<&str>,
     show_window: bool,
+    elevated: bool,
 ) -> (&'static str, Vec<String>) {
-    // 昇格したプロセスには作業ディレクトリが渡らないので、スクリプトの先頭で移動する。
+    // Start-Process した先には作業ディレクトリが渡らないので、スクリプトの先頭で移動する。
     // 単一引用符の中では、' と PowerShell が引用符とみなす曲線引用符だけを重ねればよい
     let script = match working_dir {
         Some(dir) => {
@@ -330,8 +333,9 @@ fn elevated_launch(
     } else {
         " -WindowStyle Hidden"
     };
+    let verb = if elevated { " -Verb RunAs" } else { "" };
     let start = format!(
-        "Start-Process powershell -Verb RunAs{style} -ArgumentList {}",
+        "Start-Process powershell{verb}{style} -ArgumentList {}",
         inner.join(",")
     );
     (
@@ -364,26 +368,17 @@ async fn execute_shell_command(
     let mut cmd_builder = {
         use std::os::windows::process::CommandExt;
         let mut cmd;
-        if run_as_admin {
-            let (program, args) = elevated_launch(command, dir.as_deref(), show_window);
+        if run_as_admin || show_window {
+            let (program, args) =
+                start_process_launch(command, dir.as_deref(), show_window, run_as_admin);
             cmd = StdCommand::new(program);
             cmd.args(args);
-            // 昇格後のウィンドウは Start-Process が決める。起動役の PowerShell は常に隠す
+            // 開いた先のウィンドウは Start-Process が決める。起動役の PowerShell は常に隠す
             cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         } else {
             cmd = StdCommand::new("powershell");
-            let mut args = vec!["-NoProfile"];
-            if show_window {
-                args.push("-NoExit");
-            }
-            args.push("-Command");
-            args.push(command);
-            cmd.args(args);
-            if show_window {
-                cmd.creation_flags(0x00000010); // CREATE_NEW_CONSOLE
-            } else {
-                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-            }
+            cmd.args(["-NoProfile", "-Command", command]);
+            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         }
         cmd
     };
@@ -395,8 +390,8 @@ async fn execute_shell_command(
         cmd
     };
 
-    // 昇格したプロセスには作業ディレクトリが引き継がれないので、elevated_launch が Set-Location する
-    if !run_as_admin {
+    // Start-Process した先には作業ディレクトリが引き継がれないので、start_process_launch が Set-Location する
+    if !(run_as_admin || show_window) {
         if let Some(dir) = &dir {
             cmd_builder.current_dir(dir);
         }
@@ -504,7 +499,7 @@ mod tests {
             "a",
             "ab",
         ] {
-            let (program, args) = elevated_launch(command, None, true);
+            let (program, args) = start_process_launch(command, None, true, true);
             assert_eq!(program, "powershell");
             assert_eq!(encoded_script(&args), command);
         }
@@ -513,23 +508,33 @@ mod tests {
     #[cfg(target_os = "windows")]
     #[test]
     fn elevated_launch_moves_to_the_working_dir_inside_the_script() {
-        let (_, args) = elevated_launch("dir", Some("C:\\it's\\\u{2019}x"), true);
+        let (_, args) = start_process_launch("dir", Some("C:\\it's\\\u{2019}x"), true, true);
         assert_eq!(
             encoded_script(&args),
             "Set-Location -LiteralPath 'C:\\it''s\\\u{2019}\u{2019}x'\ndir"
         );
-        let (_, args) = elevated_launch("dir", None, true);
+        let (_, args) = start_process_launch("dir", None, true, true);
         assert_eq!(encoded_script(&args), "dir");
     }
 
     #[cfg(target_os = "windows")]
     #[test]
     fn elevated_launch_shows_or_hides_the_window() {
-        let (_, shown) = elevated_launch("dir", None, true);
+        let (_, shown) = start_process_launch("dir", None, true, true);
         assert!(shown[2].starts_with("Start-Process powershell -Verb RunAs -ArgumentList"));
         assert!(shown[2].contains("'-NoExit'"));
-        let (_, hidden) = elevated_launch("dir", None, false);
+        let (_, hidden) = start_process_launch("dir", None, false, true);
         assert!(hidden[2].contains("-Verb RunAs -WindowStyle Hidden -ArgumentList"));
         assert!(!hidden[2].contains("-NoExit"));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn start_process_launch_asks_for_uac_only_when_elevated() {
+        let (_, plain) = start_process_launch("dir", None, true, false);
+        assert!(!plain[2].contains("-Verb RunAs"));
+        assert!(plain[2].starts_with("Start-Process powershell -ArgumentList"));
+        let (_, elevated) = start_process_launch("dir", None, true, true);
+        assert!(elevated[2].contains("-Verb RunAs"));
     }
 }
