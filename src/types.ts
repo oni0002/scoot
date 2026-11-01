@@ -40,12 +40,24 @@ export interface MarkdownSettings {
     paths: string[];
 }
 
+/** 登録フォルダの下のファイル・フォルダ(Local Path)。src-tauri/src/settings/domain.rs と揃える */
+export interface LocalPathSettings {
+    enabled: boolean;
+    paths: string[];
+    depth: number;
+    /** ドットなし。`*` はすべてのファイル、空ならファイルなし */
+    extensions: string[];
+    includeFolders: boolean;
+    excludeNames: string[];
+}
+
 export interface Settings {
     maxResults: number;
     fuzzyThreshold: number;
     bookmarks: BookmarkSettings;
     applications: ApplicationSettings;
     markdown: MarkdownSettings;
+    localPaths: LocalPathSettings;
     ignored: string[];
     /** Aliases of external commands, keyed by their `command` string. */
     aliases: Record<string, string>;

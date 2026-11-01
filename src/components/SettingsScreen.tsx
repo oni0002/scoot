@@ -12,6 +12,7 @@ import { GeneralSection } from './settings/GeneralSection';
 import { BookmarksSection } from './settings/BookmarksSection';
 import { ApplicationsSection } from './settings/ApplicationsSection';
 import { MarkdownSection } from './settings/MarkdownSection';
+import { LocalPathsSection } from './settings/LocalPathsSection';
 import { IgnoredSection } from './settings/IgnoredSection';
 
 interface SettingsScreenProps {
@@ -141,6 +142,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onClearH
                 <BookmarksSection settings={local} onChange={change} />
                 <ApplicationsSection settings={local} onChange={change} />
                 <MarkdownSection settings={local} onChange={change} />
+                <LocalPathsSection settings={local} onChange={change} />
                 <IgnoredSection settings={local} onChange={change} />
             </div>
         </div>

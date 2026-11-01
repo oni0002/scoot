@@ -57,6 +57,22 @@ const externalCommands = (): Command[] => [
     cmd('a4', 'drawio (Ubuntu)', 'file', 'application', 'C:\\Apps\\drawio.lnk', 'Ubuntu'),
     cmd('a5', 'Node.js', 'file', 'application', 'C:\\Apps\\node.lnk', 'Node.js'),
     cmd('a6', 'Zed', 'file', 'application', 'C:\\Apps\\Zed.lnk', 'Zed'),
+    cmd(
+        'l1',
+        'scoot',
+        'file',
+        'local',
+        'C:\\Users\\demo\\Projects\\scoot',
+        'C:\\Users\\demo\\Projects',
+    ),
+    cmd(
+        'l2',
+        'roadmap.md',
+        'file',
+        'local',
+        'C:\\Users\\demo\\Projects\\scoot\\roadmap.md',
+        'C:\\Users\\demo\\Projects\\scoot',
+    ),
     cmd('b1', 'daisyUI Documentation', 'url', 'bookmark', 'https://daisyui.com/docs/', ''),
     cmd('b2', 'Tauri v2 Guide', 'url', 'bookmark', 'https://v2.tauri.app/', ''),
     cmd('s1', 'Add Command', 'scoot', 'scoot', 'scoot://add-command', 'Add a new command'),
@@ -81,6 +97,14 @@ const defaultSettings = (): Settings => ({
         extensions: ['lnk'],
     },
     markdown: { enabled: false, paths: [] },
+    localPaths: {
+        enabled: true,
+        paths: ['C:\\Users\\demo\\Projects'],
+        depth: 2,
+        extensions: ['md', 'pdf'],
+        includeFolders: true,
+        excludeNames: ['.git', 'node_modules', 'target'],
+    },
     ignored: [
         'https://example.com/old-bookmark',
         'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Administrative Tools\\dfrgui.lnk',
@@ -101,6 +125,7 @@ export function createMockHandlers(): Record<string, Handler> {
     let startupShortcut = false;
     const visibleExternal = () =>
         externalCommands()
+            .filter((c) => c.source !== 'local' || settings.localPaths.enabled)
             .filter((c) => !settings.ignored.includes(c.command))
             .map((c) =>
                 settings.aliases[c.command] ? { ...c, alias: settings.aliases[c.command] } : c,
