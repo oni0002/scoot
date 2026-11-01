@@ -18,13 +18,24 @@ impl CommandStore {
         }
     }
 
-    /// Load commands. A missing file is created empty; a blank one just means no commands, and
-    /// is left for the user to finish writing.
+    /// Load commands. A missing file is created with one sample command (初回起動だけ。空配列の
+    /// ファイルは消した結果なので補充しない); a blank one just means no commands, and is left for
+    /// the user to finish writing.
     pub async fn load(&self) -> Result<Vec<Command>, crate::error::AppError> {
         let content = match crate::json::read_text(&self.commands_path).await? {
             FileText::Missing => {
-                self.save(&[]).await?;
-                return Ok(Vec::new());
+                let mut sample = Command::new(
+                    "Google Search",
+                    "url",
+                    "user",
+                    "https://www.google.com/search?q={$*}",
+                    "Type g, then what to search for",
+                );
+                sample.id = nanoid::nanoid!();
+                sample.alias = Some("g".to_string());
+                let commands = vec![sample];
+                self.save(&commands).await?;
+                return Ok(commands);
             }
             FileText::Blank => return Ok(Vec::new()),
             FileText::Text(content) => content,
@@ -70,6 +81,51 @@ impl CommandStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn temp_store() -> (CommandStore, std::path::PathBuf) {
+        let dir = std::env::temp_dir().join(format!("scoot-store-{}", nanoid::nanoid!()));
+        std::fs::create_dir_all(&dir).unwrap();
+        (CommandStore::in_dir(&dir), dir)
+    }
+
+    #[tokio::test]
+    async fn missing_file_is_seeded_once_and_persisted() {
+        let (store, dir) = temp_store();
+        let loaded = store.load().await.unwrap();
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded[0].alias.as_deref(), Some("g"));
+        assert!(!loaded[0].id.is_empty());
+        let mut registry = crate::commands::registry::CommandRegistry::default();
+        assert!(registry.validate_command(&loaded[0]).is_ok());
+        registry.set_user_commands(loaded.clone());
+        let mut other = Command::new("Other", "url", "user", "https://b.dev", "");
+        other.alias = Some("g".to_string());
+        assert!(registry.validate_command(&other).is_err());
+
+        let again = store.load().await.unwrap();
+        assert_eq!(again[0].id, loaded[0].id);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn empty_array_stays_empty() {
+        let (store, dir) = temp_store();
+        std::fs::write(store.get_path(), "[]").unwrap();
+        assert!(store.load().await.unwrap().is_empty());
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn existing_commands_are_untouched() {
+        let (store, dir) = temp_store();
+        let mut cmd = Command::new("Docs", "url", "user", "https://a.dev", "");
+        cmd.id = "a".to_string();
+        store.save(&[cmd]).await.unwrap();
+        let loaded = store.load().await.unwrap();
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded[0].name, "Docs");
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 
     #[tokio::test]
     async fn open_with_is_saved_and_source_is_not() {
