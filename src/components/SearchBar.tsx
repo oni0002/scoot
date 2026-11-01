@@ -41,7 +41,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     return (
         <div className="shrink-0 mb-4 relative">
             <div className="flex items-center gap-4">
-                <label className="input input-sm flex items-center gap-2 flex-1 focus-within:outline-none">
+                <label className="input input-sm flex items-center gap-2 flex-1 focus-within:outline-none focus-within:[--input-color:color-mix(in_oklab,var(--color-base-content)_20%,#0000)]">
                     {argumentMode ? <LuChevronRight /> : <LuSearch />}
                     <input
                         ref={inputRef}

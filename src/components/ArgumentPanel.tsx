@@ -1,6 +1,7 @@
 import React from 'react';
 import { LuCopy } from 'react-icons/lu';
 import { Command } from '../types';
+import { SELECTED_ROW_CLASS } from '../constants';
 import { expandTemplate, missingSlots, slotsOf, unusedArgs } from '../command';
 
 interface ArgumentPanelProps {
@@ -36,7 +37,7 @@ export const ArgumentPanel: React.FC<ArgumentPanelProps> = ({ command, args, onC
     return (
         <div className="space-y-4">
             {/* One frame: the selected-row look, extended down to hold what the alias will do */}
-            <div className="relative rounded-lg bg-base-content/10 ring-1 ring-inset ring-base-content/40">
+            <div className={`rounded-lg ${SELECTED_ROW_CLASS}`}>
                 {/* Mouse convenience, like the row buttons: Ctrl+C is the keyboard path, named in the hint bar */}
                 <div aria-hidden="true" className="absolute right-2 top-1.5 z-[1]">
                     <button

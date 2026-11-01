@@ -1,7 +1,7 @@
 import React from 'react';
 import { LuEllipsisVertical, LuCopy } from 'react-icons/lu';
 import { Command, SearchResult } from '../types';
-import { DIRECT_OPEN_ID, resultOptionId } from '../constants';
+import { DIRECT_OPEN_ID, SELECTED_ROW_CLASS, resultOptionId } from '../constants';
 import { ROW_ACTIONS, RowAction, rowActionsFor } from '../rowActions';
 
 interface SearchResultItemProps {
@@ -76,9 +76,7 @@ export const SearchResultItem = React.memo(
                     role="option"
                     aria-selected={isSelected}
                     className={`rounded-lg p-2 cursor-pointer flex items-center ${
-                        isSelected
-                            ? 'bg-base-content/10 ring-1 ring-inset ring-base-content/40'
-                            : 'bg-base-100 hover:bg-base-200'
+                        isSelected ? SELECTED_ROW_CLASS : 'bg-base-100 hover:bg-base-200'
                     }`}
                     onClick={(e) => onClick(index, e)}
                 >

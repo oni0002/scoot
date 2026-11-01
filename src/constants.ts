@@ -31,3 +31,7 @@ export const KEYBOARD_SHORTCUTS = {
     NAVIGATE_TAB: ['Tab'],
     COPY: ['c'],
 };
+
+/** 選択行の見た目。検索結果の行と引数パネルで揃える(左端のプライマリの線 + 無彩色の背景)。 */
+export const SELECTED_ROW_CLASS =
+    'relative bg-base-content/10 before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-xs before:bg-primary';
