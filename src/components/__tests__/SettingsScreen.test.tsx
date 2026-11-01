@@ -205,7 +205,7 @@ describe('SettingsScreen files and folders', () => {
                         depth: 4,
                         extensions: ['md', 'pdf', 'txt', '*'],
                         includeFolders: false,
-                        excludeNames: ['.git', 'node_modules', 'dist'],
+                        excludeNames: ['node_modules', 'dist'],
                     },
                 }),
             ),
