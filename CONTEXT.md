@@ -17,7 +17,7 @@ Command の実行方法を決める4種類の区分。`url`（ブラウザで開
 _Avoid_: Type, kind
 
 **Source**:
-Command がどこから読み込まれたかの出所区分。`user`（手動登録）、`bookmark`（ブラウザブックマーク）、`application`（OSのショートカットファイル）、`scoot`（組み込みコマンド）、Markdown Link では抽出元のファイル名。実行時のみ保持され、永続化されない。
+Command がどこから読み込まれたかの出所区分。`user`（手動登録）、`bookmark`（ブラウザブックマーク）、`application`（OSのショートカットファイル）、`local`（登録したフォルダの下のファイル・フォルダ）、`scoot`（組み込みコマンド）、Markdown Link では抽出元のファイル名。実行時のみ保持され、永続化されない。
 _Avoid_: Origin, provider
 
 **Scoot Command**:
@@ -65,6 +65,10 @@ _Avoid_: App, shortcut
 **Markdown Link**:
 指定した Markdown ファイルから抽出した URL または ファイルパスの Command。相対パスは、その Markdown ファイルのあるフォルダを基準に解決する。http・https・ftp・mailto 以外のスキーム（`javascript:`、`obsidian://` など）のリンクは、開けないので対象にしない。Source は抽出元の Markdown のファイル名（行のバッジに表示される）。
 _Avoid_: Link, md link
+
+**Local Path**:
+ユーザーが Settings に登録したフォルダの下で見つけたファイルまたはフォルダの Command。Category は `file`、Source は `local`。深さ・拡張子・除外する名前で絞り、全フォルダ合わせた件数に上限がある(超えたら通知する)。シンボリックリンク・ジャンクションはたどらず、隠し・システム属性のものは対象にしない。変更は監視せず、Reload で最新になる。マシン全体のファイル検索ではない(`docs/adr/0004`)。
+_Avoid_: Local file(Category `file` やユーザーの file Command と紛らわしい), file search, indexed file
 
 ### 設定・ライフサイクル
 

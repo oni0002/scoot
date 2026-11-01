@@ -15,6 +15,8 @@ const THEMES: [&str; 3] = ["system", "light", "dark"];
 pub const DEFAULT_SHORTCUT: &str = "Alt+Space";
 /// One day. Keep in sync with the input's `max` in src/components/settings/GeneralSection.tsx.
 const MAX_RELOAD_INTERVAL_MINUTES: u64 = 24 * 60;
+/// src/components/settings/LocalPathsSection.tsx の入力欄の `max` と揃える
+const MAX_LOCAL_PATH_DEPTH: usize = 10;
 
 /// Settings struct
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -25,6 +27,7 @@ pub struct Settings {
     pub bookmarks: BookmarkSettings,
     pub applications: ApplicationSettings,
     pub markdown: MarkdownSettings,
+    pub local_paths: LocalPathSettings,
     pub ignored: Vec<String>,
     /// Aliases for external commands, keyed by their `command` string (like `ignored`). Their IDs
     /// are hashes that std does not promise to keep stable, so they cannot be persisted.
@@ -87,6 +90,38 @@ impl Default for MarkdownSettings {
     }
 }
 
+/// Local Path の設定。ユーザーが登録したフォルダと、その下のどこまで・何を一覧にするか
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LocalPathSettings {
+    pub enabled: bool,
+    pub paths: Vec<String>,
+    /// 登録フォルダから何階層下まで一覧にするか。1 はフォルダ直下だけ
+    pub depth: usize,
+    /// ドットなしの拡張子(大文字小文字は区別しない)。`*` はすべてのファイル、空ならファイルは出さない
+    pub extensions: Vec<String>,
+    pub include_folders: bool,
+    /// 中身ごと飛ばすファイル・フォルダの名前(大文字小文字は区別しない)
+    pub exclude_names: Vec<String>,
+}
+
+impl Default for LocalPathSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            paths: Vec::new(),
+            depth: 3,
+            extensions: Vec::new(),
+            include_folders: true,
+            exclude_names: vec![
+                ".git".to_string(),
+                "node_modules".to_string(),
+                "target".to_string(),
+            ],
+        }
+    }
+}
+
 /// BookmarkSettings default values
 impl Default for BookmarkSettings {
     fn default() -> Self {
@@ -106,6 +141,7 @@ impl Default for Settings {
             bookmarks: BookmarkSettings::default(),
             applications: ApplicationSettings::default(),
             markdown: MarkdownSettings::default(),
+            local_paths: LocalPathSettings::default(),
             ignored: Vec::new(),
             aliases: BTreeMap::new(),
             theme: DEFAULT_THEME.to_string(),
@@ -154,6 +190,12 @@ impl Settings {
             return fail(format!(
                 "reloadIntervalMinutes must be between 1 and {} (got {}).",
                 MAX_RELOAD_INTERVAL_MINUTES, self.reload_interval_minutes
+            ));
+        }
+        if !(1..=MAX_LOCAL_PATH_DEPTH).contains(&self.local_paths.depth) {
+            return fail(format!(
+                "localPaths.depth must be between 1 and {} (got {}).",
+                MAX_LOCAL_PATH_DEPTH, self.local_paths.depth
             ));
         }
         if !THEMES.contains(&self.theme.as_str()) {
@@ -281,6 +323,36 @@ mod tests {
         assert_eq!(settings.aliases["C:\\Apps\\Code.lnk"], "vscode");
         assert!(parse(r#"{"aliases": {"x": "has space"}}"#).is_err());
         assert!(parse(r#"{"aliases": {"x": ""}}"#).is_err());
+    }
+
+    #[test]
+    fn local_paths_are_off_by_default_and_skip_the_usual_build_folders() {
+        let local = parse("{}").unwrap().local_paths;
+        assert!(!local.enabled);
+        assert!(local.paths.is_empty());
+        assert_eq!(local.depth, 3);
+        assert!(local.extensions.is_empty());
+        assert!(local.include_folders);
+        assert_eq!(local.exclude_names, [".git", "node_modules", "target"]);
+
+        let local = parse(r#"{"localPaths": {"enabled": true, "paths": ["~/Projects"], "depth": 2, "extensions": ["md", "*"], "includeFolders": false, "excludeNames": []}}"#)
+            .unwrap()
+            .local_paths;
+        assert!(local.enabled);
+        assert_eq!(local.paths, ["~/Projects"]);
+        assert_eq!(local.depth, 2);
+        assert_eq!(local.extensions, ["md", "*"]);
+        assert!(!local.include_folders);
+        assert!(local.exclude_names.is_empty());
+    }
+
+    #[test]
+    fn local_path_depth_must_be_within_range() {
+        assert!(parse(r#"{"localPaths": {"depth": 1}}"#).is_ok());
+        assert!(parse(r#"{"localPaths": {"depth": 10}}"#).is_ok());
+        assert!(parse(r#"{"localPaths": {"depth": 0}}"#).is_err());
+        assert!(parse(r#"{"localPaths": {"depth": 11}}"#).is_err());
+        assert!(parse(r#"{"localPaths": {"depth": -1}}"#).is_err());
     }
 
     #[test]

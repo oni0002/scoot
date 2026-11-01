@@ -4,6 +4,7 @@ pub mod domain;
 pub mod execution;
 pub mod ipc;
 pub mod loader;
+pub mod local_path;
 pub mod markdown;
 pub mod registry;
 pub mod reveal;

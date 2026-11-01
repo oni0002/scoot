@@ -11,9 +11,11 @@ pub async fn reload<R: Runtime>(
     command_registry: &std::sync::Mutex<CommandRegistry>,
     settings: &crate::settings::domain::Settings,
 ) -> Result<(), AppError> {
-    log::debug!("Loading commands, bookmarks, applications, and markdown links in parallel");
+    log::debug!(
+        "Loading commands, bookmarks, applications, markdown links, and local paths in parallel"
+    );
 
-    let (commands_result, bookmarks, app_commands, markdown_commands) = tokio::join!(
+    let (commands_result, bookmarks, app_commands, markdown_commands, local) = tokio::join!(
         command_store.load(),
         async {
             if settings.bookmarks.enabled {
@@ -54,7 +56,31 @@ pub async fn reload<R: Runtime>(
                 Vec::new()
             }
         },
+        async {
+            if settings.local_paths.enabled {
+                crate::commands::local_path::load(&settings.local_paths)
+                    .await
+                    .unwrap_or_else(|e| {
+                        log::warn!("Failed to load local paths: {}", e);
+                        Default::default()
+                    })
+            } else {
+                Default::default()
+            }
+        },
     );
+
+    let local_notice = crate::commands::local_path::NOTICE_SOURCE;
+    if local.truncated {
+        let msg = format!(
+            "Only the first {} files and folders were loaded. In Settings > Files and Folders, lower Depth, add Excluded names, or narrow Extensions.",
+            crate::commands::local_path::MAX_ENTRIES
+        );
+        log::warn!("{}", msg);
+        crate::notices::raise(app_handle, local_notice, crate::notices::WARNING, msg);
+    } else {
+        crate::notices::clear(app_handle, local_notice);
+    }
 
     // None: commands.json could not be read, so the commands already loaded stay as they are
     let commands = match commands_result {
@@ -78,6 +104,7 @@ pub async fn reload<R: Runtime>(
         .into_iter()
         .chain(app_commands)
         .chain(markdown_commands)
+        .chain(local.commands)
         .chain(crate::commands::domain::get_scoot_commands())
         .filter(|c| !ignored.contains(c.command.as_str()))
         .collect();

@@ -8,7 +8,7 @@ pub struct CommandRegistry {
     /// Commands from commands.json that failed validation. They are neither offered nor run, but a
     /// save writes them back, so an unrelated edit never deletes what the user typed by hand.
     rejected_commands: Vec<Command>,
-    external_commands: Vec<Command>, // bookmark + app + markdown + scoot (reload-only)
+    external_commands: Vec<Command>, // bookmark + app + markdown + local + scoot (reload-only)
     external_index: HashMap<String, usize>, // id → position in external_commands
     command_index: HashMap<String, String>, // command string → id
     alias_index: HashMap<String, String>, // alias string → id

@@ -16,6 +16,7 @@ pub const CATEGORY_SCOOT: &str = "scoot";
 pub const SOURCE_USER: &str = "user";
 pub const SOURCE_BOOKMARK: &str = "bookmark";
 pub const SOURCE_APPLICATION: &str = "application";
+pub const SOURCE_LOCAL: &str = "local";
 pub const SOURCE_SCOOT: &str = "scoot";
 
 // Scoot command constants

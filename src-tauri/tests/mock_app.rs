@@ -164,6 +164,44 @@ mod reload {
 
         assert!(held_notices(&app).iter().any(|n| n.source == "commands"));
     }
+
+    #[tokio::test]
+    async fn local_paths_past_the_cap_leave_a_notice_until_narrowed() {
+        use scoot_lib::commands::local_path::{MAX_ENTRIES, NOTICE_SOURCE};
+        let dir = temp_dir();
+        let tree = dir.join("tree");
+        for i in 0..=MAX_ENTRIES {
+            std::fs::create_dir_all(tree.join(i.to_string())).unwrap();
+        }
+        let write_settings = |exclude: &[&str]| {
+            let json = serde_json::json!({
+                "applications": { "enabled": false },
+                "bookmarks": { "enabled": false },
+                "localPaths": { "enabled": true, "paths": [tree], "depth": 1, "excludeNames": exclude },
+            });
+            std::fs::write(dir.join("settings.json"), json.to_string()).unwrap();
+        };
+        let app = app_in(&dir);
+        let local_count = || {
+            let state = app.state::<CommandsState>();
+            let commands = state.commands.lock().unwrap().get_all_commands();
+            commands.iter().filter(|c| c.source == "local").count()
+        };
+
+        write_settings(&[]);
+        reload(app.handle()).await.unwrap();
+        assert_eq!(local_count(), MAX_ENTRIES);
+        let notice = held_notices(&app)
+            .into_iter()
+            .find(|n| n.source == NOTICE_SOURCE)
+            .expect("a notice for the cut-off walk");
+        assert_eq!(notice.level, WARNING);
+
+        write_settings(&["0"]);
+        reload(app.handle()).await.unwrap();
+        assert_eq!(local_count(), MAX_ENTRIES);
+        assert!(held_notices(&app).iter().all(|n| n.source != NOTICE_SOURCE));
+    }
 }
 
 mod notices_reach_the_page {
