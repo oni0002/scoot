@@ -230,6 +230,29 @@ async fn execute_local_file(
     Ok(())
 }
 
+/// The directory a shell command should start in: quotes and environment variables resolved.
+/// None when nothing is set or the directory does not exist, in which case the command runs
+/// where Scoot is.
+fn resolve_working_dir(dir: &str) -> Option<String> {
+    let expanded = crate::os::expand_env_vars(dir.trim());
+    let trimmed = expanded.trim();
+    let clean = trimmed
+        .strip_prefix('"')
+        .and_then(|d| d.strip_suffix('"'))
+        .unwrap_or(trimmed);
+    if clean.is_empty() {
+        return None;
+    }
+    if !std::path::Path::new(clean).exists() {
+        log::warn!(
+            "Warning: Working directory '{}' does not exist. Ignoring.",
+            clean
+        );
+        return None;
+    }
+    Some(clean.to_string())
+}
+
 /// Execute a shell command
 async fn execute_shell_command(
     command: &str,
@@ -273,30 +296,8 @@ async fn execute_shell_command(
         cmd
     };
 
-    // Set the working directory
-    if let Some(dir) = working_dir {
-        // Remove double quotes if present
-        let expanded_dir = crate::os::expand_env_vars(dir.trim());
-        let trimmed_dir = expanded_dir.trim();
-        let clean_dir =
-            if trimmed_dir.starts_with('"') && trimmed_dir.ends_with('"') && trimmed_dir.len() >= 2
-            {
-                &trimmed_dir[1..trimmed_dir.len() - 1]
-            } else {
-                trimmed_dir
-            };
-
-        if !clean_dir.is_empty() {
-            if std::path::Path::new(clean_dir).exists() {
-                cmd_builder.current_dir(clean_dir);
-            } else {
-                // If the working directory does not exist, issue a warning
-                log::warn!(
-                    "Warning: Working directory '{}' does not exist. Ignoring.",
-                    clean_dir
-                );
-            }
-        }
+    if let Some(dir) = working_dir.as_deref().and_then(resolve_working_dir) {
+        cmd_builder.current_dir(dir);
     }
 
     // Execute the command asynchronously
@@ -332,6 +333,25 @@ mod tests {
         assert!(!is_url_scheme_allowed("scoot://add-command"));
         assert!(!is_url_scheme_allowed("C:\\Users\\foo\\bar.exe"));
         assert!(!is_url_scheme_allowed("data:text/html,<script>"));
+    }
+
+    #[test]
+    fn working_dir_drops_surrounding_quotes_and_blanks() {
+        let dir = std::env::temp_dir().to_string_lossy().into_owned();
+        assert_eq!(resolve_working_dir(&dir).as_deref(), Some(dir.as_str()));
+        assert_eq!(
+            resolve_working_dir(&format!("  \"{}\" ", dir)).as_deref(),
+            Some(dir.as_str())
+        );
+        assert_eq!(resolve_working_dir(""), None);
+        assert_eq!(resolve_working_dir("  "), None);
+        assert_eq!(resolve_working_dir("\"\""), None);
+        assert_eq!(resolve_working_dir("\""), None);
+    }
+
+    #[test]
+    fn working_dir_that_does_not_exist_is_ignored() {
+        assert_eq!(resolve_working_dir(r"Z:\no\such\dir-scoot"), None);
     }
 
     #[test]
