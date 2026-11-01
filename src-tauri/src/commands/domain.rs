@@ -326,19 +326,19 @@ impl Command {
             && !matches!(self.category.as_str(), CATEGORY_URL | CATEGORY_FILE)
         {
             return Err(crate::error::AppError::Validation(
-                "Open with is only available for url and file commands.".to_string(),
+                "Open With is only available for url and file commands.".to_string(),
             ));
         }
 
         if self.open_args.is_some() && self.open_with.is_none() {
             return Err(crate::error::AppError::Validation(
-                "Open with is required when open args are set.".to_string(),
+                "Open With is required when open args are set.".to_string(),
             ));
         }
 
         if self.run_as_admin.is_some() && self.category != CATEGORY_COMMAND {
             return Err(crate::error::AppError::Validation(
-                "Run as administrator is only available for command commands.".to_string(),
+                "Run as Administrator is only available for command commands.".to_string(),
             ));
         }
 
@@ -459,7 +459,7 @@ mod tests {
         cmd.category = "url".to_string();
         cmd.open_args = Some("--incognito".to_string());
         let err = cmd.validate().unwrap_err().to_string();
-        assert!(err.contains("Open with"), "{}", err);
+        assert!(err.contains("Open With"), "{}", err);
         cmd.open_with = Some("chrome.exe".to_string());
         assert!(cmd.validate().is_ok());
     }

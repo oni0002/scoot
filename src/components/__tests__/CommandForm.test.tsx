@@ -176,7 +176,7 @@ describe('CommandForm open with', () => {
     ])('shows the program and its arguments for %s: %s', async (category, shown) => {
         render(<CommandForm onSave={jest.fn()} onCancel={jest.fn()} />);
         await userEvent.selectOptions(screen.getByLabelText(/category/i), category);
-        expect(!!screen.queryByLabelText('Open with')).toBe(shown);
+        expect(!!screen.queryByLabelText('Open With')).toBe(shown);
         expect(!!screen.queryByLabelText('Arguments')).toBe(shown);
     });
 
@@ -185,7 +185,7 @@ describe('CommandForm open with', () => {
         render(<CommandForm onSave={onSave} onCancel={jest.fn()} />);
         await userEvent.type(screen.getByLabelText(/name/i), 'Private');
         await userEvent.type(screen.getByLabelText('URL *'), 'https://a.dev');
-        await userEvent.type(screen.getByLabelText('Open with'), ' chrome.exe ');
+        await userEvent.type(screen.getByLabelText('Open With'), ' chrome.exe ');
         await userEvent.type(screen.getByLabelText('Arguments'), '--incognito');
         await userEvent.click(screen.getByRole('button', { name: 'Add' }));
         expect(onSave).toHaveBeenLastCalledWith(
@@ -208,7 +208,7 @@ describe('CommandForm run as administrator', () => {
     ])('shows the checkbox for %s: %s', async (category, shown) => {
         render(<CommandForm onSave={jest.fn()} onCancel={jest.fn()} />);
         await userEvent.selectOptions(screen.getByLabelText(/category/i), category);
-        expect(!!screen.queryByLabelText('Run as administrator')).toBe(shown);
+        expect(!!screen.queryByLabelText('Run as Administrator')).toBe(shown);
     });
 
     it('saves it for a command, and drops it after switching to url', async () => {
@@ -217,7 +217,7 @@ describe('CommandForm run as administrator', () => {
         await userEvent.type(screen.getByLabelText(/name/i), 'Sessions');
         await userEvent.selectOptions(screen.getByLabelText(/category/i), 'command');
         await userEvent.type(screen.getByLabelText('Command *'), 'net session');
-        await userEvent.click(screen.getByLabelText('Run as administrator'));
+        await userEvent.click(screen.getByLabelText('Run as Administrator'));
         await userEvent.click(screen.getByRole('button', { name: 'Add' }));
         expect(onSave).toHaveBeenLastCalledWith(
             expect.objectContaining({ category: 'command', runAsAdmin: true }),

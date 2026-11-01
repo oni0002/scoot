@@ -109,9 +109,9 @@ On the first start, when `commands.json` does not exist yet, Scoot adds this `g`
 
 ### Opening with a specific program
 
-**URL** and **File** commands can open their target with a program other than the default. Fill in **Open with** (the program) and, if needed, **Arguments** (passed before the target). Command commands do not have these fields.
+**URL** and **File** commands can open their target with a program other than the default. Fill in **Open With** (the program) and, if needed, **Arguments** (passed before the target). Command commands do not have these fields.
 
-| Goal                    | Open with                                                      | Arguments                         |
+| Goal                    | Open With                                                      | Arguments                         |
 | ----------------------- | -------------------------------------------------------------- | --------------------------------- |
 | Chrome, incognito       | `C:\Program Files\Google\Chrome\Application\chrome.exe`        | `--incognito`                     |
 | Chrome, new window      | `C:\Program Files\Google\Chrome\Application\chrome.exe`        | `--new-window`                    |
@@ -123,7 +123,7 @@ Install locations vary by machine, so check yours. Environment variables such as
 
 ### Running as administrator
 
-A **Command** command runs in PowerShell. Tick **Run as administrator** to run it elevated: Windows asks for confirmation (UAC) each time. Tick **Show Window** too if you want to see the output. If you decline the prompt, nothing runs and Scoot does not report it.
+A **Command** command runs in PowerShell. Tick **Run as Administrator** to run it elevated: Windows asks for confirmation (UAC) each time. Tick **Show Window** too if you want to see the output. If you decline the prompt, nothing runs and Scoot does not report it.
 
 To use another shell or set environment variables, write it in the command itself:
 

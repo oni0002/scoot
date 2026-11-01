@@ -295,7 +295,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                     {OPEN_WITH_CATEGORIES.includes(formData.category) && (
                         <div className="flex gap-2">
                             <div className="flex flex-col flex-1">
-                                <FieldLabel htmlFor="cf-open-with">Open with</FieldLabel>
+                                <FieldLabel htmlFor="cf-open-with">Open With</FieldLabel>
                                 <input
                                     id="cf-open-with"
                                     autoComplete="off"
@@ -351,7 +351,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                     />
                                 </label>
                                 <label className="flex select-none items-center px-1 py-2 cursor-pointer justify-start gap-4">
-                                    <span className="text-sm">Run as administrator</span>
+                                    <span className="text-sm">Run as Administrator</span>
                                     <input
                                         type="checkbox"
                                         checked={formData.runAsAdmin}
