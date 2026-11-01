@@ -120,3 +120,14 @@ On the first start, when `commands.json` does not exist yet, Scoot adds this `g`
 | Firefox, private window | `C:\Program Files\Mozilla Firefox\firefox.exe`                 | `-private-window`                 |
 
 Install locations vary by machine, so check yours. Environment variables such as `%ProgramFiles%` work in the program path.
+
+### Running as administrator
+
+A **Command** command runs in PowerShell. Tick **Run as administrator** to run it elevated: Windows asks for confirmation (UAC) each time. Tick **Show Window** too if you want to see the output. If you decline the prompt, nothing runs and Scoot does not report it.
+
+To use another shell or set environment variables, write it in the command itself:
+
+- `cmd /c dir C:\`: run in cmd.
+- `pwsh -Command Get-Date`: run in PowerShell 7.
+- `wsl ls -la`: run in WSL.
+- `$env:NAME='1'; mytool`: set an environment variable for that command.
