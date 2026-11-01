@@ -96,11 +96,17 @@ describe('CommandForm validation copy', () => {
     it('keeps the alias optional unless the command takes arguments', async () => {
         render(<CommandForm onSave={jest.fn()} onCancel={jest.fn()} />);
         expect(screen.getByLabelText(/alias/i)).toBeEnabled();
-        expect(screen.getByText('Optional short name')).toBeInTheDocument();
+        expect(
+            screen.getByText('Optional short name. Type it to find this command.'),
+        ).toBeInTheDocument();
 
         await userEvent.click(screen.getByLabelText(/url/i));
         await userEvent.paste('https://a.dev/?q={$1}');
         expect(screen.getByLabelText(/alias \*/i)).toBeInTheDocument();
+        expect(screen.getByText('Type "g react" to pass react as {$1}.')).toBeInTheDocument();
+        await userEvent.type(screen.getByLabelText(/alias/i), 'gs');
+        expect(screen.getByText('Type "gs react" to pass react as {$1}.')).toBeInTheDocument();
+        await userEvent.clear(screen.getByLabelText(/alias/i));
         await userEvent.type(screen.getByLabelText(/name/i), 'A');
         await userEvent.click(screen.getByRole('button', { name: 'Add' }));
         expect(screen.getByText('Required for args')).toBeInTheDocument();

@@ -273,9 +273,14 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 className={`input input-sm w-full ${errors.alias ? 'input-error' : ''}`}
                             />
                             <p className="px-1 py-1 text-xs text-muted">
-                                {hasPlaceholders(formData.command)
-                                    ? 'Type it, then the arguments'
-                                    : 'Optional short name'}
+                                {hasPlaceholders(formData.command) ? (
+                                    <>
+                                        Type "{formData.alias.trim() || 'g'} react" to pass react as{' '}
+                                        {'{$1}'}.
+                                    </>
+                                ) : (
+                                    'Optional short name. Type it to find this command.'
+                                )}
                             </p>
                             <FieldError message={errors.alias} />
                         </div>
