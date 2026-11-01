@@ -102,3 +102,21 @@ Example: Google Search
 - **Command**: `https://www.google.com/search?q={$*}`
 - **Usage**: Type `g react` in Scoot.
 - **Result**: Opens `https://www.google.com/search?q=react` in your browser.
+
+Placeholders are `{$1}` and `{$2}` (the first and second argument) and `{$*}` (all arguments). A command with a placeholder needs an alias.
+
+On the first start, when `commands.json` does not exist yet, Scoot adds this `g` command for you. It is an ordinary command: edit it or delete it like any other. A `commands.json` that exists, even an empty one, is never filled in again.
+
+### Opening with a specific program
+
+**URL** and **File** commands can open their target with a program other than the default. Fill in **Open with** (the program) and, if needed, **Arguments** (passed before the target). Command commands do not have these fields.
+
+| Goal                    | Open with                                                      | Arguments                         |
+| ----------------------- | -------------------------------------------------------------- | --------------------------------- |
+| Chrome, incognito       | `C:\Program Files\Google\Chrome\Application\chrome.exe`        | `--incognito`                     |
+| Chrome, new window      | `C:\Program Files\Google\Chrome\Application\chrome.exe`        | `--new-window`                    |
+| Chrome, another profile | `C:\Program Files\Google\Chrome\Application\chrome.exe`        | `--profile-directory="Profile 1"` |
+| Edge, InPrivate         | `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe` | `--inprivate`                     |
+| Firefox, private window | `C:\Program Files\Mozilla Firefox\firefox.exe`                 | `-private-window`                 |
+
+Install locations vary by machine, so check yours. Environment variables such as `%ProgramFiles%` work in the program path.
