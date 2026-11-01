@@ -82,6 +82,7 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
     }
 
     let mut commands = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
     while let Some((dir, level)) = queue.pop_front() {
         let entries = match std::fs::read_dir(&dir) {
             Ok(entries) => entries,
@@ -114,7 +115,8 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
             } else {
                 files.includes(&path)
             };
-            if !listed {
+            // 登録フォルダが重なっても、同じパスは1回だけ出す(上限の数え方もそろう)
+            if !listed || !seen.insert(seen_key(&path)) {
                 continue;
             }
             if commands.len() == cap {
@@ -129,6 +131,16 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
     Scan {
         commands,
         truncated: false,
+    }
+}
+
+/// 重複判定のキー。Windows のパスは大文字小文字を区別しない
+fn seen_key(path: &Path) -> String {
+    let key = path.to_string_lossy();
+    if cfg!(windows) {
+        key.to_lowercase()
+    } else {
+        key.into_owned()
     }
 }
 
@@ -302,6 +314,17 @@ mod tests {
             "src/main.rs",
         ]);
         assert_eq!(found_with(&settings(&root), &root), ["src", "src/main.rs"]);
+    }
+
+    #[test]
+    fn overlapping_registered_folders_list_each_path_once() {
+        let root = tree(&["x/a.md", "x/b.md", "c.md"]);
+        let mut s = settings(&root);
+        s.paths.push(root.join("x").to_string_lossy().into_owned());
+        assert_eq!(found_with(&s, &root), ["c.md", "x", "x/a.md", "x/b.md"]);
+        // 重複は上限にも数えない
+        s.include_folders = false;
+        assert!(!scan(&s, 3).truncated);
     }
 
     #[test]
