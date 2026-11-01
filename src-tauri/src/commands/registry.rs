@@ -292,6 +292,7 @@ mod tests {
             alias: alias.map(|s| s.to_string()),
             working_dir: None,
             show_window: None,
+            run_as_admin: None,
             open_with: None,
             open_args: None,
         }

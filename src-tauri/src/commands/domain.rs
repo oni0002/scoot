@@ -54,6 +54,9 @@ pub struct Command {
     pub working_dir: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub show_window: Option<bool>,
+    /// command を UAC で昇格して実行する(Windows のみ)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_as_admin: Option<bool>,
     /// url / file を開くプログラム。未設定なら既定のアプリで開く
     #[serde(
         default,
@@ -194,6 +197,7 @@ impl Command {
             alias: None,
             working_dir: None,
             show_window: None,
+            run_as_admin: None,
             open_with: None,
             open_args: None,
         }
@@ -326,6 +330,18 @@ impl Command {
             ));
         }
 
+        if self.open_args.is_some() && self.open_with.is_none() {
+            return Err(crate::error::AppError::Validation(
+                "Open with is required when open args are set.".to_string(),
+            ));
+        }
+
+        if self.run_as_admin.is_some() && self.category != CATEGORY_COMMAND {
+            return Err(crate::error::AppError::Validation(
+                "Run as administrator is only available for command commands.".to_string(),
+            ));
+        }
+
         // Scoot command validation
         if self.command.starts_with("scoot://") && !SCOOT_COMMANDS.contains(&self.command.as_str())
         {
@@ -355,6 +371,7 @@ mod tests {
             alias: None,
             working_dir: None,
             show_window: None,
+            run_as_admin: None,
             open_with: None,
             open_args: None,
         }
@@ -429,10 +446,40 @@ mod tests {
             cmd.category = category.to_string();
             cmd.open_with = Some("chrome.exe".to_string());
             assert_eq!(cmd.validate().is_ok(), ok, "{}", category);
-            cmd.open_with = None;
             cmd.open_args = Some("--incognito".to_string());
             assert_eq!(cmd.validate().is_ok(), ok, "{}", category);
+            cmd.open_with = None;
+            assert!(cmd.validate().is_err(), "{}", category);
         }
+    }
+
+    #[test]
+    fn open_args_need_open_with() {
+        let mut cmd = create_dummy_command("https://a.b");
+        cmd.category = "url".to_string();
+        cmd.open_args = Some("--incognito".to_string());
+        let err = cmd.validate().unwrap_err().to_string();
+        assert!(err.contains("Open with"), "{}", err);
+        cmd.open_with = Some("chrome.exe".to_string());
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn run_as_admin_is_only_for_command() {
+        for (category, ok) in [
+            ("command", true),
+            ("url", false),
+            ("file", false),
+            ("scoot", false),
+        ] {
+            let mut cmd = create_dummy_command("echo hi");
+            cmd.category = category.to_string();
+            cmd.run_as_admin = Some(true);
+            assert_eq!(cmd.validate().is_ok(), ok, "{}", category);
+        }
+        let mut cmd = create_dummy_command("echo hi");
+        cmd.run_as_admin = Some(true);
+        assert_eq!(serde_json::to_value(&cmd).unwrap()["runAsAdmin"], true);
     }
 
     #[test]

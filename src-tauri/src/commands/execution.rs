@@ -114,6 +114,7 @@ async fn run_command(
                 &final_command,
                 &command.working_dir,
                 command.show_window.unwrap_or(false),
+                command.run_as_admin.unwrap_or(false),
             )
             .await
         }
@@ -272,11 +273,79 @@ fn resolve_working_dir(dir: &str) -> Option<String> {
     Some(clean.to_string())
 }
 
+/// UTF-16LE の base64。PowerShell の -EncodedCommand が受け取る形式
+#[cfg(target_os = "windows")]
+fn encode_powershell_script(script: &str) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let bytes: Vec<u8> = script.encode_utf16().flat_map(u16::to_le_bytes).collect();
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let n = chunk
+            .iter()
+            .enumerate()
+            .fold(0u32, |acc, (i, b)| acc | (*b as u32) << (16 - 8 * i));
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(TABLE[(n >> (18 - 6 * i) & 63) as usize] as char);
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
+/// 管理者として実行するための PowerShell 起動(プログラム名と引数)。
+/// ユーザーのコマンドは -EncodedCommand で渡すので、クォートのエスケープが要らない
+#[cfg(target_os = "windows")]
+fn elevated_launch(
+    command: &str,
+    working_dir: Option<&str>,
+    show_window: bool,
+) -> (&'static str, Vec<String>) {
+    // 昇格したプロセスには作業ディレクトリが渡らないので、スクリプトの先頭で移動する。
+    // 単一引用符の中では、' と PowerShell が引用符とみなす曲線引用符だけを重ねればよい
+    let script = match working_dir {
+        Some(dir) => {
+            let mut quoted = String::new();
+            for c in dir.chars() {
+                quoted.push(c);
+                if matches!(c, '\'' | '\u{2018}' | '\u{2019}' | '\u{201A}' | '\u{201B}') {
+                    quoted.push(c);
+                }
+            }
+            format!("Set-Location -LiteralPath '{quoted}'\n{command}")
+        }
+        None => command.to_string(),
+    };
+    let mut inner = vec!["'-NoProfile'"];
+    if show_window {
+        inner.push("'-NoExit'");
+    }
+    let encoded = format!("'{}'", encode_powershell_script(&script));
+    inner.push("'-EncodedCommand'");
+    inner.push(&encoded);
+    let style = if show_window {
+        ""
+    } else {
+        " -WindowStyle Hidden"
+    };
+    let start = format!(
+        "Start-Process powershell -Verb RunAs{style} -ArgumentList {}",
+        inner.join(",")
+    );
+    (
+        "powershell",
+        vec!["-NoProfile".into(), "-Command".into(), start],
+    )
+}
+
 /// Execute a shell command
 async fn execute_shell_command(
     command: &str,
     working_dir: &Option<String>,
     #[cfg_attr(not(target_os = "windows"), allow(unused_variables))] show_window: bool,
+    #[cfg_attr(not(target_os = "windows"), allow(unused_variables))] run_as_admin: bool,
 ) -> Result<(), crate::error::AppError> {
     use std::process::Command as StdCommand;
     log::debug!("Executing shell command: {}", command);
@@ -289,21 +358,32 @@ async fn execute_shell_command(
     }
 
     // Build the command
+    let dir = working_dir.as_deref().and_then(resolve_working_dir);
+
     #[cfg(target_os = "windows")]
     let mut cmd_builder = {
         use std::os::windows::process::CommandExt;
-        let mut cmd = StdCommand::new("powershell");
-        let mut args = vec!["-NoProfile"];
-        if show_window {
-            args.push("-NoExit");
-        }
-        args.push("-Command");
-        args.push(command);
-        cmd.args(args);
-        if show_window {
-            cmd.creation_flags(0x00000010); // CREATE_NEW_CONSOLE
-        } else {
+        let mut cmd;
+        if run_as_admin {
+            let (program, args) = elevated_launch(command, dir.as_deref(), show_window);
+            cmd = StdCommand::new(program);
+            cmd.args(args);
+            // 昇格後のウィンドウは Start-Process が決める。起動役の PowerShell は常に隠す
             cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        } else {
+            cmd = StdCommand::new("powershell");
+            let mut args = vec!["-NoProfile"];
+            if show_window {
+                args.push("-NoExit");
+            }
+            args.push("-Command");
+            args.push(command);
+            cmd.args(args);
+            if show_window {
+                cmd.creation_flags(0x00000010); // CREATE_NEW_CONSOLE
+            } else {
+                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            }
         }
         cmd
     };
@@ -315,8 +395,11 @@ async fn execute_shell_command(
         cmd
     };
 
-    if let Some(dir) = working_dir.as_deref().and_then(resolve_working_dir) {
-        cmd_builder.current_dir(dir);
+    // 昇格したプロセスには作業ディレクトリが引き継がれないので、elevated_launch が Set-Location する
+    if !run_as_admin {
+        if let Some(dir) = &dir {
+            cmd_builder.current_dir(dir);
+        }
     }
 
     // Execute the command asynchronously
@@ -378,5 +461,75 @@ mod tests {
         assert!(is_url_scheme_allowed("HTTPS://example.com"));
         assert!(is_url_scheme_allowed("HTTP://example.com"));
         assert!(!is_url_scheme_allowed("JAVASCRIPT:alert(1)"));
+    }
+
+    #[cfg(target_os = "windows")]
+    fn decode_powershell_script(b64: &str) -> String {
+        let value = |c: u8| match c {
+            b'A'..=b'Z' => c - b'A',
+            b'a'..=b'z' => c - b'a' + 26,
+            b'0'..=b'9' => c - b'0' + 52,
+            b'+' => 62,
+            _ => 63,
+        };
+        let mut bytes = Vec::new();
+        for chunk in b64.as_bytes().chunks(4) {
+            let data: Vec<u8> = chunk.iter().copied().take_while(|c| *c != b'=').collect();
+            let n = data
+                .iter()
+                .enumerate()
+                .fold(0u32, |acc, (i, c)| acc | (value(*c) as u32) << (18 - 6 * i));
+            bytes.extend((0..data.len() - 1).map(|i| (n >> (16 - 8 * i)) as u8));
+        }
+        let units: Vec<u16> = bytes
+            .chunks(2)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
+            .collect();
+        String::from_utf16(&units).unwrap()
+    }
+
+    #[cfg(target_os = "windows")]
+    fn encoded_script(args: &[String]) -> String {
+        let b64 = args[2].rsplit("'-EncodedCommand','").next().unwrap();
+        decode_powershell_script(b64.trim_end_matches('\''))
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn elevated_launch_round_trips_awkward_commands() {
+        for command in [
+            "echo hi",
+            "echo \"a 'b' `c` $d $(x)\"; 1",
+            "echo \"日本語 \u{1F600}\"",
+            "a",
+            "ab",
+        ] {
+            let (program, args) = elevated_launch(command, None, true);
+            assert_eq!(program, "powershell");
+            assert_eq!(encoded_script(&args), command);
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn elevated_launch_moves_to_the_working_dir_inside_the_script() {
+        let (_, args) = elevated_launch("dir", Some("C:\\it's\\\u{2019}x"), true);
+        assert_eq!(
+            encoded_script(&args),
+            "Set-Location -LiteralPath 'C:\\it''s\\\u{2019}\u{2019}x'\ndir"
+        );
+        let (_, args) = elevated_launch("dir", None, true);
+        assert_eq!(encoded_script(&args), "dir");
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn elevated_launch_shows_or_hides_the_window() {
+        let (_, shown) = elevated_launch("dir", None, true);
+        assert!(shown[2].starts_with("Start-Process powershell -Verb RunAs -ArgumentList"));
+        assert!(shown[2].contains("'-NoExit'"));
+        let (_, hidden) = elevated_launch("dir", None, false);
+        assert!(hidden[2].contains("-Verb RunAs -WindowStyle Hidden -ArgumentList"));
+        assert!(!hidden[2].contains("-NoExit"));
     }
 }
