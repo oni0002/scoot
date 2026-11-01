@@ -90,17 +90,12 @@ impl Default for MarkdownSettings {
     }
 }
 
-/// Local Path の設定。ユーザーが登録したフォルダと、その下のどこまで・何を一覧にするか
+/// Local Path の設定。登録フォルダごとの一覧の仕方と、全フォルダに共通の除外名
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct LocalPathSettings {
     pub enabled: bool,
-    pub paths: Vec<String>,
-    /// 登録フォルダから何階層下まで一覧にするか。1 はフォルダ直下だけ
-    pub depth: usize,
-    /// ドットなしの拡張子(大文字小文字は区別しない)。`*` はすべてのファイル、空ならファイルは出さない
-    pub extensions: Vec<String>,
-    pub include_folders: bool,
+    pub entries: Vec<LocalPathEntry>,
     /// 中身ごと飛ばすファイル・フォルダの名前(大文字小文字は区別しない)
     pub exclude_names: Vec<String>,
 }
@@ -109,11 +104,32 @@ impl Default for LocalPathSettings {
     fn default() -> Self {
         Self {
             enabled: false,
-            paths: Vec::new(),
+            entries: Vec::new(),
+            exclude_names: vec!["node_modules".to_string(), "target".to_string()],
+        }
+    }
+}
+
+/// 登録フォルダ1つと、その下のどこまで・何を一覧にするか
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LocalPathEntry {
+    /// `~` と `%VAR%` は読み込み時に展開する
+    pub path: String,
+    /// 登録フォルダから何階層下まで一覧にするか。1 はフォルダ直下だけ
+    pub depth: usize,
+    /// ドットなしの拡張子(大文字小文字は区別しない)。`*` はすべてのファイル、空ならファイルは出さない
+    pub extensions: Vec<String>,
+    pub include_folders: bool,
+}
+
+impl Default for LocalPathEntry {
+    fn default() -> Self {
+        Self {
+            path: String::new(),
             depth: 3,
             extensions: Vec::new(),
             include_folders: true,
-            exclude_names: vec!["node_modules".to_string(), "target".to_string()],
         }
     }
 }
@@ -188,11 +204,16 @@ impl Settings {
                 MAX_RELOAD_INTERVAL_MINUTES, self.reload_interval_minutes
             ));
         }
-        if !(1..=MAX_LOCAL_PATH_DEPTH).contains(&self.local_paths.depth) {
-            return fail(format!(
-                "localPaths.depth must be between 1 and {} (got {}).",
-                MAX_LOCAL_PATH_DEPTH, self.local_paths.depth
-            ));
+        for (i, entry) in self.local_paths.entries.iter().enumerate() {
+            if entry.path.trim().is_empty() {
+                return fail(format!("localPaths.entries[{}].path must not be empty.", i));
+            }
+            if !(1..=MAX_LOCAL_PATH_DEPTH).contains(&entry.depth) {
+                return fail(format!(
+                    "localPaths.entries[{}].depth must be between 1 and {} (got {}).",
+                    i, MAX_LOCAL_PATH_DEPTH, entry.depth
+                ));
+            }
         }
         if !THEMES.contains(&self.theme.as_str()) {
             return fail(format!(
@@ -325,30 +346,59 @@ mod tests {
     fn local_paths_are_off_by_default_and_skip_the_usual_build_folders() {
         let local = parse("{}").unwrap().local_paths;
         assert!(!local.enabled);
-        assert!(local.paths.is_empty());
-        assert_eq!(local.depth, 3);
-        assert!(local.extensions.is_empty());
-        assert!(local.include_folders);
+        assert!(local.entries.is_empty());
         assert_eq!(local.exclude_names, ["node_modules", "target"]);
 
-        let local = parse(r#"{"localPaths": {"enabled": true, "paths": ["~/Projects"], "depth": 2, "extensions": ["md", "*"], "includeFolders": false, "excludeNames": []}}"#)
+        let local = parse(r#"{"localPaths": {"enabled": true, "entries": [{"path": "~/Projects", "depth": 2, "extensions": ["md", "*"], "includeFolders": false}], "excludeNames": []}}"#)
             .unwrap()
             .local_paths;
         assert!(local.enabled);
-        assert_eq!(local.paths, ["~/Projects"]);
-        assert_eq!(local.depth, 2);
-        assert_eq!(local.extensions, ["md", "*"]);
-        assert!(!local.include_folders);
+        assert_eq!(
+            local.entries,
+            [LocalPathEntry {
+                path: "~/Projects".to_string(),
+                depth: 2,
+                extensions: vec!["md".to_string(), "*".to_string()],
+                include_folders: false,
+            }]
+        );
         assert!(local.exclude_names.is_empty());
     }
 
     #[test]
-    fn local_path_depth_must_be_within_range() {
-        assert!(parse(r#"{"localPaths": {"depth": 1}}"#).is_ok());
-        assert!(parse(r#"{"localPaths": {"depth": 10}}"#).is_ok());
-        assert!(parse(r#"{"localPaths": {"depth": 0}}"#).is_err());
-        assert!(parse(r#"{"localPaths": {"depth": 11}}"#).is_err());
-        assert!(parse(r#"{"localPaths": {"depth": -1}}"#).is_err());
+    fn a_local_path_entry_may_give_only_its_path() {
+        let local = parse(r#"{"localPaths": {"entries": [{"path": "C:\\Docs"}]}}"#)
+            .unwrap()
+            .local_paths;
+        assert_eq!(local.entries.len(), 1);
+        assert_eq!(local.entries[0].path, r"C:\Docs");
+        assert_eq!(local.entries[0].depth, 3);
+        assert!(local.entries[0].extensions.is_empty());
+        assert!(local.entries[0].include_folders);
+    }
+
+    #[test]
+    fn the_old_single_rule_shape_still_loads_with_no_entries() {
+        // 未リリースの旧形式(全フォルダ共通の paths/depth/extensions/includeFolders)。移行はせず、
+        // 古いキーは読み飛ばして他の設定は生かす
+        let settings = parse(r#"{"maxResults": 7, "localPaths": {"enabled": true, "paths": ["C:\\Projects"], "depth": 2, "extensions": ["md"], "includeFolders": false, "excludeNames": ["dist"]}}"#)
+            .unwrap();
+        assert_eq!(settings.max_results, 7);
+        assert!(settings.local_paths.enabled);
+        assert!(settings.local_paths.entries.is_empty());
+        assert_eq!(settings.local_paths.exclude_names, ["dist"]);
+    }
+
+    #[test]
+    fn local_path_entries_need_a_path_and_a_depth_within_range() {
+        let entry = |json: &str| parse(&format!(r#"{{"localPaths": {{"entries": [{json}]}}}}"#));
+        assert!(entry(r#"{"path": "C:\\a", "depth": 1}"#).is_ok());
+        assert!(entry(r#"{"path": "C:\\a", "depth": 10}"#).is_ok());
+        assert!(entry(r#"{"path": "C:\\a", "depth": 0}"#).is_err());
+        assert!(entry(r#"{"path": "C:\\a", "depth": 11}"#).is_err());
+        assert!(entry(r#"{"path": "C:\\a", "depth": -1}"#).is_err());
+        assert!(entry(r#"{"path": " "}"#).is_err());
+        assert!(entry(r#"{"depth": 2}"#).is_err());
     }
 
     #[test]

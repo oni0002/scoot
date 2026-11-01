@@ -51,6 +51,13 @@ impl Files {
     }
 }
 
+/// 登録フォルダ1つ分の、たどる深さと一覧にするもの
+struct Rule {
+    depth: usize,
+    files: Files,
+    include_folders: bool,
+}
+
 /// 登録フォルダの下のファイルとフォルダを Command にする
 pub async fn load(settings: &LocalPathSettings) -> Result<Scan, crate::error::AppError> {
     let settings = settings.clone();
@@ -61,21 +68,26 @@ pub async fn load(settings: &LocalPathSettings) -> Result<Scan, crate::error::Ap
 
 /// 全登録フォルダをまとめて幅優先でたどる。`cap` で打ち切ったとき、浅いものから残る
 fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
-    let files = Files::from_extensions(&settings.extensions);
     let excluded: HashSet<String> = settings
         .exclude_names
         .iter()
         .map(|n| n.to_lowercase())
         .collect();
+    let rules: Vec<Rule> = settings
+        .entries
+        .iter()
+        .map(|e| Rule {
+            depth: e.depth,
+            files: Files::from_extensions(&e.extensions),
+            include_folders: e.include_folders,
+        })
+        .collect();
 
-    let mut queue: VecDeque<(PathBuf, usize)> = VecDeque::new();
-    for path in &settings.paths {
-        // `~/docs` の展開で混ざる `/` を、Windows の区切りにそろえる
-        let root: PathBuf = Path::new(&crate::os::expand_env_vars(path))
-            .components()
-            .collect();
+    let mut queue: VecDeque<(PathBuf, usize, &Rule)> = VecDeque::new();
+    for (entry, rule) in settings.entries.iter().zip(&rules) {
+        let root = expand(&entry.path);
         if root.is_dir() {
-            queue.push_back((root, 0));
+            queue.push_back((root, 0, rule));
         } else {
             log::warn!("Local path '{}' is not a folder; skipped.", root.display());
         }
@@ -83,7 +95,7 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
 
     let mut commands = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
-    while let Some((dir, level)) = queue.pop_front() {
+    while let Some((dir, level, rule)) = queue.pop_front() {
         let entries = match std::fs::read_dir(&dir) {
             Ok(entries) => entries,
             Err(e) => {
@@ -108,15 +120,16 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
             }
             let path = entry.path();
             let listed = if file_type.is_dir() {
-                if level + 1 < settings.depth {
-                    queue.push_back((path.clone(), level + 1));
+                if level + 1 < rule.depth {
+                    queue.push_back((path.clone(), level + 1, rule));
                 }
-                settings.include_folders
+                rule.include_folders
             } else {
-                files.includes(&path)
+                rule.files.includes(&path)
             };
-            // 登録フォルダが重なっても、同じパスは1回だけ出す(上限の数え方もそろう)
-            if !listed || !seen.insert(seen_key(&path)) {
+            // 登録フォルダが重なっても、同じパスは1回だけ出す(上限の数え方もそろう)。
+            // どの登録の規則で出ても Command は同じなので、どれか1つが一覧にすれば出る
+            if !listed || !seen.insert(key_of(&path)) {
                 continue;
             }
             if commands.len() == cap {
@@ -134,8 +147,15 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
     }
 }
 
+/// `~` と `%VAR%` を展開し、`/` を Windows の区切りにそろえ、末尾の区切りを落とす
+fn expand(path: &str) -> PathBuf {
+    Path::new(&crate::os::expand_env_vars(path))
+        .components()
+        .collect()
+}
+
 /// 重複判定のキー。Windows のパスは大文字小文字を区別しない
-fn seen_key(path: &Path) -> String {
+fn key_of(path: &Path) -> String {
     let key = path.to_string_lossy();
     if cfg!(windows) {
         key.to_lowercase()
@@ -184,6 +204,7 @@ fn command_for(path: &Path) -> Command {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::settings::domain::LocalPathEntry;
 
     /// `entries` を作った一時フォルダ。`/` で終わるものはフォルダ
     fn tree(entries: &[&str]) -> PathBuf {
@@ -201,11 +222,19 @@ mod tests {
         root
     }
 
+    /// すべてのファイルとフォルダを、既定の深さで一覧にする登録
+    fn entry(path: &Path) -> LocalPathEntry {
+        LocalPathEntry {
+            path: path.to_string_lossy().into_owned(),
+            extensions: vec!["*".to_string()],
+            ..LocalPathEntry::default()
+        }
+    }
+
     fn settings(root: &Path) -> LocalPathSettings {
         LocalPathSettings {
             enabled: true,
-            paths: vec![root.to_string_lossy().into_owned()],
-            extensions: vec!["*".to_string()],
+            entries: vec![entry(root)],
             ..LocalPathSettings::default()
         }
     }
@@ -254,11 +283,11 @@ mod tests {
     fn depth_counts_levels_below_the_registered_folder() {
         let root = tree(&["a.md", "d1/b.md", "d1/d2/c.md", "d1/d2/d3/e.md"]);
         let mut s = settings(&root);
-        s.depth = 1;
+        s.entries[0].depth = 1;
         assert_eq!(found_with(&s, &root), ["a.md", "d1"]);
-        s.depth = 2;
+        s.entries[0].depth = 2;
         assert_eq!(found_with(&s, &root), ["a.md", "d1", "d1/b.md", "d1/d2"]);
-        s.depth = 3;
+        s.entries[0].depth = 3;
         assert_eq!(
             found_with(&s, &root),
             ["a.md", "d1", "d1/b.md", "d1/d2", "d1/d2/c.md", "d1/d2/d3"]
@@ -269,13 +298,13 @@ mod tests {
     fn extensions_pick_files_case_insensitively_and_star_takes_all() {
         let root = tree(&["a.MD", "b.pdf", "c.txt", "README"]);
         let mut s = settings(&root);
-        s.include_folders = false;
+        s.entries[0].include_folders = false;
 
-        s.extensions = vec![];
+        s.entries[0].extensions = vec![];
         assert!(found_with(&s, &root).is_empty());
-        s.extensions = vec!["md".to_string(), ".PDF".to_string()];
+        s.entries[0].extensions = vec!["md".to_string(), ".PDF".to_string()];
         assert_eq!(found_with(&s, &root), ["a.MD", "b.pdf"]);
-        s.extensions = vec!["*".to_string()];
+        s.entries[0].extensions = vec!["*".to_string()];
         assert_eq!(found_with(&s, &root), ["README", "a.MD", "b.pdf", "c.txt"]);
     }
 
@@ -284,12 +313,50 @@ mod tests {
         let root = tree(&["p/notes.md", "q/"]);
         let mut s = settings(&root);
         assert_eq!(found_with(&s, &root), ["p", "p/notes.md", "q"]);
-        s.include_folders = false;
+        s.entries[0].include_folders = false;
         assert_eq!(found_with(&s, &root), ["p/notes.md"]);
         // ファイルなし・フォルダのみ
-        s.include_folders = true;
-        s.extensions = vec![];
+        s.entries[0].include_folders = true;
+        s.entries[0].extensions = vec![];
         assert_eq!(found_with(&s, &root), ["p", "q"]);
+    }
+
+    #[test]
+    fn each_entry_walks_to_its_own_depth() {
+        let root = tree(&["p/a.md", "p/d/b.md", "q/a.md", "q/d/b.md", "q/d/e/c.md"]);
+        let mut shallow = entry(&root.join("p"));
+        shallow.depth = 1;
+        let mut deeper = entry(&root.join("q"));
+        deeper.depth = 2;
+        let s = LocalPathSettings {
+            entries: vec![shallow, deeper],
+            ..settings(&root)
+        };
+        assert_eq!(
+            found_with(&s, &root),
+            ["p/a.md", "p/d", "q/a.md", "q/d", "q/d/b.md", "q/d/e"]
+        );
+    }
+
+    #[test]
+    fn each_entry_picks_its_own_files_and_folders() {
+        let root = tree(&[
+            "docs/a.md",
+            "docs/b.pdf",
+            "docs/sub/",
+            "code/a.md",
+            "code/app/",
+        ]);
+        let mut docs = entry(&root.join("docs"));
+        docs.extensions = vec!["md".to_string()];
+        docs.include_folders = false;
+        let mut code = entry(&root.join("code"));
+        code.extensions = vec![];
+        let s = LocalPathSettings {
+            entries: vec![docs, code],
+            ..settings(&root)
+        };
+        assert_eq!(found_with(&s, &root), ["code/app", "docs/a.md"]);
     }
 
     #[test]
@@ -318,12 +385,18 @@ mod tests {
 
     #[test]
     fn overlapping_registered_folders_list_each_path_once() {
-        let root = tree(&["x/a.md", "x/b.md", "c.md"]);
-        let mut s = settings(&root);
-        s.paths.push(root.join("x").to_string_lossy().into_owned());
-        assert_eq!(found_with(&s, &root), ["c.md", "x", "x/a.md", "x/b.md"]);
-        // 重複は上限にも数えない
-        s.include_folders = false;
+        let root = tree(&["x/a.md", "x/b.txt", "x/y/", "c.md"]);
+        // 外側はフォルダだけ、内側は md とフォルダ。どちらかが一覧にするものが1回ずつ出る
+        let mut outer = entry(&root);
+        outer.extensions = vec![];
+        let mut inner = entry(&root.join("x"));
+        inner.extensions = vec!["md".to_string()];
+        let s = LocalPathSettings {
+            entries: vec![outer, inner],
+            ..settings(&root)
+        };
+        assert_eq!(found_with(&s, &root), ["x", "x/a.md", "x/y"]);
+        // 両方が出す x/y は上限にも1回だけ数える
         assert!(!scan(&s, 3).truncated);
     }
 
@@ -331,7 +404,7 @@ mod tests {
     fn the_cap_stops_the_walk_and_says_so() {
         let root = tree(&["a.md", "b.md", "c.md"]);
         let mut s = settings(&root);
-        s.include_folders = false;
+        s.entries[0].include_folders = false;
 
         let full = scan(&s, 3);
         assert_eq!(full.commands.len(), 3);
@@ -354,20 +427,23 @@ mod tests {
             "b/d/deep4.md",
         ]);
         let mut s = settings(&root);
-        s.include_folders = false;
+        s.entries[0].include_folders = false;
         let scan = scan(&s, 2);
         assert!(scan.truncated);
         assert_eq!(found(&scan, &root), ["a/a1.md", "b/b1.md"]);
     }
 
     #[test]
-    fn paths_across_registered_folders_share_one_cap() {
-        let first = tree(&["a.md", "b.md"]);
-        let second = tree(&["c.md", "d.md"]);
-        let mut s = settings(&first);
-        s.paths.push(second.to_string_lossy().into_owned());
-        s.include_folders = false;
+    fn entries_with_their_own_rules_share_one_cap() {
+        let first = tree(&["a.md", "b.md", "skip.txt"]);
+        let second = tree(&["c.txt", "d/"]);
+        let mut md_only = entry(&first);
+        md_only.extensions = vec!["md".to_string()];
+        md_only.include_folders = false;
+        let mut s = settings(&second);
+        s.entries.insert(0, md_only);
         assert_eq!(scan(&s, MAX_ENTRIES).commands.len(), 4);
+        assert!(!scan(&s, 4).truncated);
         assert!(scan(&s, 3).truncated);
     }
 
@@ -375,8 +451,7 @@ mod tests {
     fn a_missing_registered_path_is_skipped() {
         let root = tree(&["a.md"]);
         let mut s = settings(&root);
-        s.paths
-            .insert(0, root.join("missing").to_string_lossy().into_owned());
+        s.entries.insert(0, entry(&root.join("missing")));
         assert_eq!(found_with(&s, &root), ["a.md"]);
     }
 

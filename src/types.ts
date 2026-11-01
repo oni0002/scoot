@@ -40,14 +40,19 @@ export interface MarkdownSettings {
     paths: string[];
 }
 
-/** 登録フォルダの下のファイル・フォルダ(Local Path)。src-tauri/src/settings/domain.rs と揃える */
-export interface LocalPathSettings {
-    enabled: boolean;
-    paths: string[];
+/** 登録フォルダ1つと、その下のどこまで・何を一覧にするか。src-tauri/src/settings/domain.rs と揃える */
+export interface LocalPathEntry {
+    path: string;
     depth: number;
     /** ドットなし。`*` はすべてのファイル、空ならファイルなし */
     extensions: string[];
     includeFolders: boolean;
+}
+
+/** 登録フォルダの下のファイル・フォルダ(Local Path) */
+export interface LocalPathSettings {
+    enabled: boolean;
+    entries: LocalPathEntry[];
     excludeNames: string[];
 }
 

@@ -180,20 +180,26 @@ describe('SettingsScreen sections', () => {
 describe('SettingsScreen files and folders', () => {
     const section = () => screen.findByRole('region', { name: 'Files and Folders' });
 
-    it('saves every field of the section when leaving', async () => {
+    const projects = 'C:\\Users\\demo\\Projects';
+    const documents = 'C:\\Users\\demo\\Documents';
+
+    it('saves each row on its own, and the excluded names, only when leaving', async () => {
         jest.mocked(TauriAPI.saveSettings).mockResolvedValue();
         renderScreen();
         const files = await section();
 
-        const depth = within(files).getByLabelText('Depth');
+        const depth = within(files).getByLabelText(`Depth for ${projects}`);
         await userEvent.clear(depth);
         await userEvent.type(depth, '4');
-        await userEvent.click(within(files).getByRole('button', { name: 'Add extension' }));
-        await userEvent.type(within(files).getByLabelText('New extension'), 'txt, .PDF *{Enter}');
-        await userEvent.click(within(files).getByLabelText('Include folders'));
+        await userEvent.type(
+            within(files).getByLabelText(`Extensions for ${projects}`),
+            'txt, .PDF * txt',
+        );
+        await userEvent.click(within(files).getByLabelText(`Folders for ${documents}`));
         await userEvent.click(within(files).getByRole('button', { name: 'Remove target' }));
         await userEvent.click(within(files).getByRole('button', { name: 'Add name' }));
         await userEvent.type(within(files).getByLabelText('New excluded name'), 'dist{Enter}');
+        expect(TauriAPI.saveSettings).not.toHaveBeenCalled();
 
         await userEvent.click(screen.getByRole('button', { name: 'Back' }));
         await waitFor(() =>
@@ -201,10 +207,20 @@ describe('SettingsScreen files and folders', () => {
                 expect.objectContaining({
                     localPaths: {
                         enabled: true,
-                        paths: ['C:\\Users\\demo\\Projects'],
-                        depth: 4,
-                        extensions: ['md', 'pdf', 'txt', '*'],
-                        includeFolders: false,
+                        entries: [
+                            {
+                                path: projects,
+                                depth: 4,
+                                extensions: ['txt', 'PDF', '*'],
+                                includeFolders: true,
+                            },
+                            {
+                                path: documents,
+                                depth: 4,
+                                extensions: ['md', 'pdf'],
+                                includeFolders: true,
+                            },
+                        ],
                         excludeNames: ['node_modules', 'dist'],
                     },
                 }),
@@ -212,13 +228,60 @@ describe('SettingsScreen files and folders', () => {
         );
     });
 
-    it('says no files are listed once every extension is removed', async () => {
+    it('shows the extensions as saved once the field is left', async () => {
         renderScreen();
         const files = await section();
-        expect(within(files).queryByText('No files')).not.toBeInTheDocument();
-        await userEvent.click(within(files).getByRole('button', { name: 'Remove .md' }));
-        await userEvent.click(within(files).getByRole('button', { name: 'Remove .pdf' }));
-        expect(within(files).getByText('No files')).toBeInTheDocument();
+        const extensions = within(files).getByLabelText(`Extensions for ${documents}`);
+        expect(extensions).toHaveValue('md, pdf');
+        await userEvent.clear(extensions);
+        await userEvent.type(extensions, '.md,,  MD txt');
+        await userEvent.tab();
+        expect(extensions).toHaveValue('md, txt');
+    });
+
+    it('says an entry with no extensions lists no files', async () => {
+        renderScreen();
+        const files = await section();
+        expect(within(files).getByLabelText(`Extensions for ${projects}`)).toHaveAttribute(
+            'placeholder',
+            'No files',
+        );
+    });
+
+    it('adds a typed path or a chosen folder as a row with the default rule', async () => {
+        jest.mocked(TauriAPI.saveSettings).mockResolvedValue();
+        jest.mocked(TauriAPI.pickPath).mockResolvedValue('D:\\Picked');
+        renderScreen();
+        const files = await section();
+        const field = within(files).getByLabelText('New directory');
+        await userEvent.type(field, '  ~\\Notes {Enter}');
+        expect(field).toHaveValue('');
+        await userEvent.click(within(files).getByRole('button', { name: 'Choose a folder' }));
+        await within(files).findByLabelText('Depth for D:\\Picked');
+        await userEvent.click(within(files).getByRole('button', { name: `Remove ${projects}` }));
+
+        await userEvent.keyboard('{Escape}');
+        await waitFor(() =>
+            expect(TauriAPI.saveSettings).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    localPaths: expect.objectContaining({
+                        entries: [
+                            expect.objectContaining({ path: documents }),
+                            { path: '~\\Notes', depth: 3, extensions: [], includeFolders: true },
+                            { path: 'D:\\Picked', depth: 3, extensions: [], includeFolders: true },
+                        ],
+                    }),
+                }),
+            ),
+        );
+    });
+
+    it('does not add an empty path', async () => {
+        renderScreen();
+        const files = await section();
+        expect(within(files).getByRole('button', { name: 'Add directory' })).toBeDisabled();
+        await userEvent.type(within(files).getByLabelText('New directory'), '   {Enter}');
+        expect(within(files).getAllByRole('row')).toHaveLength(3);
     });
 
     it('disables its fields while switched off', async () => {
@@ -227,8 +290,9 @@ describe('SettingsScreen files and folders', () => {
         await userEvent.click(
             within(files).getByRole('checkbox', { name: 'Enable Files and Folders' }),
         );
-        expect(within(files).getByLabelText('Depth')).toBeDisabled();
-        expect(within(files).getByRole('button', { name: 'Add directory' })).toBeDisabled();
+        expect(within(files).getByLabelText(`Depth for ${projects}`)).toBeDisabled();
+        expect(within(files).getByLabelText('New directory')).toBeDisabled();
+        expect(within(files).getByRole('button', { name: 'Choose a folder' })).toBeDisabled();
     });
 });
 

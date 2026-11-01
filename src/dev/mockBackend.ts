@@ -70,8 +70,8 @@ const externalCommands = (): Command[] => [
         'roadmap.md',
         'file',
         'local',
-        'C:\\Users\\demo\\Projects\\scoot\\roadmap.md',
-        'C:\\Users\\demo\\Projects\\scoot',
+        'C:\\Users\\demo\\Documents\\Notes\\roadmap.md',
+        'C:\\Users\\demo\\Documents\\Notes',
     ),
     cmd('b1', 'daisyUI Documentation', 'url', 'bookmark', 'https://daisyui.com/docs/', ''),
     cmd('b2', 'Tauri v2 Guide', 'url', 'bookmark', 'https://v2.tauri.app/', ''),
@@ -99,10 +99,15 @@ const defaultSettings = (): Settings => ({
     markdown: { enabled: false, paths: [] },
     localPaths: {
         enabled: true,
-        paths: ['C:\\Users\\demo\\Projects'],
-        depth: 2,
-        extensions: ['md', 'pdf'],
-        includeFolders: true,
+        entries: [
+            { path: 'C:\\Users\\demo\\Projects', depth: 2, extensions: [], includeFolders: true },
+            {
+                path: 'C:\\Users\\demo\\Documents',
+                depth: 4,
+                extensions: ['md', 'pdf'],
+                includeFolders: false,
+            },
+        ],
         excludeNames: ['node_modules', 'target'],
     },
     ignored: [

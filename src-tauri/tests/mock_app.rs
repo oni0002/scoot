@@ -177,7 +177,11 @@ mod reload {
             let json = serde_json::json!({
                 "applications": { "enabled": false },
                 "bookmarks": { "enabled": false },
-                "localPaths": { "enabled": true, "paths": [tree], "depth": 1, "excludeNames": exclude },
+                "localPaths": {
+                    "enabled": true,
+                    "entries": [{ "path": tree, "depth": 1 }],
+                    "excludeNames": exclude,
+                },
             });
             std::fs::write(dir.join("settings.json"), json.to_string()).unwrap();
         };

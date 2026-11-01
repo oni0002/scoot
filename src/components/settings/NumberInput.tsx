@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 
 interface NumberInputProps {
-    id: string;
+    id?: string;
+    /** 名前を示すラベルがないとき(表のセルなど)に使う */
+    'aria-label'?: string;
+    /** 大きさと幅。既定は設定行の右端に置くもの */
+    className?: string;
     value: number;
     min: number;
     max: number;
@@ -13,16 +17,25 @@ interface NumberInputProps {
  * meanwhile), every number typed is passed on within min and max, and leaving the field shows
  * the stored value.
  */
-export const NumberInput: React.FC<NumberInputProps> = ({ id, value, min, max, onChange }) => {
+export const NumberInput: React.FC<NumberInputProps> = ({
+    id,
+    'aria-label': ariaLabel,
+    className = 'input-sm w-24',
+    value,
+    min,
+    max,
+    onChange,
+}) => {
     const [draft, setDraft] = useState<string | null>(null);
 
     return (
         <input
             id={id}
+            aria-label={ariaLabel}
             type="number"
             min={min}
             max={max}
-            className="input input-sm w-24"
+            className={`input ${className}`}
             value={draft ?? String(value)}
             onChange={(e) => {
                 setDraft(e.target.value);
