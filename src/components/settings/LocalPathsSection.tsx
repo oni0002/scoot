@@ -114,8 +114,12 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
             enabled={{ value: local.enabled, onChange: (enabled) => update({ enabled }) }}
         >
             <div className="px-3 py-2.5">
+                <p className="select-none text-sm">Directories</p>
+                <p className="text-xs text-subtle">
+                    Folders listed in search. Depth is how many levels below each folder to scan.
+                </p>
                 {/* 狭いウィンドウでは表だけ横にスクロールする。列幅は固定で、表示と編集で動かさない */}
-                <div className={`overflow-x-auto ${LIST_SURFACE}`}>
+                <div className={`mt-2 overflow-x-auto ${LIST_SURFACE}`}>
                     <table className="table table-xs min-w-[34rem] table-fixed">
                         <colgroup>
                             <col />

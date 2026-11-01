@@ -123,7 +123,8 @@ export const ListRow: React.FC<ListRowProps> = ({
                     </li>
                 ))}
                 {items.length === 0 && emptyText && (
-                    <li className={`${LIST_ROW} text-subtle`}>{emptyText}</li>
+                    // 項目の行は削除ボタンで 32px になる。空の行も同じ高さにする
+                    <li className={`${LIST_ROW} min-h-8 text-subtle`}>{emptyText}</li>
                 )}
                 {extra}
             </ul>
