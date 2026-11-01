@@ -291,7 +291,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                     type="text"
                                     value={formData.openWith}
                                     onChange={(e) => handleInputChange('openWith', e.target.value)}
-                                    placeholder="C:path	orowser.exe"
+                                    placeholder="C:\path\to\browser.exe"
                                     className="input input-sm w-full"
                                 />
                             </div>
