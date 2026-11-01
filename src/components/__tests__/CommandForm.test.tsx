@@ -77,6 +77,22 @@ describe('CommandForm validation copy', () => {
         expect(screen.queryByText('Command is required')).not.toBeInTheDocument();
     });
 
+    it.each([
+        ['url', 'URL *', 'https://example.com', 'URL is required'],
+        ['file', 'Path *', 'C:\\path\\to\\file.txt', 'Path is required'],
+        ['command', 'Command *', 'Command line', 'Command is required'],
+    ])(
+        'words the %s category as label, placeholder and error',
+        async (category, label, placeholder, error) => {
+            render(<CommandForm onSave={jest.fn()} onCancel={jest.fn()} />);
+            await userEvent.selectOptions(screen.getByLabelText(/category/i), category);
+            expect(screen.getByLabelText(label)).toHaveAttribute('placeholder', placeholder);
+
+            await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+            expect(screen.getByText(error)).toBeInTheDocument();
+        },
+    );
+
     it('keeps the alias optional unless the command takes arguments', async () => {
         render(<CommandForm onSave={jest.fn()} onCancel={jest.fn()} />);
         expect(screen.getByLabelText(/alias/i)).toBeEnabled();
