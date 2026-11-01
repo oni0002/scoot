@@ -138,7 +138,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
     return (
         <div className="h-screen w-screen flex flex-col bg-base-100 text-base-content">
             {/* Header */}
-            <div className="flex-none p-4 flex items-center gap-2">
+            <div data-tauri-drag-region className="flex-none p-4 flex items-center gap-2">
                 <button
                     onClick={requestCancel}
                     className="btn btn-ghost btn-sm btn-square"
@@ -147,7 +147,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                 >
                     <LuArrowLeft />
                 </button>
-                <h3>
+                <h3 className="pointer-events-none select-none">
                     {command ? 'Edit command' : template ? 'Duplicate command' : 'Add new command'}
                 </h3>
             </div>

@@ -3,6 +3,8 @@ use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
 pub fn show_main_window<R: Runtime>(app: &AppHandle<R>) {
     if let Some(window) = app.get_webview_window("main") {
+        // ドラッグで動かした位置は覚えず、呼び出すたびに中央へ戻す
+        let _ = window.center();
         let _ = window.show();
         let _ = window.set_focus();
         let _ = window.emit("window-shown", ());

@@ -91,7 +91,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onClearH
             data-theme={daisyTheme(local.theme)}
         >
             {/* Header */}
-            <div className="flex-none p-4 pb-2 flex items-center gap-2">
+            <div data-tauri-drag-region className="flex-none p-4 pb-2 flex items-center gap-2">
                 <button
                     className="btn btn-ghost btn-sm btn-square"
                     onClick={handleBack}
@@ -100,7 +100,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onClearH
                 >
                     <LuArrowLeft />
                 </button>
-                <h3 className="flex-1">Settings</h3>
+                <h3 className="pointer-events-none select-none flex-1">Settings</h3>
                 <button
                     type="button"
                     className="btn btn-ghost btn-sm btn-square"
