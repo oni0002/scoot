@@ -17,6 +17,12 @@ import './App.css';
 
 import { NotificationProvider, useNotificationContext } from './context/NotificationContext';
 
+// form は command があれば編集、template があれば複製、どちらも無ければ新規追加
+type View =
+    | { name: 'search' }
+    | { name: 'form'; command?: Command; template?: Command }
+    | { name: 'settings' };
+
 // 内部コンポーネント: Contextを使用するために分離する
 const AppContent = () => {
     const { showSuccess, showError, showWarning, reportError } = useNotificationContext();
@@ -35,28 +41,19 @@ const AppContent = () => {
     const { theme, fuzzyThreshold, maxResults, usageHistory, frequentFirst, loadSettings } =
         useSettingsContext();
 
-    const [currentView, setCurrentView] = useState<'search' | 'form' | 'settings'>('search');
-    const [editingCommand, setEditingCommand] = useState<Command | undefined>(undefined);
-    const [duplicatingCommand, setDuplicatingCommand] = useState<Command | undefined>(undefined);
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [view, setView] = useState<View>({ name: 'search' });
     const [deletingCommand, setDeletingCommand] = useState<Command | undefined>(undefined);
     const [aliasingCommand, setAliasingCommand] = useState<Command | undefined>(undefined);
 
-    usePreventHide(currentView !== 'search');
+    usePreventHide(view.name !== 'search');
 
-    const handleAddCommand = useCallback(() => {
-        setEditingCommand(undefined);
-        setDuplicatingCommand(undefined);
-        setCurrentView('form');
-    }, []);
+    const handleAddCommand = useCallback(() => setView({ name: 'form' }), []);
 
-    const handleOpenSettings = useCallback(() => {
-        setCurrentView('settings');
-    }, []);
+    const handleOpenSettings = useCallback(() => setView({ name: 'settings' }), []);
 
     const handleSaveCommand = useCallback(
         async (command: Command) => {
-            const editing = Boolean(editingCommand);
+            const editing = view.name === 'form' && Boolean(view.command);
             const result = editing ? await updateCommand(command) : await addCommand(command);
             if (!result.ok) {
                 showError(
@@ -66,11 +63,9 @@ const AppContent = () => {
                 return;
             }
             showSuccess(`"${command.name}" ${editing ? 'updated' : 'added'} successfully.`);
-            setCurrentView('search');
-            setEditingCommand(undefined);
-            setDuplicatingCommand(undefined);
+            setView({ name: 'search' });
         },
-        [editingCommand, updateCommand, addCommand, showSuccess, showError],
+        [view, updateCommand, addCommand, showSuccess, showError],
     );
 
     const handleConfirmDelete = useCallback(async () => {
@@ -88,33 +83,19 @@ const AppContent = () => {
     }, [deletingCommand, deleteCommand, showSuccess, showError]);
 
     // The confirm dialog closes after either answer, and closing is what lands here
-    const handleCancelDelete = useCallback(() => {
-        setShowDeleteDialog(false);
-        setDeletingCommand(undefined);
-    }, []);
+    const handleCancelDelete = useCallback(() => setDeletingCommand(undefined), []);
 
-    const handleCancelForm = useCallback(() => {
-        setCurrentView('search');
-        setEditingCommand(undefined);
-        setDuplicatingCommand(undefined);
-    }, []);
+    const handleCancelForm = useCallback(() => setView({ name: 'search' }), []);
 
-    const handleEditCommandFromSearch = useCallback((command: Command) => {
-        setEditingCommand(command);
-        setDuplicatingCommand(undefined);
-        setCurrentView('form');
-    }, []);
+    const handleEditCommandFromSearch = useCallback(
+        (command: Command) => setView({ name: 'form', command }),
+        [],
+    );
 
-    const handleDuplicateCommandFromSearch = useCallback((command: Command) => {
-        setEditingCommand(undefined);
-        setDuplicatingCommand(command);
-        setCurrentView('form');
-    }, []);
-
-    const handleDeleteCommandFromSearch = useCallback((command: Command) => {
-        setDeletingCommand(command);
-        setShowDeleteDialog(true);
-    }, []);
+    const handleDuplicateCommandFromSearch = useCallback(
+        (template: Command) => setView({ name: 'form', template }),
+        [],
+    );
 
     const handleIgnoreCommand = useCallback(
         async (command: Command) => {
@@ -218,7 +199,7 @@ const AppContent = () => {
 
     return (
         <div className="app w-screen h-screen overflow-hidden" data-theme={daisyTheme(theme)}>
-            {currentView === 'search' ? (
+            {view.name === 'search' ? (
                 <SearchWindow
                     fuzzyThreshold={fuzzyThreshold}
                     maxResults={maxResults}
@@ -226,27 +207,27 @@ const AppContent = () => {
                     frequentFirst={frequentFirst}
                     onEditCommand={handleEditCommandFromSearch}
                     onDuplicateCommand={handleDuplicateCommandFromSearch}
-                    onDeleteCommand={handleDeleteCommandFromSearch}
+                    onDeleteCommand={setDeletingCommand}
                     onAddCommand={handleAddCommand}
                     onCopyCommand={handleCopyCommand}
                     onAliasCommand={setAliasingCommand}
                     onIgnoreCommand={handleIgnoreCommand}
                     onReloadCommands={handleReloadCommands}
                     onOpenSettings={handleOpenSettings}
-                    isDialogOpen={showDeleteDialog || Boolean(aliasingCommand)}
+                    isDialogOpen={Boolean(deletingCommand || aliasingCommand)}
                 />
-            ) : currentView === 'settings' ? (
+            ) : view.name === 'settings' ? (
                 <SettingsScreen
                     onClearHistory={clearUsage}
                     onBack={() => {
-                        setCurrentView('search');
+                        setView({ name: 'search' });
                         loadSettings();
                     }}
                 />
             ) : (
                 <CommandForm
-                    command={editingCommand}
-                    template={duplicatingCommand}
+                    command={view.command}
+                    template={view.template}
                     onSave={handleSaveCommand}
                     onCancel={handleCancelForm}
                 />
@@ -259,7 +240,7 @@ const AppContent = () => {
             />
 
             <ConfirmDialog
-                isOpen={showDeleteDialog}
+                isOpen={Boolean(deletingCommand)}
                 title="Delete Command"
                 confirmLabel="Delete"
                 destructive
