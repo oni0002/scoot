@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useId, useState } from 'react';
 import { LuX } from 'react-icons/lu';
 
 interface SectionProps {
@@ -128,5 +128,68 @@ export const ListRow: React.FC<ListRowProps> = ({
                 </button>
             )}
         </div>
+    );
+};
+
+interface TextListRowProps extends Omit<ListRowProps, 'onAdd' | 'addDisabled' | 'extra'> {
+    addLabel: string;
+    /** 新しい値を入力する欄のアクセシブルな名前 */
+    inputLabel: string;
+    placeholder: string;
+    /** 前後の空白を除いた、空でない入力を受け取る */
+    onAdd: (text: string) => void;
+}
+
+/** Add でその場に入力欄を開くリスト。Enter・OK で足し、Esc・Cancel で閉じる */
+export const TextListRow: React.FC<TextListRowProps> = ({
+    inputLabel,
+    placeholder,
+    onAdd,
+    ...row
+}) => {
+    // 欄を閉じている間は null
+    const [draft, setDraft] = useState<string | null>(null);
+    const close = () => setDraft(null);
+    const confirm = () => {
+        const text = draft?.trim();
+        if (text) onAdd(text);
+        close();
+    };
+
+    return (
+        <ListRow
+            {...row}
+            onAdd={() => setDraft('')}
+            addDisabled={draft !== null}
+            extra={
+                draft !== null && (
+                    <li className="flex items-center gap-2 rounded-md bg-base-100 py-1 pl-2 pr-1">
+                        <input
+                            autoFocus
+                            autoComplete="off"
+                            className="input input-xs flex-1 min-w-0 bg-transparent"
+                            placeholder={placeholder}
+                            aria-label={inputLabel}
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') confirm();
+                                if (e.key === 'Escape') {
+                                    // Only this field is closed, not the screen around it
+                                    e.preventDefault();
+                                    close();
+                                }
+                            }}
+                        />
+                        <button type="button" className="btn btn-ghost btn-xs" onClick={confirm}>
+                            OK
+                        </button>
+                        <button type="button" className="btn btn-ghost btn-xs" onClick={close}>
+                            Cancel
+                        </button>
+                    </li>
+                )
+            }
+        />
     );
 };

@@ -149,6 +149,24 @@ describe('SettingsScreen sections', () => {
         expect(browser).toBeEnabled();
     });
 
+    it('adds a typed extension without its dot and saves it', async () => {
+        jest.mocked(TauriAPI.saveSettings).mockResolvedValue();
+        renderScreen();
+        const apps = await screen.findByRole('region', { name: 'Applications' });
+        await userEvent.click(within(apps).getByRole('button', { name: 'Add extension' }));
+        await userEvent.type(within(apps).getByLabelText('New extension'), '.url{Enter}');
+        expect(within(apps).getByText('.url')).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+        await waitFor(() =>
+            expect(TauriAPI.saveSettings).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    applications: expect.objectContaining({ extensions: ['lnk', 'url'] }),
+                }),
+            ),
+        );
+    });
+
     it('lets plain Tab leave the hotkey field instead of trapping focus', async () => {
         renderScreen();
         const hotkey = await screen.findByLabelText('Hotkey');
