@@ -37,6 +37,7 @@ const userCommands = (): Command[] => [
     cmd('u4', 'Deploy staging', 'command', 'user', 'pnpm deploy:staging', 'Build and push', {
         workingDir: 'C:\\work\\app',
         showWindow: true,
+        runAsAdmin: true,
     }),
     // Fails on purpose: exercises the execution-error path
     cmd('u5', 'Missing report', 'file', 'user', 'C:\\does\\not\\exist.pdf', 'Always fails'),

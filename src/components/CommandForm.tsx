@@ -53,6 +53,7 @@ const toFormData = (command?: Command, template?: Command) => {
         alias: command?.alias ?? '',
         workingDir: source?.workingDir ?? '',
         showWindow: source?.showWindow ?? false,
+        runAsAdmin: source?.runAsAdmin ?? false,
         openWith: source?.openWith ?? '',
         openArgs: source?.openArgs ?? '',
     };
@@ -127,6 +128,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
             alias: formData.alias.trim() || undefined,
             workingDir: isCmdCategory ? formData.workingDir.trim() || undefined : undefined,
             showWindow: isCmdCategory ? formData.showWindow : undefined,
+            runAsAdmin: isCmdCategory ? formData.runAsAdmin : undefined,
             openWith: canOpenWith ? formData.openWith.trim() || undefined : undefined,
             openArgs: canOpenWith ? formData.openArgs.trim() || undefined : undefined,
         };
@@ -344,6 +346,17 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                         checked={formData.showWindow}
                                         onChange={(e) =>
                                             handleInputChange('showWindow', e.target.checked)
+                                        }
+                                        className="checkbox checkbox-sm"
+                                    />
+                                </label>
+                                <label className="flex select-none items-center px-1 py-2 cursor-pointer justify-start gap-4">
+                                    <span className="text-sm">Run as administrator</span>
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.runAsAdmin}
+                                        onChange={(e) =>
+                                            handleInputChange('runAsAdmin', e.target.checked)
                                         }
                                         className="checkbox checkbox-sm"
                                     />

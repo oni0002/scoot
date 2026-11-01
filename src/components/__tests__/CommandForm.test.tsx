@@ -199,3 +199,36 @@ describe('CommandForm open with', () => {
         );
     });
 });
+
+describe('CommandForm run as administrator', () => {
+    it.each([
+        ['url', false],
+        ['file', false],
+        ['command', true],
+    ])('shows the checkbox for %s: %s', async (category, shown) => {
+        render(<CommandForm onSave={jest.fn()} onCancel={jest.fn()} />);
+        await userEvent.selectOptions(screen.getByLabelText(/category/i), category);
+        expect(!!screen.queryByLabelText('Run as administrator')).toBe(shown);
+    });
+
+    it('saves it for a command, and drops it after switching to url', async () => {
+        const onSave = jest.fn();
+        render(<CommandForm onSave={onSave} onCancel={jest.fn()} />);
+        await userEvent.type(screen.getByLabelText(/name/i), 'Sessions');
+        await userEvent.selectOptions(screen.getByLabelText(/category/i), 'command');
+        await userEvent.type(screen.getByLabelText('Command *'), 'net session');
+        await userEvent.click(screen.getByLabelText('Run as administrator'));
+        await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+        expect(onSave).toHaveBeenLastCalledWith(
+            expect.objectContaining({ category: 'command', runAsAdmin: true }),
+        );
+
+        await userEvent.selectOptions(screen.getByLabelText(/category/i), 'url');
+        await userEvent.clear(screen.getByLabelText('URL *'));
+        await userEvent.type(screen.getByLabelText('URL *'), 'https://a.dev');
+        await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+        expect(onSave).toHaveBeenLastCalledWith(
+            expect.objectContaining({ category: 'url', runAsAdmin: undefined }),
+        );
+    });
+});

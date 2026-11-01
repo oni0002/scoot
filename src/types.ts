@@ -8,6 +8,7 @@ export interface Command {
     alias?: string;
     workingDir?: string;
     showWindow?: boolean;
+    runAsAdmin?: boolean;
     openWith?: string;
     openArgs?: string;
 }
