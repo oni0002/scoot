@@ -506,6 +506,41 @@ mod tests {
     }
 
     #[test]
+    fn edits_and_deletes_release_the_alias_and_command_they_held() {
+        let mut manager = CommandRegistry::default();
+        let id = manager.add_user_command(create_dummy_command(Some("old")));
+
+        let mut edited = manager.get_command(&id).unwrap();
+        edited.alias = Some("new".to_string());
+        edited.command = "echo moved".to_string();
+        manager.update_user_command(edited).unwrap();
+
+        // What it held before is free for another command, what it holds now is not
+        assert!(manager
+            .validate_command(&create_dummy_command(Some("old")))
+            .is_ok());
+        let mut clash = create_dummy_command(Some("new"));
+        clash.command = "echo other".to_string();
+        assert!(manager.validate_command(&clash).is_err());
+        let mut same_path = create_dummy_command(None);
+        same_path.command = "echo moved".to_string();
+        assert!(manager.validate_command(&same_path).is_err());
+
+        manager.delete_user_command(&id).unwrap();
+        assert!(manager.validate_command(&clash).is_ok());
+        assert!(manager.validate_command(&same_path).is_ok());
+    }
+
+    #[test]
+    fn editing_or_deleting_a_missing_command_is_not_found() {
+        let mut manager = CommandRegistry::default();
+        let mut ghost = create_dummy_command(None);
+        ghost.id = "missing".to_string();
+        assert!(manager.update_user_command(ghost).is_err());
+        assert!(manager.delete_user_command("missing").is_err());
+    }
+
+    #[test]
     fn test_add_user_command_id_generation() {
         let mut manager = CommandRegistry::default();
         let cmd = create_dummy_command(None);
