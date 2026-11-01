@@ -103,7 +103,7 @@ const defaultSettings = (): Settings => ({
         depth: 2,
         extensions: ['md', 'pdf'],
         includeFolders: true,
-        excludeNames: ['.git', 'node_modules', 'target'],
+        excludeNames: ['node_modules', 'target'],
     },
     ignored: [
         'https://example.com/old-bookmark',

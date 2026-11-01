@@ -96,9 +96,12 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
             };
             // シンボリックリンクとジャンクションはたどらない(循環や登録外への逸脱を防ぐ)。
             // OneDrive のクラウドファイルも再解析ポイントだが、名前の代理ではないので対象に残る
+            let name = entry.file_name().to_string_lossy().to_lowercase();
+            // `.git` や `.env` などドット始まりは常に飛ばす(設定にしない)
             if file_type.is_symlink()
+                || name.starts_with('.')
                 || is_hidden(&entry)
-                || excluded.contains(&entry.file_name().to_string_lossy().to_lowercase())
+                || excluded.contains(&name)
             {
                 continue;
             }
@@ -141,9 +144,10 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .is_ok_and(|m| m.file_attributes() & (FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM) != 0)
 }
 
+// ドット始まりは呼び出し側で飛ばすので、Windows 以外に隠し属性はない
 #[cfg(not(windows))]
-fn is_hidden(entry: &DirEntry) -> bool {
-    entry.file_name().to_string_lossy().starts_with('.')
+fn is_hidden(_entry: &DirEntry) -> bool {
+    false
 }
 
 /// 名前はファイル名(拡張子つき)、説明は親フォルダのパス
@@ -287,6 +291,17 @@ mod tests {
         let mut s = settings(&root);
         s.exclude_names.push("thumbs.db".to_string());
         assert_eq!(found_with(&s, &root), ["app", "app/main.rs"]);
+    }
+
+    #[test]
+    fn dot_prefixed_entries_are_skipped_with_their_subtree() {
+        let root = tree(&[
+            ".config/app.toml",
+            ".env",
+            "src/.hidden/x.md",
+            "src/main.rs",
+        ]);
+        assert_eq!(found_with(&settings(&root), &root), ["src", "src/main.rs"]);
     }
 
     #[test]

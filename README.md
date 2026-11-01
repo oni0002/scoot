@@ -79,7 +79,7 @@ Relative file paths in a Markdown file are taken from the folder that file is in
 | Depth           | Folder levels to scan below each directory, 1 to 10 (1 is its direct contents)          | `3`                              |
 | Extensions      | File types to list, without the dot. `*` lists every file; an empty list lists no files | `[]`                             |
 | Include folders | List folders as well as files                                                           | `true`                           |
-| Excluded names  | File and folder names skipped with everything inside, in any case                       | `.git`, `node_modules`, `target` |
+| Excluded names  | File and folder names skipped with everything inside, in any case                       | `node_modules`, `target`         |
 
 The settings apply to every directory in the list. Two ways to use it:
 
@@ -88,7 +88,7 @@ The settings apply to every directory in the list. Two ways to use it:
 | Open a project folder by name   | `~\Projects`  | `2`   | (empty)    | on              |
 | Find documents in a docs folder | `~\Documents` | `3`   | `md, pdf`  | off             |
 
-Scoot lists at most 5000 files and folders across all directories, shallowest first. If there are more, it stops there and shows a notice: lower Depth, add Excluded names, or narrow Extensions. Symbolic links and junctions are not followed, and hidden and system files are skipped. The folders are not watched: new files show up at the next reload (the Reload Interval, or the `Reload` command). This is not a search of the whole disk.
+Scoot lists at most 5000 files and folders across all directories, shallowest first. If there are more, it stops there and shows a notice: lower Depth, add Excluded names, or narrow Extensions. Symbolic links and junctions are not followed, and hidden and system files are skipped, as is anything whose name starts with a dot (`.git`, `.env`). The folders are not watched: new files show up at the next reload (the Reload Interval, or the `Reload` command). This is not a search of the whole disk.
 
 The `settings.json` and `commands.json` files are stored in the same directory as the `.exe` file. So is `usage.json`, the run history that nudges frequently and recently used commands up in search results; turn it off or clear it under Settings > General.
 

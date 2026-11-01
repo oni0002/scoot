@@ -67,7 +67,7 @@ _Avoid_: App, shortcut
 _Avoid_: Link, md link
 
 **Local Path**:
-ユーザーが Settings に登録したフォルダの下で見つけたファイルまたはフォルダの Command。Category は `file`、Source は `local`。深さ・拡張子・除外する名前で絞り、全フォルダ合わせた件数に上限がある(超えたら通知する)。シンボリックリンク・ジャンクションはたどらず、隠し・システム属性のものは対象にしない。変更は監視せず、Reload で最新になる。マシン全体のファイル検索ではない(`docs/adr/0004`)。
+ユーザーが Settings に登録したフォルダの下で見つけたファイルまたはフォルダの Command。Category は `file`、Source は `local`。深さ・拡張子・除外する名前で絞り、全フォルダ合わせた件数に上限がある(超えたら通知する)。シンボリックリンク・ジャンクションはたどらず、隠し・システム属性のものと、名前がドットで始まるものは対象にしない。変更は監視せず、Reload で最新になる。マシン全体のファイル検索ではない(`docs/adr/0004`)。
 _Avoid_: Local file(Category `file` やユーザーの file Command と紛らわしい), file search, indexed file
 
 ### 設定・ライフサイクル

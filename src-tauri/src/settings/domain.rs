@@ -113,11 +113,7 @@ impl Default for LocalPathSettings {
             depth: 3,
             extensions: Vec::new(),
             include_folders: true,
-            exclude_names: vec![
-                ".git".to_string(),
-                "node_modules".to_string(),
-                "target".to_string(),
-            ],
+            exclude_names: vec!["node_modules".to_string(), "target".to_string()],
         }
     }
 }
@@ -333,7 +329,7 @@ mod tests {
         assert_eq!(local.depth, 3);
         assert!(local.extensions.is_empty());
         assert!(local.include_folders);
-        assert_eq!(local.exclude_names, [".git", "node_modules", "target"]);
+        assert_eq!(local.exclude_names, ["node_modules", "target"]);
 
         let local = parse(r#"{"localPaths": {"enabled": true, "paths": ["~/Projects"], "depth": 2, "extensions": ["md", "*"], "includeFolders": false, "excludeNames": []}}"#)
             .unwrap()
