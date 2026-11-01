@@ -14,6 +14,29 @@ interface CommandFormProps {
     onCancel: () => void;
 }
 
+// category ごとの入力欄の文言。未知の category は command として扱う
+const CATEGORY_COPY: Record<string, { label: string; placeholder: string; required: string }> = {
+    url: { label: 'URL', placeholder: 'https://example.com', required: 'URL is required' },
+    file: { label: 'Path', placeholder: 'C:\\path\\to\\file.txt', required: 'Path is required' },
+    command: { label: 'Command', placeholder: 'Command line', required: 'Command is required' },
+};
+
+const FieldLabel: React.FC<{ htmlFor: string; children: React.ReactNode }> = ({
+    htmlFor,
+    children,
+}) => (
+    <label htmlFor={htmlFor} className="flex select-none items-center px-1 py-2 justify-between">
+        <span className="text-sm">{children}</span>
+    </label>
+);
+
+const FieldError: React.FC<{ message?: string }> = ({ message }) =>
+    message ? (
+        <p role="alert" className="flex items-center px-1 py-2 text-xs text-error">
+            {message}
+        </p>
+    ) : null;
+
 // A duplicate starts from the original's values but is a new command: no id, and no alias since
 // an alias must stay unique. The name gets " copy" so the two rows can be told apart.
 const toFormData = (command?: Command, template?: Command) => {
@@ -59,6 +82,8 @@ export const CommandForm: React.FC<CommandFormProps> = ({
         }
     }, [dirty, onCancel]);
 
+    const categoryCopy = CATEGORY_COPY[formData.category] ?? CATEGORY_COPY.command;
+
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
 
@@ -67,12 +92,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
         }
 
         if (!formData.command.trim()) {
-            newErrors.command =
-                formData.category === 'url'
-                    ? 'URL is required'
-                    : formData.category === 'file'
-                      ? 'Path is required'
-                      : 'Command is required';
+            newErrors.command = categoryCopy.required;
         }
 
         if (hasPlaceholders(formData.command) && !formData.alias.trim()) {
@@ -158,12 +178,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                     <div className="flex gap-2">
                         {/* Name */}
                         <div className="flex flex-col flex-1">
-                            <label
-                                htmlFor="cf-name"
-                                className="flex select-none items-center px-1 py-2 justify-between"
-                            >
-                                <span className="text-sm">Name *</span>
-                            </label>
+                            <FieldLabel htmlFor="cf-name">Name *</FieldLabel>
                             <input
                                 id="cf-name"
                                 autoComplete="off"
@@ -174,24 +189,12 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 className={`input input-sm w-full ${errors.name ? 'input-error' : ''}`}
                                 autoFocus
                             />
-                            {errors.name && (
-                                <p
-                                    role="alert"
-                                    className="flex items-center px-1 py-2 text-xs text-error"
-                                >
-                                    {errors.name}
-                                </p>
-                            )}
+                            <FieldError message={errors.name} />
                         </div>
 
                         {/* Category */}
                         <div className="flex flex-col w-32">
-                            <label
-                                htmlFor="cf-category"
-                                className="flex select-none items-center px-1 py-2 justify-between"
-                            >
-                                <span className="text-sm">Category *</span>
-                            </label>
+                            <FieldLabel htmlFor="cf-category">Category *</FieldLabel>
                             <select
                                 id="cf-category"
                                 value={formData.category}
@@ -207,18 +210,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
 
                     <div className="flex gap-2 items-start">
                         <div className="flex flex-col flex-1">
-                            <label
-                                htmlFor="cf-command"
-                                className="flex select-none items-center px-1 py-2 justify-between"
-                            >
-                                <span className="text-sm">
-                                    {formData.category === 'url'
-                                        ? 'URL *'
-                                        : formData.category === 'file'
-                                          ? 'Path *'
-                                          : 'Command *'}
-                                </span>
-                            </label>
+                            <FieldLabel htmlFor="cf-command">{categoryCopy.label} *</FieldLabel>
                             <div className="flex gap-2 w-full">
                                 <input
                                     id="cf-command"
@@ -226,13 +218,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                     type="text"
                                     value={formData.command}
                                     onChange={(e) => handleInputChange('command', e.target.value)}
-                                    placeholder={
-                                        formData.category === 'url'
-                                            ? 'https://example.com'
-                                            : formData.category === 'file'
-                                              ? 'C:\\path\\to\\file.txt'
-                                              : 'Command line'
-                                    }
+                                    placeholder={categoryCopy.placeholder}
                                     className={`input input-sm flex-1 ${errors.command ? 'input-error' : ''}`}
                                 />
                                 {formData.category === 'file' && (
@@ -258,28 +244,16 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                     </>
                                 )}
                             </div>
-                            {errors.command && (
-                                <p
-                                    role="alert"
-                                    className="flex items-center px-1 py-2 text-xs text-error"
-                                >
-                                    {errors.command}
-                                </p>
-                            )}
+                            <FieldError message={errors.command} />
                             <p className="flex px-1 py-2 text-xs text-muted">
                                 Use {'{$1}'}, {'{$2}'} or {'{$*}'} for arguments
                             </p>
                         </div>
 
                         <div className="flex flex-col w-32">
-                            <label
-                                htmlFor="cf-alias"
-                                className="flex select-none items-center px-1 py-2 justify-between"
-                            >
-                                <span className="text-sm">
-                                    Alias {hasPlaceholders(formData.command) ? '*' : ''}
-                                </span>
-                            </label>
+                            <FieldLabel htmlFor="cf-alias">
+                                Alias {hasPlaceholders(formData.command) ? '*' : ''}
+                            </FieldLabel>
                             <input
                                 id="cf-alias"
                                 autoComplete="off"
@@ -295,26 +269,14 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                     ? 'Type it, then the arguments'
                                     : 'Optional short name'}
                             </p>
-                            {errors.alias && (
-                                <p
-                                    role="alert"
-                                    className="flex items-center px-1 py-2 text-xs text-error"
-                                >
-                                    {errors.alias}
-                                </p>
-                            )}
+                            <FieldError message={errors.alias} />
                         </div>
                     </div>
 
                     {formData.category === 'command' && (
                         <>
                             <div className="flex flex-col w-full">
-                                <label
-                                    htmlFor="cf-working-dir"
-                                    className="flex select-none items-center px-1 py-2 justify-between"
-                                >
-                                    <span className="text-sm">Working Dir</span>
-                                </label>
+                                <FieldLabel htmlFor="cf-working-dir">Working Dir</FieldLabel>
                                 <input
                                     id="cf-working-dir"
                                     autoComplete="off"
@@ -345,12 +307,7 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                     )}
 
                     <div className="flex flex-col w-full">
-                        <label
-                            htmlFor="cf-description"
-                            className="flex select-none items-center px-1 py-2 justify-between"
-                        >
-                            <span className="text-sm">Description</span>
-                        </label>
+                        <FieldLabel htmlFor="cf-description">Description</FieldLabel>
                         <input
                             id="cf-description"
                             autoComplete="off"
