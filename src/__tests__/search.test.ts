@@ -172,6 +172,36 @@ describe('run history', () => {
     });
 });
 
+describe('local path penalty', () => {
+    const NOW = Date.UTC(2026, 9, 18);
+    const local = (name: string): Command => ({ ...makeCommand(name), source: 'local' });
+    const first = (
+        commands: Command[],
+        query: string,
+        usage: Record<string, { count: number; lastUsed: number }> = {},
+    ) => fuseSearch(createFuse(commands, 0.6), query, commands, 10, usage, NOW)[0].command;
+
+    it('puts a Command above a local entry with the same match', () => {
+        expect(first([local('Docs'), makeCommand('Docs')], 'docs').source).toBe('user');
+    });
+
+    it('still lets a clearly better local match win', () => {
+        const commands = [makeCommand('Term sheet notes archive'), local('Terminal')];
+        expect(first(commands, 'terminal').source).toBe('local');
+    });
+
+    it('does not change the order of non-local entries', () => {
+        const commands = [makeCommand('Docs A'), { ...makeCommand('Docs B'), source: 'bookmark' }];
+        expect(first(commands, 'docs').name).toBe('Docs A');
+    });
+
+    it('still applies run history to local entries', () => {
+        const commands = [local('Docs A'), local('Docs B')];
+        const usage = { 'Docs B': { count: 5, lastUsed: NOW } };
+        expect(first(commands, 'docs', usage).name).toBe('Docs B');
+    });
+});
+
 describe('frequentCommands', () => {
     const NOW = Date.UTC(2026, 9, 18);
     const DAY = 24 * 60 * 60 * 1000;

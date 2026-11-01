@@ -37,7 +37,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 - URL コマンドの引数はパーセントエンコードする。置換ロジックは Rust(`Command::substitute_args`)と TS(`substituteArgs`、プレビュー用)の2箇所にあるため、変更時は両方を揃える。両方が `src/__tests__/fixtures/substitute-cases.json` の同じケースを検証する
 - `source` は実行時のみ保持し、commands.json には保存しない
 - 外部ソースのコマンドに紐づく設定(`ignored` / `aliases`)は `command` 文字列をキーに settings.json へ保存する。外部コマンドの ID は `DefaultHasher` のハッシュで、Rust のバージョンをまたいで同じ値になる保証がないので、永続化には使わない(`docs/adr/0003`)
-- 実行履歴(`usage.json`)は検索結果の並べ替えにだけ使い、キーは `command` 文字列(ID は外部コマンドで安定しないので使わない)。順位は `fuseScore - boost`(小さいほど上)で、`boost = 0.05 * w / (w + 3)`、`w = 回数 * 0.5^(最終使用からの日数 / 30)`。上限があるので、履歴だけで良く一致する候補を逆転させない。式は `src/search.ts` にあるので、変えるときは `search.test.ts` と揃える
+- 実行履歴(`usage.json`)は検索結果の並べ替えにだけ使い、キーは `command` 文字列(ID は外部コマンドで安定しないので使わない)。順位は `fuseScore - boost + penalty`(小さいほど上)で、`boost = 0.05 * w / (w + 3)`、`w = 回数 * 0.5^(最終使用からの日数 / 30)`。上限があるので、履歴だけで良く一致する候補を逆転させない。`penalty` は Source が `local` のときだけ固定 `0.02`(ファイル名はスコアが良く出やすく、自前のコマンドを押し出すため。はっきり良く一致するファイルは逆転できる)。式は `src/search.ts` にあるので、変えるときは `search.test.ts` と揃える
 
 ## UI
 

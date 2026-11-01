@@ -31,7 +31,7 @@ export function createFuse(commands: Command[], threshold: number): Fuse<Command
 //
 //   weight = count * 0.5 ^ (daysSinceLastUse / USAGE_HALF_LIFE_DAYS)
 //   boost  = MAX_USAGE_BOOST * weight / (weight + USAGE_SATURATION)
-//   rank   = fuseScore - boost            (lower ranks first)
+//   rank   = fuseScore - boost + penalty  (lower ranks first)
 //
 // The boost rises with the weight but saturates at MAX_USAGE_BOOST, so a command run a thousand
 // times cannot bury a better match. Decay uses only the last run, not each run's own age.
@@ -39,6 +39,12 @@ const MAX_USAGE_BOOST = 0.05;
 const USAGE_HALF_LIFE_DAYS = 30;
 const USAGE_SATURATION = 3;
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// ファイル名は短く単語が1つなので、複数語のコマンド名より Fuse のスコアが良くなりやすく、
+// 登録した Local Path の項目がユーザー自身のコマンドを上位から押し出す。固定で足して
+// 同点ならコマンドを先にする。差が大きい(はっきり良く一致する)ファイルはこの程度では逆転されない
+const LOCAL_SOURCE_PENALTY = 0.02;
+const LOCAL_SOURCE = 'local';
 
 /** Frecency: each run counts, but runs fade with the time since the last one. */
 export function usageBoost(usage: Usage | undefined, now: number): number {
@@ -98,7 +104,13 @@ export function fuseSearch(
         });
     }
     return [...ranked.values()]
-        .map((r) => ({ r, rank: r.score - usageBoost(usage[r.command.command], now) }))
+        .map((r) => ({
+            r,
+            rank:
+                r.score -
+                usageBoost(usage[r.command.command], now) +
+                (r.command.source === LOCAL_SOURCE ? LOCAL_SOURCE_PENALTY : 0),
+        }))
         .sort((a, b) => a.rank - b.rank)
         .slice(0, maxResults)
         .map(({ r }) => r);
