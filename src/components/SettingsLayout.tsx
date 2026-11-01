@@ -1,5 +1,5 @@
 import React, { useId, useState } from 'react';
-import { LuX } from 'react-icons/lu';
+import { LuCheck, LuX } from 'react-icons/lu';
 
 interface SectionProps {
     title: string;
@@ -186,11 +186,23 @@ export const TextListRow: React.FC<TextListRowProps> = ({
                                 }
                             }}
                         />
-                        <button type="button" className="btn btn-ghost btn-xs" onClick={confirm}>
-                            OK
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-xs btn-square flex-none"
+                            onClick={confirm}
+                            aria-label="OK"
+                            title="OK"
+                        >
+                            <LuCheck size={14} />
                         </button>
-                        <button type="button" className="btn btn-ghost btn-xs" onClick={close}>
-                            Cancel
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-xs btn-square flex-none"
+                            onClick={close}
+                            aria-label="Cancel"
+                            title="Cancel"
+                        >
+                            <LuX size={14} />
                         </button>
                     </li>
                 )
