@@ -154,6 +154,11 @@ fn expand(path: &str) -> PathBuf {
         .collect()
 }
 
+/// 書き方(`~`・`%VAR%`・区切り・末尾の区切り・大文字小文字)が違っても、同じパスなら同じになるキー
+pub fn path_key(path: &str) -> String {
+    key_of(&expand(path))
+}
+
 /// 重複判定のキー。Windows のパスは大文字小文字を区別しない
 fn key_of(path: &Path) -> String {
     let key = path.to_string_lossy();

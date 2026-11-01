@@ -166,6 +166,45 @@ mod reload {
     }
 
     #[tokio::test]
+    async fn a_path_the_user_added_as_a_file_command_is_not_listed_again() {
+        let dir = temp_dir();
+        let tree = dir.join("tree");
+        for name in ["slash", "env", "case", "other"] {
+            std::fs::create_dir_all(tree.join(name)).unwrap();
+        }
+        std::env::set_var("SCOOT_TEST_LOCAL_TREE", &tree);
+        let file = |command: String| serde_json::json!({ "name": "mine", "category": "file", "command": command, "description": "" });
+        let tree_str = tree.to_string_lossy();
+        let commands = serde_json::json!([
+            file(format!("{tree_str}\\slash\\")),
+            file(r"%SCOOT_TEST_LOCAL_TREE%/env".to_string()),
+            file(format!("{}\\CASE", tree_str.to_uppercase())),
+            // ファイル以外の Category は同じ文字列でも突き合わせない
+            { "name": "run", "category": "command", "command": format!("{tree_str}\\other"), "description": "" },
+        ]);
+        std::fs::write(dir.join("commands.json"), commands.to_string()).unwrap();
+        let settings = serde_json::json!({
+            "applications": { "enabled": false },
+            "bookmarks": { "enabled": false },
+            "localPaths": { "enabled": true, "entries": [{ "path": tree, "depth": 1 }] },
+        });
+        std::fs::write(dir.join("settings.json"), settings.to_string()).unwrap();
+        let app = app_in(&dir);
+
+        reload(app.handle()).await.unwrap();
+
+        let state = app.state::<CommandsState>();
+        let commands = state.commands.lock().unwrap().get_all_commands();
+        let local: Vec<&str> = commands
+            .iter()
+            .filter(|c| c.source == "local")
+            .map(|c| c.name.as_str())
+            .collect();
+        assert_eq!(local, ["other"]);
+        assert_eq!(commands.iter().filter(|c| c.source == "user").count(), 4);
+    }
+
+    #[tokio::test]
     async fn local_paths_past_the_cap_leave_a_notice_until_narrowed() {
         use scoot_lib::commands::local_path::{MAX_ENTRIES, NOTICE_SOURCE};
         let dir = temp_dir();

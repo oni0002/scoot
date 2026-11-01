@@ -1,4 +1,5 @@
 use crate::commands::domain::Command;
+use crate::commands::local_path;
 use crate::commands::registry::CommandRegistry;
 use crate::error::AppError;
 use std::collections::{BTreeMap, HashSet};
@@ -99,21 +100,33 @@ pub async fn reload<R: Runtime>(
         }
     };
 
+    let mut manager = command_registry.lock().map_err(AppError::lock)?;
+    let user: &[Command] = match &commands {
+        Some(commands) => commands,
+        None => manager.user_commands(),
+    };
+    // ユーザーが File Command にしたパスは Local Path から出さない(同じものが2行並ばないように)。
+    // 上限は走査の中で数えるので、ここで落とした分も上限に含まれる
+    let user_files: HashSet<String> = user
+        .iter()
+        .filter(|c| c.category == crate::commands::domain::CATEGORY_FILE)
+        .map(|c| local_path::path_key(&c.command))
+        .collect();
+    let local_commands = local
+        .commands
+        .into_iter()
+        .filter(|c| !user_files.contains(&local_path::path_key(&c.command)));
+
     let ignored: HashSet<&str> = settings.ignored.iter().map(String::as_str).collect();
     let mut external: Vec<Command> = bookmarks
         .into_iter()
         .chain(app_commands)
         .chain(markdown_commands)
-        .chain(local.commands)
+        .chain(local_commands)
         .chain(crate::commands::domain::get_scoot_commands())
         .filter(|c| !ignored.contains(c.command.as_str()))
         .collect();
-    let mut manager = command_registry.lock().map_err(AppError::lock)?;
-    let user_aliases: HashSet<String> = match &commands {
-        Some(commands) => commands.iter().filter_map(|c| c.alias.clone()).collect(),
-        None => manager.user_aliases(),
-    };
-    let user_aliases: HashSet<&str> = user_aliases.iter().map(String::as_str).collect();
+    let user_aliases: HashSet<&str> = user.iter().filter_map(|c| c.alias.as_deref()).collect();
     apply_aliases(&mut external, &settings.aliases, &user_aliases);
 
     // External first: user commands are checked against their aliases, and `apply_aliases` has

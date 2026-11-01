@@ -81,12 +81,9 @@ impl CommandRegistry {
         Ok(())
     }
 
-    /// The aliases user commands hold
-    pub fn user_aliases(&self) -> HashSet<String> {
-        self.user_commands
-            .iter()
-            .filter_map(|c| c.alias.clone())
-            .collect()
+    /// commands.json の順のユーザーコマンド(検証に通ったもの)
+    pub fn user_commands(&self) -> &[Command] {
+        &self.user_commands
     }
 
     fn index_user_command(&mut self, command: &Command) {
