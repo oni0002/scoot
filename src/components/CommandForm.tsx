@@ -254,7 +254,16 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                             </div>
                             <FieldError message={errors.command} />
                             <p className="flex px-1 py-2 text-xs text-muted">
-                                Use {'{$1}'}, {'{$2}'} or {'{$*}'} for arguments
+                                {hasPlaceholders(formData.command) ? (
+                                    <>
+                                        Type "{formData.alias.trim() || 'g'} react" to pass react as{' '}
+                                        {'{$1}'}.
+                                    </>
+                                ) : (
+                                    <>
+                                        Use {'{$1}'}, {'{$2}'} or {'{$*}'} for arguments
+                                    </>
+                                )}
                             </p>
                         </div>
 
@@ -273,14 +282,9 @@ export const CommandForm: React.FC<CommandFormProps> = ({
                                 className={`input input-sm w-full ${errors.alias ? 'input-error' : ''}`}
                             />
                             <p className="px-1 py-1 text-xs text-muted">
-                                {hasPlaceholders(formData.command) ? (
-                                    <>
-                                        Type "{formData.alias.trim() || 'g'} react" to pass react as{' '}
-                                        {'{$1}'}.
-                                    </>
-                                ) : (
-                                    'Optional short name. Type it to find this command.'
-                                )}
+                                {hasPlaceholders(formData.command)
+                                    ? 'Type it, then the arguments'
+                                    : 'Optional short name'}
                             </p>
                             <FieldError message={errors.alias} />
                         </div>
