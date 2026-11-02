@@ -112,17 +112,19 @@ export const SearchResultItem = React.memo(
                         aria-hidden="true"
                         className="absolute right-2 top-1/2 -translate-y-1/2 z-[1] flex items-center gap-1"
                     >
-                        <button
-                            type="button"
-                            tabIndex={-1}
-                            className="btn btn-ghost btn-xs btn-square p-1"
-                            onClick={(e) => onAction?.('copy', command, e)}
-                            title="Copy"
-                            aria-label={`Copy ${command.name}`}
-                        >
-                            <LuCopy />
-                        </button>
-                        {actions.length > 1 && (
+                        {actions.includes('copy') && (
+                            <button
+                                type="button"
+                                tabIndex={-1}
+                                className="btn btn-ghost btn-xs btn-square p-1"
+                                onClick={(e) => onAction?.('copy', command, e)}
+                                title="Copy"
+                                aria-label={`Copy ${command.name}`}
+                            >
+                                <LuCopy />
+                            </button>
+                        )}
+                        {actions.some((action) => action !== 'copy') && (
                             <div
                                 className={`dropdown ${totalCount > 4 && index >= totalCount - 2 ? 'dropdown-top' : ''} dropdown-end`}
                                 onKeyDown={(e) => {

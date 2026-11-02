@@ -7,7 +7,8 @@ import { AliasDialog } from './components/AliasDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Command } from './types';
 import { TauriAPI } from './tauri';
-import { NOTIFICATION_DURATION, RELOADED_MESSAGE } from './constants';
+import { LOCAL_PATHS_SECTION_ID, NOTIFICATION_DURATION, RELOADED_MESSAGE } from './constants';
+import { isScopeEntry } from './command';
 import { useAppEvents } from './hooks/useAppEvents';
 import { usePreventHide } from './hooks/usePreventHide';
 import { CommandProvider, useCommandContext } from './context/CommandContext';
@@ -21,7 +22,7 @@ import { NotificationProvider, useNotificationContext } from './context/Notifica
 type View =
     | { name: 'search' }
     | { name: 'form'; command?: Command; template?: Command }
-    | { name: 'settings' };
+    | { name: 'settings'; scrollTo?: string };
 
 // 内部コンポーネント: Contextを使用するために分離する
 const AppContent = () => {
@@ -87,8 +88,14 @@ const AppContent = () => {
 
     const handleCancelForm = useCallback(() => setView({ name: 'search' }), []);
 
+    // A folder alias's row has no form: its settings are the row of the Files and Folders table
     const handleEditCommandFromSearch = useCallback(
-        (command: Command) => setView({ name: 'form', command }),
+        (command: Command) =>
+            setView(
+                isScopeEntry(command)
+                    ? { name: 'settings', scrollTo: LOCAL_PATHS_SECTION_ID }
+                    : { name: 'form', command },
+            ),
         [],
     );
 
@@ -218,6 +225,7 @@ const AppContent = () => {
                 />
             ) : view.name === 'settings' ? (
                 <SettingsScreen
+                    scrollTo={view.scrollTo}
                     onClearHistory={clearUsage}
                     onBack={() => {
                         setView({ name: 'search' });

@@ -3,6 +3,7 @@ import { LuCheck, LuFolder, LuPencil } from 'react-icons/lu';
 import { TauriAPI } from '../../tauri';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { LocalPathEntry, Settings } from '../../types';
+import { LOCAL_PATHS_SECTION_ID } from '../../constants';
 import {
     ADD_BUTTON,
     LIST_SURFACE,
@@ -111,6 +112,7 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
     return (
         <Section
             title="Files and Folders"
+            id={LOCAL_PATHS_SECTION_ID}
             enabled={{ value: local.enabled, onChange: (enabled) => update({ enabled }) }}
         >
             <div className="px-3 py-2.5">

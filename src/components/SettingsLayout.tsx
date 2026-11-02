@@ -3,16 +3,18 @@ import { LuCheck, LuX } from 'react-icons/lu';
 
 interface SectionProps {
     title: string;
+    /** The element id, for a screen that opens scrolled to this section. */
+    id?: string;
     /** Adds an on/off switch to the heading; the section's controls are disabled while it is off. */
     enabled?: { value: boolean; onChange: (value: boolean) => void };
     children: React.ReactNode;
 }
 
 /** A titled group of settings on one tinted surface, rows separated by hairlines. */
-export const Section: React.FC<SectionProps> = ({ title, enabled, children }) => {
+export const Section: React.FC<SectionProps> = ({ title, id, enabled, children }) => {
     const headingId = useId();
     return (
-        <section aria-labelledby={headingId} className="mt-6 first:mt-2">
+        <section id={id} aria-labelledby={headingId} className="mt-6 first:mt-2">
             <div className="mb-2 flex min-h-8 items-center justify-between px-3">
                 <h4 id={headingId} className="text-sm font-semibold">
                     {title}

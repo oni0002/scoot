@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { LuArrowLeft, LuFileJson } from 'react-icons/lu';
 import { TauriAPI } from '../tauri';
 import { Settings } from '../types';
@@ -16,11 +16,17 @@ import { LocalPathsSection } from './settings/LocalPathsSection';
 import { IgnoredSection } from './settings/IgnoredSection';
 
 interface SettingsScreenProps {
+    /** The id of a section to scroll to when the screen opens. */
+    scrollTo?: string;
     onClearHistory: () => Promise<void>;
     onBack: () => void;
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onClearHistory }) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({
+    scrollTo,
+    onBack,
+    onClearHistory,
+}) => {
     const { settings } = useSettingsContext();
     const { showSuccess, reportError } = useNotificationContext();
     const [saveError, setSaveError] = useState<string | null>(null);
@@ -93,6 +99,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onClearH
 
     // While the hotkey field is capturing, Esc cancels the capture instead of closing the screen
     useEscapeToClose(handleBack, !hotkey.capturing);
+
+    const ready = Boolean(local);
+    useEffect(() => {
+        if (ready && scrollTo) document.getElementById(scrollTo)?.scrollIntoView();
+    }, [ready, scrollTo]);
 
     if (!local) return null;
 

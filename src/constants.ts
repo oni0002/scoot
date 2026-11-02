@@ -15,6 +15,9 @@ export const NOTIFICATION_DURATION = {
     PROGRESS_MAX: 120000,
 };
 
+/** The id of the Files and Folders section of the Settings screen, which a folder alias's row opens at. */
+export const LOCAL_PATHS_SECTION_ID = 'settings-local-paths';
+
 export const SCOOT_RELOAD = 'scoot://reload';
 export const RELOADED_MESSAGE = 'Commands and settings reloaded';
 
