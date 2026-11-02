@@ -150,9 +150,11 @@ const AppContent = () => {
 
     const handleCopyCommand = useCallback(
         async (command: Command) => {
-            if (!command.command) return;
+            // A folder alias's row has no command to copy; what it stands for is the folder
+            const text = isScopeEntry(command) ? command.description : command.command;
+            if (!text) return;
             try {
-                await navigator.clipboard.writeText(command.command);
+                await navigator.clipboard.writeText(text);
                 showSuccess('Copied to clipboard', 2000);
             } catch (err) {
                 console.error('Failed to copy:', err);

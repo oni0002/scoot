@@ -50,9 +50,9 @@ describe('rowActionsFor', () => {
         });
     });
 
-    it('offers only Edit on the row of a folder alias, which opens its settings', () => {
+    it('offers Copy and Edit on the row of a folder alias, which opens its settings', () => {
         const entry = { ...base, category: 'scoot', command: 'scoot://search-folder/pj' };
-        expect(rowActionsFor(entry)).toEqual(['edit']);
+        expect(rowActionsFor(entry)).toEqual(['copy', 'edit']);
     });
 
     it('only lets a typed-in URL or path be copied', () => {

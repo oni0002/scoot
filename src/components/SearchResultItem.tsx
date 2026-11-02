@@ -55,8 +55,6 @@ export const SearchResultItem = React.memo(
     }: SearchResultItemProps) => {
         const { command } = result;
         const actions = rowActionsFor(command);
-        // バッジを、右端に重なるボタンの手前で止める。コピーのボタンがない行はボタンが1つぶん狭い
-        const actionsGap = actions.includes('copy') ? 'mr-14' : 'mr-7';
 
         const runMenuAction = (action: RowAction, event: React.MouseEvent) => {
             // Closes the row menu (it stays open while it has focus); focus then returns to the search
@@ -94,7 +92,7 @@ export const SearchResultItem = React.memo(
                     </div>
 
                     <div
-                        className={`flex items-center gap-2 ml-2 shrink-0 ${showActions ? actionsGap : ''}`}
+                        className={`flex items-center gap-2 ml-2 shrink-0 ${showActions ? 'mr-14' : ''}`}
                     >
                         {command.alias && (
                             <div className="badge badge-sm badge-primary">{command.alias}</div>
@@ -109,24 +107,22 @@ export const SearchResultItem = React.memo(
 
                 {/* Mouse convenience only: keyboard and screen-reader users have Ctrl+C/E/D/I,
                     listed in the hint bar, so these controls stay out of the tab order and tree. */}
-                {showActions && actions.length > 0 && (
+                {showActions && (
                     <div
                         aria-hidden="true"
                         className="absolute right-2 top-1/2 -translate-y-1/2 z-[1] flex items-center gap-1"
                     >
-                        {actions.includes('copy') && (
-                            <button
-                                type="button"
-                                tabIndex={-1}
-                                className="btn btn-ghost btn-xs btn-square p-1"
-                                onClick={(e) => onAction?.('copy', command, e)}
-                                title="Copy"
-                                aria-label={`Copy ${command.name}`}
-                            >
-                                <LuCopy />
-                            </button>
-                        )}
-                        {actions.some((action) => action !== 'copy') && (
+                        <button
+                            type="button"
+                            tabIndex={-1}
+                            className="btn btn-ghost btn-xs btn-square p-1"
+                            onClick={(e) => onAction?.('copy', command, e)}
+                            title="Copy"
+                            aria-label={`Copy ${command.name}`}
+                        >
+                            <LuCopy />
+                        </button>
+                        {actions.length > 1 && (
                             <div
                                 className={`dropdown ${totalCount > 4 && index >= totalCount - 2 ? 'dropdown-top' : ''} dropdown-end`}
                                 onKeyDown={(e) => {
