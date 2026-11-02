@@ -42,7 +42,7 @@ pub const SCOOT_COMMANDS: [&str; 7] = [
 ];
 
 /// Command struct
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Command {
     #[serde(default, skip_serializing_if = "String::is_empty")]
@@ -199,20 +199,12 @@ impl Command {
         description: impl Into<String>,
     ) -> Self {
         Command {
-            id: String::new(),
             name: name.into(),
             category: category.into(),
             source: source.into(),
             command: command.into(),
             description: description.into(),
-            alias: None,
-            working_dir: None,
-            show_window: None,
-            run_as_admin: None,
-            open_with: None,
-            open_args: None,
-            scopes: Vec::new(),
-            scoped_only: false,
+            ..Default::default()
         }
     }
 
@@ -381,14 +373,7 @@ mod tests {
             source: "user".to_string(),
             command: cmd.to_string(),
             description: "Test command".to_string(),
-            alias: None,
-            working_dir: None,
-            show_window: None,
-            run_as_admin: None,
-            open_with: None,
-            open_args: None,
-            scopes: Vec::new(),
-            scoped_only: false,
+            ..Default::default()
         }
     }
 
