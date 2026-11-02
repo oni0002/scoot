@@ -48,7 +48,16 @@ pub async fn execute_command(
         .map_err(crate::error::AppError::lock)?
         .usage_history;
     if usage_history {
-        state.usage.record(&usage_key).await;
+        // 履歴のディスク書き込みを待たせない。応答が遅れるぶん、ウィンドウが閉じるのも遅れる
+        let handle = app_handle.clone();
+        tauri::async_runtime::spawn(async move {
+            use tauri::Manager;
+            handle
+                .state::<crate::state::CommandsState>()
+                .usage
+                .record(&usage_key)
+                .await;
+        });
     }
     Ok(result)
 }

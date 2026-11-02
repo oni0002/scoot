@@ -29,7 +29,9 @@ describe('useCommands mutations', () => {
     };
 
     const loaded = async (...list: Command[]) => {
-        mockInvoke.mockResolvedValueOnce(list);
+        // 一覧と履歴の取得は並行して投げるので、呼び出しの順ではなく名前で返す
+        const answer = async (name: string) => (name === 'get_all_commands' ? list : {});
+        mockInvoke.mockImplementationOnce(answer).mockImplementationOnce(answer);
         const hook = renderHook(() => useCommands());
         await act(async () => {
             await hook.result.current.loadCommands();

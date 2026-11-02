@@ -52,8 +52,14 @@ impl SettingsStore {
     /// moved to settings.json, or read where it is if it cannot be moved (ADR 0005).
     async fn settle_file(&self) -> String {
         let exists = |path: &str| tokio::fs::try_exists(path.to_string());
-        if exists(&self.settings_path).await.unwrap_or(false) {
-            if exists(&self.legacy_path).await.unwrap_or(false) {
+        let (settings_exists, legacy_exists) =
+            tokio::join!(exists(&self.settings_path), exists(&self.legacy_path));
+        let (settings_exists, legacy_exists) = (
+            settings_exists.unwrap_or(false),
+            legacy_exists.unwrap_or(false),
+        );
+        if settings_exists {
+            if legacy_exists {
                 log::warn!(
                     "Both {} and {} exist; using {}",
                     SETTINGS_FILE,
@@ -63,7 +69,7 @@ impl SettingsStore {
             }
             return self.settings_path.clone();
         }
-        if !exists(&self.legacy_path).await.unwrap_or(false) {
+        if !legacy_exists {
             return self.settings_path.clone();
         }
         match tokio::fs::rename(&self.legacy_path, &self.settings_path).await {

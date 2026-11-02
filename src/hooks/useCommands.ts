@@ -17,12 +17,12 @@ export function useCommands() {
     const loadCommands = useCallback(async () => {
         try {
             if (isInitialLoad.current) setLoading(true);
-            const loadedCommands = await TauriAPI.getAllCommands();
-            setCommands(loadedCommands);
             // History only reorders results: failing to read it must not fail the load
             TauriAPI.getUsage().then(setUsage, (err) =>
                 console.warn('Failed to load usage:', getErrorMessage(err)),
             );
+            const loadedCommands = await TauriAPI.getAllCommands();
+            setCommands(loadedCommands);
             setError(null);
         } catch (err) {
             const message = getErrorMessage(err);

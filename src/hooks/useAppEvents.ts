@@ -63,17 +63,17 @@ export const useAppEvents = ({
                     },
                 };
 
-                for (const [event, handler] of Object.entries(eventHandlers)) {
-                    if (!isMounted) return;
-
-                    const unlisten = await listen(event, handler);
-
-                    if (isMounted) {
-                        unlistenFunctions.push(unlisten);
-                    } else {
-                        unlisten();
-                    }
-                }
+                // 購読は互いに独立なので並列にする。解除が先に来ても漏れないよう、各購読の完了時に確認する
+                await Promise.all(
+                    Object.entries(eventHandlers).map(async ([event, handler]) => {
+                        const unlisten = await listen(event, handler);
+                        if (isMounted) {
+                            unlistenFunctions.push(unlisten);
+                        } else {
+                            unlisten();
+                        }
+                    }),
+                );
                 // Load only once subscribed, so a reload finishing during startup cannot be missed
                 if (isMounted) {
                     loadCommands();

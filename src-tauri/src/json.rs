@@ -18,12 +18,16 @@ pub enum FileText {
 }
 
 pub async fn read_text(path: &str) -> Result<FileText, AppError> {
-    if !tokio::fs::try_exists(path).await.unwrap_or(false) {
-        return Ok(FileText::Missing);
-    }
-    let content = tokio::fs::read_to_string(path)
-        .await
-        .map_err(|e| AppError::System(format!("Failed to read '{}': {}", path, e)))?;
+    let content = match tokio::fs::read_to_string(path).await {
+        Ok(content) => content,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(FileText::Missing),
+        Err(e) => {
+            return Err(AppError::System(format!(
+                "Failed to read '{}': {}",
+                path, e
+            )))
+        }
+    };
     Ok(if content.trim().is_empty() {
         FileText::Blank
     } else {
