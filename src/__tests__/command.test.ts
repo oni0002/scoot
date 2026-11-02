@@ -3,11 +3,22 @@ import {
     parseArgs,
     expandTemplate,
     hasPlaceholders,
+    isScopeEntry,
     missingSlots,
     slotsOf,
     substituteArgs,
     unusedArgs,
 } from '../command';
+
+describe('isScopeEntry', () => {
+    it('is true only for a scoot row that came from a local folder', () => {
+        expect(isScopeEntry({ category: 'scoot', source: 'local' })).toBe(true);
+        // a Scoot Command is scoot in both; a local file is local in source only
+        expect(isScopeEntry({ category: 'scoot', source: 'scoot' })).toBe(false);
+        expect(isScopeEntry({ category: 'file', source: 'local' })).toBe(false);
+        expect(isScopeEntry({ category: 'url', source: 'user' })).toBe(false);
+    });
+});
 
 describe('hasPlaceholders', () => {
     it('detects {$1}', () => expect(hasPlaceholders('open {$1}')).toBe(true));

@@ -174,6 +174,12 @@ describe('run history', () => {
         expect(first.command.name).toBe('Terminal');
     });
 
+    it('halves a run’s weight every 30 days', () => {
+        const now = usageBoost({ count: 1, lastUsed: NOW }, NOW);
+        expect(usageBoost({ count: 2, lastUsed: NOW - 30 * DAY }, NOW)).toBeCloseTo(now, 10);
+        expect(usageBoost({ count: 4, lastUsed: NOW - 60 * DAY }, NOW)).toBeCloseTo(now, 10);
+    });
+
     it('caps the boost', () => {
         expect(usageBoost({ count: 1e6, lastUsed: NOW }, NOW)).toBeLessThanOrEqual(0.05);
         expect(usageBoost(undefined, NOW)).toBe(0);
@@ -182,7 +188,11 @@ describe('run history', () => {
 
 describe('local path penalty', () => {
     const NOW = Date.UTC(2026, 9, 18);
-    const local = (name: string): Command => ({ ...makeCommand(name), source: 'local' });
+    // Own id: results are keyed by id, so a same-named Command would replace the local entry
+    const local = (name: string): Command => ({
+        ...makeCommand(name, `local-${name}`),
+        source: 'local',
+    });
     const first = (
         commands: Command[],
         query: string,
