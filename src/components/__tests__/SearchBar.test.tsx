@@ -2,31 +2,47 @@ import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
+import { LuFolderSearch } from 'react-icons/lu';
 import { SearchBar } from '../SearchBar';
 
 const noop = jest.fn();
 
+const barProps = (inputRef = createRef<HTMLInputElement>()) => ({
+    query: '',
+    onQueryChange: noop,
+    onKeyDown: noop,
+    inputRef,
+    argumentMode: null,
+    scoped: false,
+    onAddCommand: noop,
+    onReloadCommands: noop,
+    onOpenCommandsJson: noop,
+    onOpenSettingsJson: noop,
+    onShowAbout: noop,
+    hasResults: false,
+});
+
 const renderBar = () => {
     const inputRef = createRef<HTMLInputElement>();
-    render(
-        <SearchBar
-            query=""
-            onQueryChange={noop}
-            onKeyDown={noop}
-            inputRef={inputRef}
-            argumentMode={null}
-            onAddCommand={noop}
-            onReloadCommands={noop}
-            onOpenCommandsJson={noop}
-            onOpenSettingsJson={noop}
-            onShowAbout={noop}
-            hasResults={false}
-        />,
-    );
+    render(<SearchBar {...barProps(inputRef)} />);
     return inputRef;
 };
 
 describe('SearchBar menu', () => {
+    it('swaps the leading icon for a folder search icon when scoped', () => {
+        const leadingIcon = (scoped: boolean) => {
+            const { container, unmount } = render(<SearchBar {...barProps()} scoped={scoped} />);
+            const html = container.querySelector('label svg')?.outerHTML;
+            unmount();
+            return html;
+        };
+        const folder = render(<LuFolderSearch />);
+        const expected = folder.container.innerHTML;
+        folder.unmount();
+        expect(leadingIcon(true)).toBe(expected);
+        expect(leadingIcon(false)).not.toBe(expected);
+    });
+
     it('exposes items as menuitems that are not tab stops', () => {
         renderBar();
         const items = screen.getAllByRole('menuitem', { hidden: true });

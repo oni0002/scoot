@@ -1,5 +1,5 @@
 import React from 'react';
-import { LuEllipsisVertical, LuSearch, LuChevronRight } from 'react-icons/lu';
+import { LuEllipsisVertical, LuSearch, LuChevronRight, LuFolderSearch } from 'react-icons/lu';
 import { Command } from '../types';
 import { RESULT_LIST_ID } from '../constants';
 
@@ -9,6 +9,8 @@ interface SearchBarProps {
     onKeyDown: (e: React.KeyboardEvent) => void;
     inputRef: React.RefObject<HTMLInputElement | null>;
     argumentMode: { alias: string; command: Command } | null;
+    /** Searching only under a registered folder, after its alias. */
+    scoped: boolean;
 
     // Menu Actions
     onAddCommand: (e: React.MouseEvent) => void;
@@ -29,6 +31,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     onKeyDown,
     inputRef,
     argumentMode,
+    scoped,
     onAddCommand,
     onReloadCommands,
     onOpenCommandsJson,
@@ -42,7 +45,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <div className="shrink-0 mb-4 relative">
             <div className="flex items-center gap-4">
                 <label className="input input-sm flex items-center gap-2 flex-1 focus-within:outline-none focus-within:[--input-color:color-mix(in_oklab,var(--color-base-content)_20%,#0000)]">
-                    {argumentMode ? <LuChevronRight /> : <LuSearch />}
+                    {argumentMode ? <LuChevronRight /> : scoped ? <LuFolderSearch /> : <LuSearch />}
                     <input
                         ref={inputRef}
                         type="text"

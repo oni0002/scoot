@@ -116,6 +116,20 @@ describe('useSearchState', () => {
             expect(type('pj')).not.toContain('report-draft.md');
         });
 
+        it('is flagged as scoped only while searching under the folder', () => {
+            const scoped = (query: string) => {
+                const { result } = renderHook(() => useSearchState(commands, THRESHOLD, MAX));
+                act(() => {
+                    result.current.handleQueryChange(query);
+                });
+                return result.current.scoped;
+            };
+            expect(scoped('pj ')).toBe(true);
+            expect(scoped('pj report')).toBe(true);
+            expect(scoped('pj')).toBe(false);
+            expect(scoped('report')).toBe(false);
+        });
+
         it('gives way to an alias that takes arguments', () => {
             const clash = [...commands, makeCmd('Open PJ', 'pj-cmd', 'pj')];
             const { result } = renderHook(() => useSearchState(clash, THRESHOLD, MAX));

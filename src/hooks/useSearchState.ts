@@ -14,7 +14,7 @@ const NO_USAGE: UsageMap = {};
 export type SearchMode =
     | { mode: 'idle' }
     | { mode: 'argument'; alias: string; command: Command }
-    | { mode: 'search'; results: SearchResult[]; selectedIndex: number };
+    | { mode: 'search'; results: SearchResult[]; selectedIndex: number; scoped?: boolean };
 
 export const useSearchState = (
     commands: Command[],
@@ -96,7 +96,7 @@ export const useSearchState = (
             if (scopeIndex && (parts.length > 1 || newQuery.endsWith(' '))) {
                 const keyword = trimmed.slice(potentialAlias.length).trim();
                 const results = searchIndex(scopeIndex, keyword, maxResults, usage);
-                return { mode: 'search', results, selectedIndex: 0 };
+                return { mode: 'search', results, selectedIndex: 0, scoped: true };
             }
 
             const searchResults = searchIndex(index, newQuery, maxResults, usage);
@@ -171,6 +171,7 @@ export const useSearchState = (
         results,
         selectedIndex,
         argumentMode,
+        scoped: searchMode.mode === 'search' && Boolean(searchMode.scoped),
         inputRef,
         resetState,
         handleQueryChange,

@@ -312,6 +312,7 @@ A fast and efficient command launcher for your desktop.`,
                 onKeyDown={handleKeyDown}
                 inputRef={inputRef}
                 argumentMode={argumentMode}
+                scoped={searchState.scoped}
                 onAddCommand={handleAddCommand}
                 onReloadCommands={handleReload}
                 onOpenCommandsJson={handleOpenCommandsJson}
