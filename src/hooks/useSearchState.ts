@@ -1,6 +1,12 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Command, SearchResult, UsageMap } from '../types';
-import { createFuse, fuseSearch, frequentCommands, detectDirectOpen } from '../search';
+import {
+    createIndex,
+    searchIndex,
+    SearchIndex,
+    frequentCommands,
+    detectDirectOpen,
+} from '../search';
 import { hasPlaceholders } from '../command';
 
 const NO_USAGE: UsageMap = {};
@@ -25,8 +31,8 @@ export const useSearchState = (
 
     // alias_only の登録フォルダの項目は、そのフォルダの Alias を打ったときだけ探せる
     const searchable = useMemo(() => commands.filter((c) => !c.scopedOnly), [commands]);
-    const fuse = useMemo(
-        () => createFuse(searchable, fuzzyThreshold),
+    const index = useMemo(
+        () => createIndex(searchable, fuzzyThreshold),
         [searchable, fuzzyThreshold],
     );
     // Local Path の Alias ごとの索引。打鍵のたびに作らないよう、コマンド一覧か閾値が変わったときに作る
@@ -37,11 +43,8 @@ export const useSearchState = (
                 byAlias.set(alias, [...(byAlias.get(alias) ?? []), cmd]);
             }
         }
-        return new Map(
-            [...byAlias].map(([alias, scoped]) => [
-                alias,
-                { fuse: createFuse(scoped, fuzzyThreshold), commands: scoped },
-            ]),
+        return new Map<string, SearchIndex>(
+            [...byAlias].map(([alias, scoped]) => [alias, createIndex(scoped, fuzzyThreshold)]),
         );
     }, [commands, fuzzyThreshold]);
     // Looked up on every keystroke, so index it once per command list
@@ -89,14 +92,14 @@ export const useSearchState = (
             }
 
             // Local Path の Alias は、そのフォルダの下だけを探す。引数を取る Command の Alias が先
-            const index = scopeIndexes.get(potentialAlias);
-            if (index && (parts.length > 1 || newQuery.endsWith(' '))) {
+            const scopeIndex = scopeIndexes.get(potentialAlias);
+            if (scopeIndex && (parts.length > 1 || newQuery.endsWith(' '))) {
                 const keyword = trimmed.slice(potentialAlias.length).trim();
-                const results = fuseSearch(index.fuse, keyword, index.commands, maxResults, usage);
+                const results = searchIndex(scopeIndex, keyword, maxResults, usage);
                 return { mode: 'search', results, selectedIndex: 0 };
             }
 
-            const searchResults = fuseSearch(fuse, newQuery, searchable, maxResults, usage);
+            const searchResults = searchIndex(index, newQuery, maxResults, usage);
             const dynamicItem = detectDirectOpen(newQuery);
             if (dynamicItem) {
                 // What was typed is what Enter opens, so it leads the list
@@ -104,7 +107,7 @@ export const useSearchState = (
             }
             return { mode: 'search', results: searchResults, selectedIndex: 0 };
         },
-        [commandByAlias, maxResults, fuse, usage, searchable, scopeIndexes],
+        [commandByAlias, maxResults, index, usage, scopeIndexes],
     );
 
     const handleQueryChange = useCallback(

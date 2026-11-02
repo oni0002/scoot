@@ -116,6 +116,26 @@ export function fuseSearch(
         .map(({ r }) => r);
 }
 
+/** Fuse の索引と、それを作った一覧。`fuseSearch` は両方を要るので、取り違えないよう組にして持つ */
+export interface SearchIndex {
+    fuse: Fuse<Command>;
+    commands: Command[];
+}
+
+export function createIndex(commands: Command[], threshold: number): SearchIndex {
+    return { fuse: createFuse(commands, threshold), commands };
+}
+
+export function searchIndex(
+    index: SearchIndex,
+    query: string,
+    maxResults: number,
+    usage: UsageMap = {},
+    now: number = Date.now(),
+): SearchResult[] {
+    return fuseSearch(index.fuse, query, index.commands, maxResults, usage, now);
+}
+
 // A word-start match scores like a good Fuse match, tighter (fewer words) first. It stays below
 // 0.05 so that history, which is capped at that much, cannot reorder it against a literal hit.
 function boundaryScore(hit: BoundaryMatch, query: string): number {

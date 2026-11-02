@@ -1,4 +1,12 @@
-import { detectDirectOpen, createFuse, fuseSearch, frequentCommands, usageBoost } from '../search';
+import {
+    detectDirectOpen,
+    createFuse,
+    createIndex,
+    searchIndex,
+    fuseSearch,
+    frequentCommands,
+    usageBoost,
+} from '../search';
 import { DIRECT_OPEN_ID } from '../constants';
 import { Command } from '../types';
 
@@ -279,5 +287,16 @@ describe('abbreviations', () => {
         const results = fuseSearch(fuse, 'vscode', commands, 10);
         const ids = results.map((r) => r.command.id);
         expect(new Set(ids).size).toBe(ids.length);
+    });
+});
+
+describe('searchIndex', () => {
+    it('searches the list it was built from, as fuseSearch does with that pair', () => {
+        const commands = [makeCommand('GitHub'), makeCommand('Google'), makeCommand('Gmail')];
+        const index = createIndex(commands, 0.4);
+        expect(searchIndex(index, 'git', 10).map((r) => r.command.name)).toEqual(
+            fuseSearch(index.fuse, 'git', commands, 10).map((r) => r.command.name),
+        );
+        expect(searchIndex(index, '', 2)).toHaveLength(2);
     });
 });
