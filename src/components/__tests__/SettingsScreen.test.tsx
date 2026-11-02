@@ -320,6 +320,24 @@ describe('SettingsScreen files and folders', () => {
         expect(within(files).getByLabelText('Depth for new path')).toBeInTheDocument();
     });
 
+    it('keeps the edited row when a later one is removed', async () => {
+        renderScreen();
+        const files = await section();
+        await edit(files, projects);
+        await userEvent.click(within(files).getByRole('button', { name: `Remove ${documents}` }));
+        expect(within(files).getByLabelText(`Depth for ${projects}`)).toBeInTheDocument();
+    });
+
+    it('keeps the row it moves to when an emptied row above it is dropped', async () => {
+        renderScreen();
+        const files = await section();
+        await edit(files, projects);
+        await userEvent.clear(within(files).getByLabelText('Path'));
+        await edit(files, documents);
+        expect(within(files).getAllByRole('row')).toHaveLength(2);
+        expect(within(files).getByLabelText(`Depth for ${documents}`)).toBeInTheDocument();
+    });
+
     it('does not open another row for editing when an earlier one is removed', async () => {
         renderScreen();
         const files = await section();
