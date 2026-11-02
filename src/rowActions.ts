@@ -1,6 +1,6 @@
 import { Command } from './types';
 import { DIRECT_OPEN_ID } from './constants';
-import { hasPlaceholders } from './command';
+import { hasPlaceholders, isScopeEntry } from './command';
 
 export type RowAction = 'copy' | 'reveal' | 'edit' | 'duplicate' | 'delete' | 'alias' | 'ignore';
 
@@ -30,6 +30,8 @@ export const ROW_ACTION_BY_KEY: Record<string, Exclude<RowAction, 'copy'>> = {
 /** Actions available for a result. Typed-in URLs and paths can only be copied. */
 export function rowActionsFor(command: Command): RowAction[] {
     if (command.id === DIRECT_OPEN_ID) return ['copy'];
+    // A folder alias's row only starts a search; it is neither a path to copy nor something to ignore
+    if (isScopeEntry(command)) return [];
     // A custom command carries its alias in the edit form; an external one has no form to edit
     const rest: RowAction[] =
         command.source === 'user' ? ['edit', 'duplicate', 'delete'] : ['alias', 'ignore'];

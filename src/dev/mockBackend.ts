@@ -148,6 +148,25 @@ export function createMockHandlers(): Record<string, Handler> {
             scopedOnly: roots.length > 0 && roots.every((e) => e.aliasOnly),
         };
     };
+    // 本物は走査で、Alias を持つ登録フォルダごとに入口の行を足す
+    const scopeEntries = (): Command[] =>
+        settings.localPaths.enabled
+            ? settings.localPaths.entries.flatMap((e) =>
+                  e.alias
+                      ? [
+                            {
+                                id: `scope-${e.alias}`,
+                                name: `Search in ${e.path.split('\\').pop()}`,
+                                category: 'scoot',
+                                source: 'local',
+                                command: `scoot://search-folder/${e.alias}`,
+                                description: e.path,
+                                alias: e.alias,
+                            },
+                        ]
+                      : [],
+              )
+            : [];
     const visibleExternal = () =>
         externalCommands()
             .filter((c) => c.source !== 'local' || settings.localPaths.enabled)
@@ -158,7 +177,7 @@ export function createMockHandlers(): Record<string, Handler> {
             );
 
     return {
-        get_all_commands: () => [...users, ...visibleExternal()],
+        get_all_commands: () => [...users, ...visibleExternal(), ...scopeEntries()],
         get_usage: () => ({ ...usage }),
         clear_usage: () => {
             for (const id of Object.keys(usage)) delete usage[id];

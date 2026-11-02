@@ -123,6 +123,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         selectedIndex,
         argumentMode,
         setQuery,
+        onQueryChange: searchState.handleQueryChange,
         setSearchMode,
         resetState,
         executeCommand: executeContextCommand,

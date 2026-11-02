@@ -92,7 +92,7 @@ export const SearchResultItem = React.memo(
                     </div>
 
                     <div
-                        className={`flex items-center gap-2 ml-2 shrink-0 ${showActions ? 'mr-14' : ''}`}
+                        className={`flex items-center gap-2 ml-2 shrink-0 ${showActions && actions.length > 0 ? 'mr-14' : ''}`}
                     >
                         {command.alias && (
                             <div className="badge badge-sm badge-primary">{command.alias}</div>
@@ -107,7 +107,7 @@ export const SearchResultItem = React.memo(
 
                 {/* Mouse convenience only: keyboard and screen-reader users have Ctrl+C/E/D/I,
                     listed in the hint bar, so these controls stay out of the tab order and tree. */}
-                {showActions && (
+                {showActions && actions.length > 0 && (
                     <div
                         aria-hidden="true"
                         className="absolute right-2 top-1/2 -translate-y-1/2 z-[1] flex items-center gap-1"

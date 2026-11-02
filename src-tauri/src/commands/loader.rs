@@ -112,10 +112,16 @@ pub async fn reload<R: Runtime>(
         .filter(|c| c.category == crate::commands::domain::CATEGORY_FILE)
         .map(|c| local_path::path_key(&c.command))
         .collect();
+    let user_aliases: HashSet<&str> = user.iter().filter_map(|c| c.alias.as_deref()).collect();
     let local_commands = local
         .commands
         .into_iter()
         .filter(|c| !user_files.contains(&local_path::path_key(&c.command)));
+    // フォルダの Alias の入口の行は、同じ Alias のユーザーコマンドに譲る(そのコマンドを弾かないため)
+    let scope_entries = local
+        .scope_entries
+        .into_iter()
+        .filter(|c| c.alias.as_deref().is_none_or(|a| !user_aliases.contains(a)));
 
     let ignored: HashSet<&str> = settings.ignored.iter().map(String::as_str).collect();
     let mut external: Vec<Command> = bookmarks
@@ -123,10 +129,10 @@ pub async fn reload<R: Runtime>(
         .chain(app_commands)
         .chain(markdown_commands)
         .chain(local_commands)
+        .chain(scope_entries)
         .chain(crate::commands::domain::get_scoot_commands())
         .filter(|c| !ignored.contains(c.command.as_str()))
         .collect();
-    let user_aliases: HashSet<&str> = user.iter().filter_map(|c| c.alias.as_deref()).collect();
     apply_aliases(&mut external, &settings.aliases, &user_aliases);
 
     // External first: user commands are checked against their aliases, and `apply_aliases` has

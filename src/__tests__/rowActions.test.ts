@@ -50,6 +50,11 @@ describe('rowActionsFor', () => {
         });
     });
 
+    it('offers nothing on the row of a folder alias, which only starts a search', () => {
+        const entry = { ...base, category: 'scoot', command: 'scoot://search-folder/pj' };
+        expect(rowActionsFor(entry)).toEqual([]);
+    });
+
     it('only lets a typed-in URL or path be copied', () => {
         expect(rowActionsFor({ ...base, id: DIRECT_OPEN_ID })).toEqual(['copy']);
     });

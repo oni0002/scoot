@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Command, SearchResult } from '../types';
 import { SearchMode } from './useSearchState';
 import { TauriAPI } from '../tauri';
-import { hasPlaceholders, missingSlots, parseArgs } from '../command';
+import { hasPlaceholders, isScopeEntry, missingSlots, parseArgs } from '../command';
 
 interface UseCommandExecutionProps {
     query: string;
@@ -10,6 +10,8 @@ interface UseCommandExecutionProps {
     selectedIndex: number;
     argumentMode: { alias: string; command: Command } | null;
     setQuery: (query: string) => void;
+    /** Sets the query and searches it, as typing does */
+    onQueryChange: (query: string) => void;
     setSearchMode: React.Dispatch<React.SetStateAction<SearchMode>>;
     resetState: () => void;
     executeCommand: (command: Command, args: string[]) => Promise<boolean | null>;
@@ -21,6 +23,7 @@ export const useCommandExecution = ({
     selectedIndex,
     argumentMode,
     setQuery,
+    onQueryChange,
     setSearchMode,
     resetState,
     executeCommand,
@@ -40,6 +43,12 @@ export const useCommandExecution = ({
                 if (results.length === 0 || effectiveIndex >= results.length) return;
 
                 const selectedResult = results[effectiveIndex];
+
+                // A folder alias's row starts the search of that folder, as an alias with arguments does
+                if (isScopeEntry(selectedResult.command) && selectedResult.command.alias) {
+                    onQueryChange(selectedResult.command.alias + ' ');
+                    return;
+                }
 
                 if (
                     selectedResult.command.alias &&
@@ -76,6 +85,7 @@ export const useCommandExecution = ({
             resetState,
             setSearchMode,
             setQuery,
+            onQueryChange,
         ],
     );
 

@@ -6,6 +6,14 @@ export function hasPlaceholders(cmd: string): boolean {
     return PLACEHOLDER_RE.test(cmd);
 }
 
+/** Keep in sync with SCOPE_COMMAND_PREFIX in src-tauri/src/commands/domain.rs. */
+const SCOPE_COMMAND_PREFIX = 'scoot://search-folder/';
+
+/** A folder alias's row (Local Path): choosing it starts a search of that folder instead of running. */
+export function isScopeEntry(command: { command: string }): boolean {
+    return command.command.startsWith(SCOPE_COMMAND_PREFIX);
+}
+
 // Mirrors Command::substitute_args in src-tauri/src/commands/domain.rs (used for the preview only);
 // both run the cases in src/__tests__/fixtures/substitute-cases.json
 function percentEncode(s: string): string {

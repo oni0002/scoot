@@ -23,6 +23,7 @@ const setup = (executeCommand: jest.Mock) => {
             selectedIndex: 0,
             argumentMode: null,
             setQuery: jest.fn(),
+            onQueryChange: jest.fn(),
             setSearchMode: jest.fn(),
             resetState,
             executeCommand,
@@ -48,6 +49,7 @@ describe('useCommandExecution in argument mode', () => {
                 selectedIndex: 0,
                 argumentMode: { alias: 's', command: search },
                 setQuery: jest.fn(),
+                onQueryChange: jest.fn(),
                 setSearchMode: jest.fn(),
                 resetState: jest.fn(),
                 executeCommand,
@@ -91,5 +93,38 @@ describe('useCommandExecution', () => {
         const { result } = setup(jest.fn().mockResolvedValue(false));
         await act(() => result.current.runSelectedCommand());
         expect(TauriAPI.hideWindow).toHaveBeenCalled();
+    });
+});
+
+describe('useCommandExecution on a folder alias row', () => {
+    const entry: Command = {
+        ...command,
+        id: 'scope-pj',
+        name: 'Search in Projects',
+        category: 'scoot',
+        source: 'local',
+        command: 'scoot://search-folder/pj',
+        alias: 'pj',
+    };
+
+    it('starts the folder search instead of running anything', async () => {
+        const executeCommand = jest.fn();
+        const onQueryChange = jest.fn();
+        const { result } = renderHook(() =>
+            useCommandExecution({
+                query: 'pj',
+                results: [{ command: entry, score: 0, matches: [] }],
+                selectedIndex: 0,
+                argumentMode: null,
+                setQuery: jest.fn(),
+                onQueryChange,
+                setSearchMode: jest.fn(),
+                resetState: jest.fn(),
+                executeCommand,
+            }),
+        );
+        await act(() => result.current.runSelectedCommand());
+        expect(onQueryChange).toHaveBeenCalledWith('pj ');
+        expect(executeCommand).not.toHaveBeenCalled();
     });
 });

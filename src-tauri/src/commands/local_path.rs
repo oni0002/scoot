@@ -1,4 +1,6 @@
-use crate::commands::domain::{Command, CATEGORY_FILE, SOURCE_LOCAL};
+use crate::commands::domain::{
+    Command, CATEGORY_FILE, CATEGORY_SCOOT, SCOPE_COMMAND_PREFIX, SOURCE_LOCAL,
+};
 use crate::settings::domain::LocalPathSettings;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -14,6 +16,8 @@ pub const NOTICE_SOURCE: &str = "localPaths";
 #[derive(Default)]
 pub struct Scan {
     pub commands: Vec<Command>,
+    /// Alias を持つ登録フォルダごとの入口の行。選ぶと `<alias> ` に入る。上限には数えない
+    pub scope_entries: Vec<Command>,
     /// 上限に達して走査を途中でやめたか
     pub truncated: bool,
 }
@@ -102,9 +106,13 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
         .collect();
 
     let mut queue: VecDeque<(PathBuf, usize, &Rule)> = VecDeque::new();
+    let mut scope_entries: Vec<Command> = Vec::new();
     for (entry, rule) in settings.entries.iter().zip(&rules) {
         let root = expand(&entry.path);
         if root.is_dir() {
+            if let Some(alias) = rule.alias {
+                scope_entries.push(scope_entry(alias, &root));
+            }
             queue.push_back((root, 0, rule));
         } else {
             log::warn!("Local path '{}' is not a folder; skipped.", root.display());
@@ -158,6 +166,7 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
                     if commands.len() == cap {
                         return Scan {
                             commands,
+                            scope_entries,
                             truncated: true,
                         };
                     }
@@ -172,8 +181,26 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
     }
     Scan {
         commands,
+        scope_entries,
         truncated: false,
     }
+}
+
+/// 登録フォルダの Alias の入口の行。名前は Alias でも探せるよう Alias を持ち、説明にフォルダを出す。
+/// 実行はしない(UI が選ばれたら `<alias> ` に入る)ので、`command` は Alias を表す印にとどめる
+fn scope_entry(alias: &str, root: &Path) -> Command {
+    let folder = root
+        .file_name()
+        .map_or_else(|| root.to_string_lossy(), |n| n.to_string_lossy());
+    let mut command = Command::new(
+        format!("Search in {}", folder),
+        CATEGORY_SCOOT,
+        SOURCE_LOCAL,
+        format!("{}{}", SCOPE_COMMAND_PREFIX, alias),
+        root.to_string_lossy(),
+    );
+    command.alias = Some(alias.to_string());
+    command
 }
 
 /// `~` と `%VAR%` を展開し、`/` を Windows の区切りにそろえ、末尾の区切りを落とす
@@ -566,6 +593,30 @@ mod tests {
             .find(|t| t.0 == "p/a.md")
             .unwrap();
         assert!(!a.2);
+    }
+
+    #[test]
+    fn a_folder_with_an_alias_gets_an_entry_row_outside_the_cap() {
+        let root = tree(&["a.md", "b.md"]);
+        let mut with = entry(&root);
+        with.alias = Some("pj".to_string());
+        with.include_folders = false;
+        let mut without = entry(&root.join("missing"));
+        without.alias = Some("gone".to_string());
+        let s = LocalPathSettings {
+            entries: vec![with, without],
+            ..settings(&root)
+        };
+        // 上限ちょうどまで一覧にしても、入口の行は上限を使わない。存在しないフォルダには出ない
+        let scan = scan(&s, 2);
+        assert!(!scan.truncated);
+        assert_eq!(scan.commands.len(), 2);
+        assert_eq!(scan.scope_entries.len(), 1);
+        let row = &scan.scope_entries[0];
+        assert_eq!(row.command, format!("{}pj", SCOPE_COMMAND_PREFIX));
+        assert_eq!(row.alias.as_deref(), Some("pj"));
+        assert_eq!(row.description, root.to_string_lossy());
+        assert!(row.name.starts_with("Search in "));
     }
 
     #[test]

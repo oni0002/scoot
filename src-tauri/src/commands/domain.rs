@@ -19,6 +19,10 @@ pub const SOURCE_APPLICATION: &str = "application";
 pub const SOURCE_LOCAL: &str = "local";
 pub const SOURCE_SCOOT: &str = "scoot";
 
+/// Local Path の登録フォルダの Alias に入る行の `command` の頭。実行はせず、UI が `<alias> ` に入る。
+/// Keep in sync with `SCOPE_COMMAND_PREFIX` in src/command.ts.
+pub const SCOPE_COMMAND_PREFIX: &str = "scoot://search-folder/";
+
 // Scoot command constants
 pub const CMD_SCOOT_ADD_COMMAND: &str = "scoot://add-command";
 pub const CMD_SCOOT_OPEN_COMMANDS: &str = "scoot://open-commands";
