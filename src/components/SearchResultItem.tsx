@@ -55,6 +55,8 @@ export const SearchResultItem = React.memo(
     }: SearchResultItemProps) => {
         const { command } = result;
         const actions = rowActionsFor(command);
+        // バッジを、右端に重なるボタンの手前で止める。コピーのボタンがない行はボタンが1つぶん狭い
+        const actionsGap = actions.includes('copy') ? 'mr-14' : 'mr-7';
 
         const runMenuAction = (action: RowAction, event: React.MouseEvent) => {
             // Closes the row menu (it stays open while it has focus); focus then returns to the search
@@ -92,7 +94,7 @@ export const SearchResultItem = React.memo(
                     </div>
 
                     <div
-                        className={`flex items-center gap-2 ml-2 shrink-0 ${showActions && actions.length > 0 ? 'mr-14' : ''}`}
+                        className={`flex items-center gap-2 ml-2 shrink-0 ${showActions ? actionsGap : ''}`}
                     >
                         {command.alias && (
                             <div className="badge badge-sm badge-primary">{command.alias}</div>
