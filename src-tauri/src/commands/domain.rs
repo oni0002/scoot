@@ -20,7 +20,7 @@ pub const SOURCE_LOCAL: &str = "local";
 pub const SOURCE_SCOOT: &str = "scoot";
 
 /// Local Path の登録フォルダの Alias に入る行の `command` の頭。実行はせず、UI が `<alias> ` に入る。
-/// Keep in sync with `SCOPE_COMMAND_PREFIX` in src/command.ts.
+/// UI はこの文字列ではなく、Category が `scoot` で Source が `local` の組で、この行を見分ける
 pub const SCOPE_COMMAND_PREFIX: &str = "scoot://search-folder/";
 
 // Scoot command constants

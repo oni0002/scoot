@@ -3,6 +3,7 @@ use crate::commands::local_path;
 use crate::commands::registry::CommandRegistry;
 use crate::error::AppError;
 use std::collections::{BTreeMap, HashSet};
+use std::future::Future;
 use tauri::Runtime;
 
 /// Reload commands, bookmarks, and apps into the registry
@@ -18,57 +19,29 @@ pub async fn reload<R: Runtime>(
 
     let (commands_result, bookmarks, app_commands, markdown_commands, local) = tokio::join!(
         command_store.load(),
-        async {
-            if settings.bookmarks.enabled {
-                crate::commands::bookmark::load(&settings.bookmarks)
-                    .await
-                    .unwrap_or_else(|e| {
-                        log::warn!("Failed to load bookmarks: {}", e);
-                        Vec::new()
-                    })
-            } else {
-                Vec::new()
-            }
-        },
-        async {
-            if settings.applications.enabled {
-                crate::commands::application::load(
-                    &settings.applications.directories,
-                    &settings.applications.extensions,
-                )
-                .await
-                .unwrap_or_else(|e| {
-                    log::warn!("Failed to load applications: {}", e);
-                    Vec::new()
-                })
-            } else {
-                Vec::new()
-            }
-        },
-        async {
-            if settings.markdown.enabled {
-                crate::commands::markdown::load(&settings.markdown)
-                    .await
-                    .unwrap_or_else(|e| {
-                        log::warn!("Failed to load markdown links: {}", e);
-                        Vec::new()
-                    })
-            } else {
-                Vec::new()
-            }
-        },
-        async {
-            if settings.local_paths.enabled {
-                crate::commands::local_path::load(&settings.local_paths)
-                    .await
-                    .unwrap_or_else(|e| {
-                        log::warn!("Failed to load local paths: {}", e);
-                        Default::default()
-                    })
-            } else {
-                Default::default()
-            }
-        },
+        load_source(
+            settings.bookmarks.enabled,
+            "bookmarks",
+            crate::commands::bookmark::load(&settings.bookmarks)
+        ),
+        load_source(
+            settings.applications.enabled,
+            "applications",
+            crate::commands::application::load(
+                &settings.applications.directories,
+                &settings.applications.extensions,
+            )
+        ),
+        load_source(
+            settings.markdown.enabled,
+            "markdown links",
+            crate::commands::markdown::load(&settings.markdown)
+        ),
+        load_source(
+            settings.local_paths.enabled,
+            "local paths",
+            crate::commands::local_path::load(&settings.local_paths)
+        ),
     );
 
     let local_notice = crate::commands::local_path::NOTICE_SOURCE;
@@ -144,6 +117,21 @@ pub async fn reload<R: Runtime>(
     }
 
     Ok(())
+}
+
+/// 無効なソースは読まない。読み込みに失敗したソースは警告だけ出して空にし、他のソースは止めない
+async fn load_source<T: Default>(
+    enabled: bool,
+    name: &str,
+    load: impl Future<Output = Result<T, AppError>>,
+) -> T {
+    if !enabled {
+        return T::default();
+    }
+    load.await.unwrap_or_else(|e| {
+        log::warn!("Failed to load {}: {}", name, e);
+        T::default()
+    })
 }
 
 /// Give external commands the aliases saved in settings.json. A hand-edited file can hold an alias

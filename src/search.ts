@@ -3,7 +3,7 @@ import { Command, SearchResult, Usage, UsageMap } from './types';
 import { DIRECT_OPEN_ID } from './constants';
 import { boundaryMatch, BoundaryMatch } from './boundaryMatch';
 
-export const FUSE_KEYS: IFuseOptions<Command>['keys'] = [
+const FUSE_KEYS: IFuseOptions<Command>['keys'] = [
     { name: 'name', weight: 0.7 },
     { name: 'alias', weight: 0.5 },
 ];

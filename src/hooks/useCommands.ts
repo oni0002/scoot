@@ -5,7 +5,7 @@ import { getErrorMessage } from '../error';
 import { DIRECT_OPEN_ID } from '../constants';
 
 /** Outcome of a command mutation; failures carry the backend's reason so the UI can show it. */
-export type CommandResult = { ok: true } | { ok: false; message: string };
+type CommandResult = { ok: true } | { ok: false; message: string };
 
 export function useCommands() {
     const [commands, setCommands] = useState<Command[]>([]);

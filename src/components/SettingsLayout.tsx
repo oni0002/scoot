@@ -64,7 +64,7 @@ export const Row: React.FC<RowProps> = ({ label, htmlFor, description, children 
 /** リストの値を載せる面・行の区切り・行の余白と文字・Add ボタン・削除ボタン。単列のリストと Files and Folders の表が同じ見た目になるよう、両方がここを使う */
 export const LIST_SURFACE = 'rounded-md bg-base-100';
 export const ROW_DIVIDER = 'border-base-content/10';
-export const LIST_ROW = `flex items-center gap-2 border-t px-2 py-1 text-[0.6875rem] first:border-t-0 ${ROW_DIVIDER}`;
+const LIST_ROW = `flex items-center gap-2 border-t px-2 py-1 text-[0.6875rem] first:border-t-0 ${ROW_DIVIDER}`;
 export const ADD_BUTTON = 'btn btn-primary btn-xs mt-2';
 
 /** 値を消すボタン。name は押す対象の名前(アクセシブルな名前に使う) */

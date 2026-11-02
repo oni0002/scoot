@@ -51,7 +51,7 @@ describe('rowActionsFor', () => {
     });
 
     it('offers Copy and Edit on the row of a folder alias, which opens its settings', () => {
-        const entry = { ...base, category: 'scoot', command: 'scoot://search-folder/pj' };
+        const entry = { ...base, category: 'scoot', source: 'local' };
         expect(rowActionsFor(entry)).toEqual(['copy', 'edit']);
     });
 

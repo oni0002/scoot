@@ -613,6 +613,11 @@ mod tests {
         assert_eq!(scan.commands.len(), 2);
         assert_eq!(scan.scope_entries.len(), 1);
         let row = &scan.scope_entries[0];
+        // UI はこの組で入口の行を見分ける(src/command.ts の isScopeEntry)
+        assert_eq!(
+            (row.category.as_str(), row.source.as_str()),
+            (CATEGORY_SCOOT, SOURCE_LOCAL)
+        );
         assert_eq!(row.command, format!("{}pj", SCOPE_COMMAND_PREFIX));
         assert_eq!(row.alias.as_deref(), Some("pj"));
         assert_eq!(row.description, root.to_string_lossy());

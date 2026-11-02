@@ -1,3 +1,5 @@
+import { Command } from './types';
+
 // {$1}, {$2}, ... or {$*}. Keep in sync with PLACEHOLDER_RE in src-tauri/src/commands/domain.rs.
 const PLACEHOLDER_RE = /\{\$([1-9]\d*|\*)\}/;
 const PLACEHOLDER_GLOBAL = /\{\$([1-9]\d*|\*)\}/g;
@@ -6,12 +8,12 @@ export function hasPlaceholders(cmd: string): boolean {
     return PLACEHOLDER_RE.test(cmd);
 }
 
-/** Keep in sync with SCOPE_COMMAND_PREFIX in src-tauri/src/commands/domain.rs. */
-const SCOPE_COMMAND_PREFIX = 'scoot://search-folder/';
-
-/** A folder alias's row (Local Path): choosing it starts a search of that folder instead of running. */
-export function isScopeEntry(command: { command: string }): boolean {
-    return command.command.startsWith(SCOPE_COMMAND_PREFIX);
+/**
+ * A folder alias's row (Local Path): choosing it starts a search of that folder instead of running.
+ * Only these rows are `scoot` in category yet `local` in source; Scoot Commands have source `scoot`.
+ */
+export function isScopeEntry(command: Pick<Command, 'category' | 'source'>): boolean {
+    return command.category === 'scoot' && command.source === 'local';
 }
 
 // Mirrors Command::substitute_args in src-tauri/src/commands/domain.rs (used for the preview only);
@@ -24,7 +26,7 @@ function percentEncode(s: string): string {
 }
 
 /** One literal run or one placeholder of an expanded command template. */
-export interface TemplatePart {
+interface TemplatePart {
     text: string;
     /** The placeholder this part came from, e.g. "{$1}"; undefined for literal text. */
     slot?: string;
