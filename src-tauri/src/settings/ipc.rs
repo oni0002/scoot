@@ -22,18 +22,32 @@ pub async fn get_settings(
 pub async fn save_settings(
     settings: Settings,
     state: State<'_, SettingsState>,
+    app_handle: tauri::AppHandle,
 ) -> Result<(), crate::error::AppError> {
+    use tauri::Emitter;
+
     // Refuse values settings.json could not load back, before they reach the state or the file
     settings.validate()?;
 
     // state
-    {
+    let relist = {
         let mut locked_settings = state.settings.lock().map_err(AppError::lock)?;
+        let relist = locked_settings.changes_loaded_commands(&settings);
         *locked_settings = settings.clone();
-    }
+        relist
+    };
 
     // settings.json
-    state.settings_store.save(&settings).await
+    state.settings_store.save(&settings).await?;
+
+    // The file watcher sees the app's own save as no change, so the commands loaded from the sources
+    // are rebuilt here, once the file holds what they are rebuilt from
+    if relist {
+        if let Err(e) = app_handle.emit(crate::lifecycle::REQUEST_RELOAD, ()) {
+            log::error!("Failed to emit request-reload after saving settings: {}", e);
+        }
+    }
+    Ok(())
 }
 
 /// Ignore a command: persist to settings and remove from registry immediately

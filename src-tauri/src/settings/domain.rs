@@ -190,6 +190,17 @@ impl Settings {
         Ok(settings)
     }
 
+    /// 読み込み済みのコマンド一覧を作り直す必要がある違いか。ソースの設定・無視・Alias が対象で、
+    /// テーマやホットキーのように一覧に関わらないものは含めない
+    pub fn changes_loaded_commands(&self, other: &Settings) -> bool {
+        self.bookmarks != other.bookmarks
+            || self.applications != other.applications
+            || self.markdown != other.markdown
+            || self.local_paths != other.local_paths
+            || self.ignored != other.ignored
+            || self.aliases != other.aliases
+    }
+
     /// Range and format rules for the values serde cannot check by type alone
     pub fn validate(&self) -> Result<(), crate::error::AppError> {
         let fail = |msg: String| Err(crate::error::AppError::Validation(msg));
@@ -444,6 +455,41 @@ mod tests {
         assert!(entries(r#"{"path": "C:\\a", "alias": "pj", "aliasOnly": true}"#).is_ok());
         assert!(entries(&format!("{},{}", path("pj"), path("pj"))).is_err());
         assert!(entries(&format!("{},{}", path("pj"), path("nt"))).is_ok());
+    }
+
+    #[test]
+    fn only_settings_that_shape_the_command_list_call_for_a_reload() {
+        let base = Settings::default();
+        let changed = |edit: fn(&mut Settings)| {
+            let mut other = base.clone();
+            edit(&mut other);
+            base.changes_loaded_commands(&other)
+        };
+        assert!(!base.changes_loaded_commands(&base.clone()));
+        assert!(!changed(|s| s.theme = "dark".to_string()));
+        assert!(!changed(|s| s.max_results = 20));
+        assert!(!changed(|s| s.hotkey = "Ctrl+Shift+K".to_string()));
+        assert!(changed(|s| s.bookmarks.enabled = false));
+        assert!(changed(|s| s
+            .applications
+            .extensions
+            .push("url".to_string())));
+        assert!(changed(|s| s
+            .markdown
+            .paths
+            .push("C:\\notes.md".to_string())));
+        assert!(changed(|s| s
+            .local_paths
+            .exclude_names
+            .push("dist".to_string())));
+        assert!(changed(|s| s
+            .local_paths
+            .entries
+            .push(LocalPathEntry::default())));
+        assert!(changed(|s| s.ignored.push("x".to_string())));
+        assert!(changed(|s| {
+            s.aliases.insert("x".to_string(), "y".to_string());
+        }));
     }
 
     #[test]

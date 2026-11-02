@@ -85,5 +85,5 @@ Settings を GUI で編集するための画面。Scoot Command (OpenSettings) �
 _Avoid_: Config screen, preferences screen
 
 **Reload**:
-Settings と全 Command ソースを再読み込みしてアプリの状態を最新化する操作。settings.json の変更検知・タイマー・手動操作で発生する。commands.json は監視しない。Command は主に UI から追加するので、手で書き換えた分は手動またはタイマーの Reload で反映される。
+Settings と全 Command ソースを再読み込みしてアプリの状態を最新化する操作。settings.json の変更検知・タイマー・手動操作のほか、Settings Screen でコマンド一覧に関わる設定(外部ソース・Ignored・Alias)を保存したときに発生する。commands.json は監視しない。Command は主に UI から追加するので、手で書き換えた分は手動またはタイマーの Reload で反映される。
 _Avoid_: Refresh, restart
