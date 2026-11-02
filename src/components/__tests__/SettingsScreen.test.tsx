@@ -192,9 +192,12 @@ describe('SettingsScreen files and folders', () => {
         const files = await section();
         const rows = within(files).getAllByRole('row');
         expect(within(rows[1]).getByText('No files')).toBeInTheDocument();
-        expect(within(rows[1]).getByText('Yes')).toBeInTheDocument();
+        // Folders と In search の2列
+        expect(within(rows[1]).getAllByText('Yes')).toHaveLength(2);
+        expect(within(rows[1]).getByText('pj')).toBeInTheDocument();
         expect(within(rows[2]).getByText('md, pdf')).toBeInTheDocument();
         expect(within(rows[2]).getByText('No')).toBeInTheDocument();
+        expect(within(rows[2]).getByText('None')).toBeInTheDocument();
         expect(within(files).queryByLabelText(`Depth for ${projects}`)).not.toBeInTheDocument();
         expect(
             within(files).queryByLabelText(`Extensions for ${projects}`),
@@ -236,12 +239,15 @@ describe('SettingsScreen files and folders', () => {
                                 depth: 4,
                                 extensions: ['txt', 'PDF', '*'],
                                 includeFolders: true,
+                                alias: 'pj',
+                                aliasOnly: false,
                             },
                             {
                                 path: documents,
                                 depth: 4,
                                 extensions: ['md', 'pdf'],
                                 includeFolders: true,
+                                aliasOnly: false,
                             },
                         ],
                         excludeNames: ['node_modules', 'dist'],
@@ -351,7 +357,78 @@ describe('SettingsScreen files and folders', () => {
                         entries: [
                             expect.objectContaining({ path: projects }),
                             expect.objectContaining({ path: documents }),
-                            { path: '~\\Notes', depth: 3, extensions: [], includeFolders: true },
+                            {
+                                path: '~\\Notes',
+                                depth: 3,
+                                extensions: [],
+                                includeFolders: true,
+                                aliasOnly: false,
+                            },
+                        ],
+                    }),
+                }),
+            ),
+        );
+    });
+
+    it('takes an alias for a folder, which can then leave the folder out of normal search', async () => {
+        jest.mocked(TauriAPI.saveSettings).mockResolvedValue();
+        renderScreen();
+        const files = await section();
+        await edit(files, documents);
+        const inSearch = within(files).getByLabelText(`In search for ${documents}`);
+        // 入口(Alias)がない間は、通常の検索から外せない
+        expect(inSearch).toBeDisabled();
+        expect(inSearch).toBeChecked();
+
+        await userEvent.type(within(files).getByLabelText(`Alias for ${documents}`), ' doc ');
+        expect(inSearch).toBeEnabled();
+        await userEvent.click(inSearch);
+        await done(files, documents);
+        expect(within(files).queryByLabelText(`Alias for ${documents}`)).toBeNull();
+
+        await userEvent.keyboard('{Escape}');
+        await waitFor(() =>
+            expect(TauriAPI.saveSettings).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    localPaths: expect.objectContaining({
+                        entries: [
+                            expect.objectContaining({ path: projects }),
+                            expect.objectContaining({
+                                path: documents,
+                                alias: 'doc',
+                                aliasOnly: true,
+                            }),
+                        ],
+                    }),
+                }),
+            ),
+        );
+    });
+
+    it('puts a folder back in normal search when its alias is cleared', async () => {
+        jest.mocked(TauriAPI.saveSettings).mockResolvedValue();
+        renderScreen();
+        const files = await section();
+        await edit(files, projects);
+        await userEvent.click(within(files).getByLabelText(`In search for ${projects}`));
+        expect(within(files).getByLabelText(`In search for ${projects}`)).not.toBeChecked();
+        await userEvent.clear(within(files).getByLabelText(`Alias for ${projects}`));
+        expect(within(files).getByLabelText(`In search for ${projects}`)).toBeChecked();
+        await done(files, projects);
+
+        await userEvent.keyboard('{Escape}');
+        await waitFor(() =>
+            expect(TauriAPI.saveSettings).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    localPaths: expect.objectContaining({
+                        entries: [
+                            expect.objectContaining({
+                                path: projects,
+                                alias: undefined,
+                                aliasOnly: false,
+                            }),
+                            expect.objectContaining({ path: documents }),
                         ],
                     }),
                 }),

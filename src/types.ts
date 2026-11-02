@@ -11,6 +11,10 @@ export interface Command {
     runAsAdmin?: boolean;
     openWith?: string;
     openArgs?: string;
+    /** Local Path で、この項目を一覧にした登録フォルダの Alias(実行時のみ) */
+    scopes?: string[];
+    /** 通常の検索には出さず、`scopes` の Alias からだけ探せる */
+    scopedOnly?: boolean;
 }
 
 /** How often and how recently a command was run, keyed by the `command` string (ids of external commands do not last). */
@@ -47,6 +51,10 @@ export interface LocalPathEntry {
     /** ドットなし。`*` はすべてのファイル、空ならファイルなし */
     extensions: string[];
     includeFolders: boolean;
+    /** `<alias> <keyword>` でこのフォルダの下だけを探す。Command の Alias とは別の名前空間 */
+    alias?: string;
+    /** 通常の検索には出さない。`alias` が要る */
+    aliasOnly: boolean;
 }
 
 /** 登録フォルダの下のファイル・フォルダ(Local Path) */

@@ -40,9 +40,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onClearH
     // edits are not lost behind a screen that looks saved.
     const saveEdits = useCallback(async (): Promise<boolean> => {
         if (!edited) return true;
-        // 空のパスの行は保存時の検証で弾かれるので、黙って捨てる。残すパスは前後の空白を落とす
+        // 空のパスの行は保存時の検証で弾かれるので、黙って捨てる。残すパスと Alias は前後の空白を落とし、
+        // 空の Alias は持たない(通常の検索から外す設定も、入口がなければ持てない)
         const entries = edited.localPaths.entries
-            .map((e) => ({ ...e, path: e.path.trim() }))
+            .map((e) => {
+                const alias = e.alias?.trim() || undefined;
+                return { ...e, path: e.path.trim(), alias, aliasOnly: alias ? e.aliasOnly : false };
+            })
             .filter((e) => e.path);
         const toSave = { ...edited, localPaths: { ...edited.localPaths, entries } };
         if (JSON.stringify(toSave) === JSON.stringify(settings)) return true;

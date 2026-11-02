@@ -1,6 +1,7 @@
 use crate::commands::domain::{Command, CATEGORY_FILE, SOURCE_LOCAL};
 use crate::settings::domain::LocalPathSettings;
-use std::collections::{HashSet, VecDeque};
+use std::collections::hash_map::Entry;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
 
@@ -52,10 +53,25 @@ impl Files {
 }
 
 /// 登録フォルダ1つ分の、たどる深さと一覧にするもの
-struct Rule {
+struct Rule<'a> {
     depth: usize,
     files: Files,
     include_folders: bool,
+    alias: Option<&'a str>,
+    alias_only: bool,
+}
+
+impl Rule<'_> {
+    /// この規則が一覧にした `command` に、検索の入口を足す。登録フォルダが重なって複数の規則が
+    /// 同じものを一覧にしたときは、どれかが通常の検索に出すなら通常の検索にも出す
+    fn tag(&self, command: &mut Command) {
+        command.scoped_only &= self.alias_only;
+        if let Some(alias) = self.alias {
+            if !command.scopes.iter().any(|s| s == alias) {
+                command.scopes.push(alias.to_string());
+            }
+        }
+    }
 }
 
 /// 登録フォルダの下のファイルとフォルダを Command にする
@@ -80,6 +96,8 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
             depth: e.depth,
             files: Files::from_extensions(&e.extensions),
             include_folders: e.include_folders,
+            alias: e.alias.as_deref(),
+            alias_only: e.alias_only,
         })
         .collect();
 
@@ -93,8 +111,9 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
         }
     }
 
-    let mut commands = Vec::new();
-    let mut seen: HashSet<String> = HashSet::new();
+    let mut commands: Vec<Command> = Vec::new();
+    // パス → commands の位置
+    let mut seen: HashMap<String, usize> = HashMap::new();
     while let Some((dir, level, rule)) = queue.pop_front() {
         let entries = match std::fs::read_dir(&dir) {
             Ok(entries) => entries,
@@ -127,18 +146,28 @@ fn scan(settings: &LocalPathSettings, cap: usize) -> Scan {
             } else {
                 rule.files.includes(&path)
             };
-            // 登録フォルダが重なっても、同じパスは1回だけ出す(上限の数え方もそろう)。
-            // どの登録の規則で出ても Command は同じなので、どれか1つが一覧にすれば出る
-            if !listed || !seen.insert(key_of(&path)) {
+            if !listed {
                 continue;
             }
-            if commands.len() == cap {
-                return Scan {
-                    commands,
-                    truncated: true,
-                };
+            // 登録フォルダが重なっても、同じパスは1回だけ出す(上限の数え方もそろう)。
+            // どの登録の規則で出ても Command は同じなので、どれか1つが一覧にすれば出る。
+            // 検索の入口(Alias)は、一覧にした規則ぶんが集まる
+            match seen.entry(key_of(&path)) {
+                Entry::Occupied(slot) => rule.tag(&mut commands[*slot.get()]),
+                Entry::Vacant(slot) => {
+                    if commands.len() == cap {
+                        return Scan {
+                            commands,
+                            truncated: true,
+                        };
+                    }
+                    slot.insert(commands.len());
+                    let mut command = command_for(&path);
+                    command.scoped_only = true;
+                    rule.tag(&mut command);
+                    commands.push(command);
+                }
             }
-            commands.push(command_for(&path));
         }
     }
     Scan {
@@ -458,6 +487,92 @@ mod tests {
         let mut s = settings(&root);
         s.entries.insert(0, entry(&root.join("missing")));
         assert_eq!(found_with(&s, &root), ["a.md"]);
+    }
+
+    /// 見つかったものの(登録フォルダからの相対パス, scopes, scoped_only)。順不同なので並べる
+    fn tagged(scan: &Scan, root: &Path) -> Vec<(String, Vec<String>, bool)> {
+        let mut tagged: Vec<_> = scan
+            .commands
+            .iter()
+            .map(|c| {
+                let relative = Path::new(&c.command).strip_prefix(root).unwrap();
+                (
+                    relative.to_string_lossy().replace('\\', "/"),
+                    c.scopes.clone(),
+                    c.scoped_only,
+                )
+            })
+            .collect();
+        tagged.sort();
+        tagged
+    }
+
+    #[test]
+    fn an_alias_tags_what_its_folder_lists_and_alias_only_keeps_it_out_of_search() {
+        let root = tree(&["p/a.md", "q/b.md"]);
+        let mut p = entry(&root.join("p"));
+        p.alias = Some("pj".to_string());
+        p.alias_only = true;
+        let mut q = entry(&root.join("q"));
+        q.alias = Some("nt".to_string());
+        let s = LocalPathSettings {
+            entries: vec![p, q, entry(&root)],
+            ..settings(&root)
+        };
+        // 外側(Alias なし・通常の検索に出す)が p と q の中身も一覧にするので、重なった分は通常の検索にも出る
+        let scan = scan(&s, MAX_ENTRIES);
+        let tags = tagged(&scan, &root);
+        let pick = |name: &str| tags.iter().find(|t| t.0 == name).unwrap();
+        assert_eq!(
+            pick("p/a.md"),
+            &("p/a.md".into(), vec!["pj".to_string()], false)
+        );
+        assert_eq!(
+            pick("q/b.md"),
+            &("q/b.md".into(), vec!["nt".to_string()], false)
+        );
+    }
+
+    #[test]
+    fn alias_only_hides_an_entry_only_when_every_folder_listing_it_is_alias_only() {
+        let root = tree(&["p/a.md"]);
+        let mut inner = entry(&root.join("p"));
+        inner.alias = Some("pj".to_string());
+        inner.alias_only = true;
+        let mut outer = entry(&root);
+        outer.alias = Some("all".to_string());
+        outer.alias_only = true;
+        let both_only = LocalPathSettings {
+            entries: vec![inner.clone(), outer.clone()],
+            ..settings(&root)
+        };
+        let scan_only = scan(&both_only, MAX_ENTRIES);
+        let a = tagged(&scan_only, &root)
+            .into_iter()
+            .find(|t| t.0 == "p/a.md")
+            .unwrap();
+        // 重なった2つの登録の Alias がどちらも入口になる
+        assert_eq!(a.1, ["pj", "all"]);
+        assert!(a.2);
+
+        outer.alias_only = false;
+        let one_open = LocalPathSettings {
+            entries: vec![inner, outer],
+            ..settings(&root)
+        };
+        let scan_open = scan(&one_open, MAX_ENTRIES);
+        let a = tagged(&scan_open, &root)
+            .into_iter()
+            .find(|t| t.0 == "p/a.md")
+            .unwrap();
+        assert!(!a.2);
+    }
+
+    #[test]
+    fn a_folder_without_an_alias_lists_into_search_as_before() {
+        let root = tree(&["a.md"]);
+        let scan = scan(&settings(&root), MAX_ENTRIES);
+        assert_eq!(tagged(&scan, &root), [("a.md".to_string(), vec![], false)]);
     }
 
     #[cfg(windows)]

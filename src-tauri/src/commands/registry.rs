@@ -292,6 +292,8 @@ mod tests {
             run_as_admin: None,
             open_with: None,
             open_args: None,
+            scopes: Vec::new(),
+            scoped_only: false,
         }
     }
 

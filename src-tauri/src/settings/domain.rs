@@ -121,6 +121,11 @@ pub struct LocalPathEntry {
     /// ドットなしの拡張子(大文字小文字は区別しない)。`*` はすべてのファイル、空ならファイルは出さない
     pub extensions: Vec<String>,
     pub include_folders: bool,
+    /// `<alias> <keyword>` でこのフォルダの下だけを検索する。Command の Alias とは別の名前空間
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alias: Option<String>,
+    /// 通常の検索には出さず、`alias` を打ったときだけ探せる(`alias` が要る)
+    pub alias_only: bool,
 }
 
 impl Default for LocalPathEntry {
@@ -130,6 +135,8 @@ impl Default for LocalPathEntry {
             depth: 3,
             extensions: Vec::new(),
             include_folders: true,
+            alias: None,
+            alias_only: false,
         }
     }
 }
@@ -213,6 +220,29 @@ impl Settings {
                     "localPaths.entries[{}].depth must be between 1 and {} (got {}).",
                     i, MAX_LOCAL_PATH_DEPTH, entry.depth
                 ));
+            }
+            match &entry.alias {
+                Some(alias) => {
+                    crate::commands::domain::validate_alias(alias)?;
+                    let first = self
+                        .local_paths
+                        .entries
+                        .iter()
+                        .position(|e| e.alias.as_deref() == Some(alias.as_str()));
+                    if first != Some(i) {
+                        return fail(format!(
+                            "localPaths.entries[{}].alias '{}' is already used by another path.",
+                            i, alias
+                        ));
+                    }
+                }
+                None if entry.alias_only => {
+                    return fail(format!(
+                        "localPaths.entries[{}].aliasOnly needs an alias.",
+                        i
+                    ));
+                }
+                None => {}
             }
         }
         if !THEMES.contains(&self.theme.as_str()) {
@@ -360,6 +390,8 @@ mod tests {
                 depth: 2,
                 extensions: vec!["md".to_string(), "*".to_string()],
                 include_folders: false,
+                alias: None,
+                alias_only: false,
             }]
         );
         assert!(local.exclude_names.is_empty());
@@ -399,6 +431,19 @@ mod tests {
         assert!(entry(r#"{"path": "C:\\a", "depth": -1}"#).is_err());
         assert!(entry(r#"{"path": " "}"#).is_err());
         assert!(entry(r#"{"depth": 2}"#).is_err());
+    }
+
+    #[test]
+    fn a_local_path_alias_is_well_formed_unique_and_required_by_alias_only() {
+        let entries = |json: &str| parse(&format!(r#"{{"localPaths": {{"entries": [{json}]}}}}"#));
+        let path = |alias: &str| format!(r#"{{"path": "C:\\a", "alias": "{alias}"}}"#);
+        assert!(entries(&path("pj")).is_ok());
+        assert!(entries(&path("has space")).is_err());
+        assert!(entries(&path("")).is_err());
+        assert!(entries(r#"{"path": "C:\\a", "aliasOnly": true}"#).is_err());
+        assert!(entries(r#"{"path": "C:\\a", "alias": "pj", "aliasOnly": true}"#).is_ok());
+        assert!(entries(&format!("{},{}", path("pj"), path("pj"))).is_err());
+        assert!(entries(&format!("{},{}", path("pj"), path("nt"))).is_ok());
     }
 
     #[test]

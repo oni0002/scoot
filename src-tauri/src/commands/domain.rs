@@ -72,6 +72,12 @@ pub struct Command {
         deserialize_with = "blank_as_none"
     )]
     pub open_args: Option<String>,
+    /// Local Path で、この項目を一覧にした登録フォルダの Alias。実行時のみ(外部ソースの項目にだけ付く)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub scopes: Vec<String>,
+    /// 一覧にした登録フォルダがすべて alias_only で、通常の検索には出さない
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub scoped_only: bool,
 }
 
 /// 空白だけの文字列は未設定として扱う
@@ -201,6 +207,8 @@ impl Command {
             run_as_admin: None,
             open_with: None,
             open_args: None,
+            scopes: Vec::new(),
+            scoped_only: false,
         }
     }
 
@@ -375,6 +383,8 @@ mod tests {
             run_as_admin: None,
             open_with: None,
             open_args: None,
+            scopes: Vec::new(),
+            scoped_only: false,
         }
     }
 

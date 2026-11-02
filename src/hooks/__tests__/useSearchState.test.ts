@@ -77,6 +77,55 @@ describe('useSearchState', () => {
         });
     });
 
+    describe('a folder alias (Local Path)', () => {
+        const local = (name: string, scopes: string[], scopedOnly = false): Command => ({
+            ...makeCmd(name),
+            source: 'local',
+            category: 'file',
+            scopes,
+            scopedOnly,
+        });
+        const commands = [
+            local('report.md', ['pj']),
+            local('report-draft.md', ['pj'], true),
+            local('report.pdf', ['doc'], true),
+            makeCmd('Report Tool'),
+        ];
+        const type = (query: string) => {
+            const { result } = renderHook(() => useSearchState(commands, THRESHOLD, MAX));
+            act(() => {
+                result.current.handleQueryChange(query);
+            });
+            return result.current.results.map((r) => r.command.name).sort();
+        };
+
+        it('searches only that folder after the alias and a space', () => {
+            expect(type('pj report')).toEqual(['report-draft.md', 'report.md']);
+            expect(type('doc report')).toEqual(['report.pdf']);
+        });
+
+        it('lists the folder before a keyword is typed', () => {
+            expect(type('pj ')).toEqual(['report-draft.md', 'report.md']);
+        });
+
+        it('leaves alias-only entries out of the normal search', () => {
+            expect(type('report')).toEqual(['Report Tool', 'report.md']);
+        });
+
+        it('stays a normal search while the alias itself is still being typed', () => {
+            expect(type('pj')).not.toContain('report-draft.md');
+        });
+
+        it('gives way to an alias that takes arguments', () => {
+            const clash = [...commands, makeCmd('Open PJ', 'pj-cmd', 'pj')];
+            const { result } = renderHook(() => useSearchState(clash, THRESHOLD, MAX));
+            act(() => {
+                result.current.handleQueryChange('pj x');
+            });
+            expect(result.current.searchMode.mode).toBe('argument');
+        });
+    });
+
     describe('argument mode transition', () => {
         const aliasCmd = makeCmd('Open URL', 'open-url', 'open');
         const commands = [aliasCmd, makeCmd('GitHub')];

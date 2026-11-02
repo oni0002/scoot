@@ -23,7 +23,27 @@ export const useSearchState = (
 
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const fuse = useMemo(() => createFuse(commands, fuzzyThreshold), [commands, fuzzyThreshold]);
+    // alias_only の登録フォルダの項目は、そのフォルダの Alias を打ったときだけ探せる
+    const searchable = useMemo(() => commands.filter((c) => !c.scopedOnly), [commands]);
+    const fuse = useMemo(
+        () => createFuse(searchable, fuzzyThreshold),
+        [searchable, fuzzyThreshold],
+    );
+    // Local Path の Alias ごとの索引。打鍵のたびに作らないよう、コマンド一覧か閾値が変わったときに作る
+    const scopeIndexes = useMemo(() => {
+        const byAlias = new Map<string, Command[]>();
+        for (const cmd of commands) {
+            for (const alias of cmd.scopes ?? []) {
+                byAlias.set(alias, [...(byAlias.get(alias) ?? []), cmd]);
+            }
+        }
+        return new Map(
+            [...byAlias].map(([alias, scoped]) => [
+                alias,
+                { fuse: createFuse(scoped, fuzzyThreshold), commands: scoped },
+            ]),
+        );
+    }, [commands, fuzzyThreshold]);
     // Looked up on every keystroke, so index it once per command list
     const commandByAlias = useMemo(() => {
         const map = new Map<string, Command>();
@@ -36,8 +56,8 @@ export const useSearchState = (
     // Before anything is typed, the list is derived from the history rather than stored, so it is
     // current each time the window opens and when the history loads late
     const idleResults = useMemo(
-        () => (showFrequent ? frequentCommands(commands, usage, maxResults) : []),
-        [showFrequent, commands, usage, maxResults],
+        () => (showFrequent ? frequentCommands(searchable, usage, maxResults) : []),
+        [showFrequent, searchable, usage, maxResults],
     );
 
     const resetState = useCallback(() => {
@@ -68,7 +88,15 @@ export const useSearchState = (
                 // Still typing the alias keyword — fall through to search
             }
 
-            const searchResults = fuseSearch(fuse, newQuery, commands, maxResults, usage);
+            // Local Path の Alias は、そのフォルダの下だけを探す。引数を取る Command の Alias が先
+            const index = scopeIndexes.get(potentialAlias);
+            if (index && (parts.length > 1 || newQuery.endsWith(' '))) {
+                const keyword = trimmed.slice(potentialAlias.length).trim();
+                const results = fuseSearch(index.fuse, keyword, index.commands, maxResults, usage);
+                return { mode: 'search', results, selectedIndex: 0 };
+            }
+
+            const searchResults = fuseSearch(fuse, newQuery, searchable, maxResults, usage);
             const dynamicItem = detectDirectOpen(newQuery);
             if (dynamicItem) {
                 // What was typed is what Enter opens, so it leads the list
@@ -76,7 +104,7 @@ export const useSearchState = (
             }
             return { mode: 'search', results: searchResults, selectedIndex: 0 };
         },
-        [commands, commandByAlias, maxResults, fuse, usage],
+        [commandByAlias, maxResults, fuse, usage, searchable, scopeIndexes],
     );
 
     const handleQueryChange = useCallback(

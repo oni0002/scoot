@@ -86,15 +86,17 @@ Each row of the Directories table has its own settings. Press Add path to add a 
 | Depth      | Folder levels to scan below it, 1 to 10 (1 is its direct contents)                      | `3`     |
 | Extensions | File types to list, without the dot. `*` lists every file; an empty list lists no files | (empty) |
 | Folders    | List folders as well as files                                                           | on      |
+| Alias      | A short name for this folder. Type `<alias> <keyword>` to search only this folder       | (none)  |
+| In search  | Also list this folder in the normal search. Off keeps it to the alias; needs an alias   | on      |
 
-For example, these two rows open any project folder by name and find notes and PDFs under Documents:
+For example, these two rows open any project folder by name and find notes and PDFs under Documents. Typing `pj report` searches only under Projects, and Documents stays out of the normal search, so its files do not crowd out your commands:
 
-| Path          | Depth | Extensions | Folders |
-| ------------- | ----- | ---------- | ------- |
-| `~\Projects`  | `2`   | (empty)    | on      |
-| `~\Documents` | `4`   | `md, pdf`  | off     |
+| Path          | Depth | Extensions | Folders | Alias | In search |
+| ------------- | ----- | ---------- | ------- | ----- | --------- |
+| `~\Projects`  | `2`   | (empty)    | on      | `pj`  | on        |
+| `~\Documents` | `4`   | `md, pdf`  | off     | `doc` | off       |
 
-When two rows overlap, a path either row lists appears once. A file or folder you already added as a File command is not listed again; your command is the one shown.
+A folder alias is a name of its own, apart from the aliases of commands. If a command with arguments uses the same alias, the command wins. Typing the alias and a space with no keyword lists the first entries of that folder. When two rows overlap, a path either row lists appears once, and it can be searched through each row's alias; it stays in the normal search if any row listing it has In search on. A file or folder you already added as a File command is not listed again; your command is the one shown.
 
 Scoot lists at most 5000 files and folders across all directories, shallowest first. If there are more, it stops there and shows a notice: lower Depth, add Excluded names, or narrow Extensions. Symbolic links and junctions are not followed, and hidden and system files are skipped, as is anything whose name starts with a dot (`.git`, `.env`). The folders are not watched: new files show up at the next reload (the Reload Interval, or the `Reload` command). This is not a search of the whole disk.
 

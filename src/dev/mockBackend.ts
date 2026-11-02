@@ -100,12 +100,20 @@ const defaultSettings = (): Settings => ({
     localPaths: {
         enabled: true,
         entries: [
-            { path: 'C:\\Users\\demo\\Projects', depth: 2, extensions: [], includeFolders: true },
+            {
+                path: 'C:\\Users\\demo\\Projects',
+                depth: 2,
+                extensions: [],
+                includeFolders: true,
+                alias: 'pj',
+                aliasOnly: false,
+            },
             {
                 path: 'C:\\Users\\demo\\Documents',
                 depth: 4,
                 extensions: ['md', 'pdf'],
                 includeFolders: false,
+                aliasOnly: false,
             },
         ],
         excludeNames: ['node_modules', 'target'],
@@ -128,10 +136,23 @@ export function createMockHandlers(): Record<string, Handler> {
     let nextId = 100;
     const usage: Record<string, { count: number; lastUsed: number }> = {};
     let startupShortcut = false;
+    // 本物は走査のときに付ける scopes / scopedOnly を、登録フォルダの前方一致で近似する
+    const tagLocal = (c: Command): Command => {
+        if (c.source !== 'local') return c;
+        const roots = settings.localPaths.entries.filter((e) =>
+            c.command.toLowerCase().startsWith(`${e.path.toLowerCase()}\\`),
+        );
+        return {
+            ...c,
+            scopes: roots.flatMap((e) => (e.alias ? [e.alias] : [])),
+            scopedOnly: roots.length > 0 && roots.every((e) => e.aliasOnly),
+        };
+    };
     const visibleExternal = () =>
         externalCommands()
             .filter((c) => c.source !== 'local' || settings.localPaths.enabled)
             .filter((c) => !settings.ignored.includes(c.command))
+            .map(tagLocal)
             .map((c) =>
                 settings.aliases[c.command] ? { ...c, alias: settings.aliases[c.command] } : c,
             );

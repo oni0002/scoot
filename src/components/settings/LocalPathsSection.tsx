@@ -39,7 +39,7 @@ const ExtensionsInput: React.FC<{
         <input
             type="text"
             autoComplete="off"
-            className="input input-xs w-44 placeholder:italic"
+            className="input input-xs w-28 placeholder:italic"
             aria-label={label}
             placeholder={draft === null ? 'No files' : 'md, pdf, or * for all files'}
             value={draft ?? value.join(', ')}
@@ -92,7 +92,7 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
         update({
             entries: [
                 ...local.entries,
-                { path: '', depth: 3, extensions: [], includeFolders: true },
+                { path: '', depth: 3, extensions: [], includeFolders: true, aliasOnly: false },
             ],
         });
         focusPath.current = local.entries.length;
@@ -117,16 +117,19 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                 <p className="select-none text-sm">Directories</p>
                 <p className="text-xs text-subtle">
                     Folders listed in search. Depth is how many levels below each folder to scan.
+                    Type a folder&apos;s alias before a keyword to search that folder only.
                 </p>
                 {/* 狭いウィンドウでは表だけ横にスクロールする。列幅は固定で、表示と編集で動かさない */}
                 <div className={`mt-2 overflow-x-auto ${LIST_SURFACE}`}>
-                    <table className="table table-xs min-w-[34rem] table-fixed">
+                    <table className="table table-xs min-w-[38rem] table-fixed">
                         <colgroup>
                             <col />
+                            <col className="w-18" />
+                            <col className="w-32" />
+                            <col className="w-16" />
                             <col className="w-20" />
-                            <col className="w-48" />
                             <col className="w-20" />
-                            <col className="w-20" />
+                            <col className="w-16" />
                         </colgroup>
                         <thead className="text-xs text-subtle [&_th]:font-normal">
                             <tr className={ROW_DIVIDER}>
@@ -134,6 +137,8 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                                 <th>Depth</th>
                                 <th>Extensions</th>
                                 <th>Folders</th>
+                                <th>Alias</th>
+                                <th>In search</th>
                                 <th>
                                     <span className="sr-only">Actions</span>
                                 </th>
@@ -235,6 +240,52 @@ export const LocalPathsSection: React.FC<LocalPathsSectionProps> = ({ settings, 
                                                 'Yes'
                                             ) : (
                                                 'No'
+                                            )}
+                                        </td>
+                                        <td>
+                                            {isEditing ? (
+                                                <input
+                                                    type="text"
+                                                    autoComplete="off"
+                                                    className="input input-xs w-16 font-mono"
+                                                    aria-label={`Alias for ${name}`}
+                                                    value={entry.alias ?? ''}
+                                                    onChange={(e) =>
+                                                        updateEntry(i, {
+                                                            alias: e.target.value,
+                                                            // 入口がなければ、通常の検索から外す設定は成り立たない
+                                                            aliasOnly: e.target.value.trim()
+                                                                ? entry.aliasOnly
+                                                                : false,
+                                                        })
+                                                    }
+                                                />
+                                            ) : entry.alias ? (
+                                                <span className="block truncate font-mono">
+                                                    {entry.alias}
+                                                </span>
+                                            ) : (
+                                                <span className="italic text-subtle">None</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {isEditing ? (
+                                                <input
+                                                    type="checkbox"
+                                                    className="checkbox checkbox-sm"
+                                                    aria-label={`In search for ${name}`}
+                                                    checked={!entry.aliasOnly}
+                                                    disabled={!entry.alias?.trim()}
+                                                    onChange={(e) =>
+                                                        updateEntry(i, {
+                                                            aliasOnly: !e.target.checked,
+                                                        })
+                                                    }
+                                                />
+                                            ) : entry.aliasOnly ? (
+                                                'No'
+                                            ) : (
+                                                'Yes'
                                             )}
                                         </td>
                                         <td>
