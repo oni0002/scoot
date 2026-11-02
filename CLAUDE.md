@@ -26,7 +26,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 
 - `src/` — フロントエンド。`components/`(UI)、`hooks/`(状態とロジック)、`context/`、`search.ts`(Fuse.js と、略称を拾う `boundaryMatch.ts` の合成)、`tauri.ts`(IPC呼び出しはここに集約)、`listen.ts`(バックエンドのイベント購読。解除が購読完了より先でも漏れない)
 - `src-tauri/src/commands/` — コマンドの `domain` / `registry`(メモリ上の一覧) / `store`(commands.json) / `loader`(各ソースの読み込み) / `execution` / `ipc`。`bookmark` / `application` / `markdown` / `local_path` が外部ソース
-- `src-tauri/src/settings/` — 設定(settings.json)。0.2.x までの名前 `config.json` は、初回の読み込みで改名して読む(0.4.0 で外す。`docs/adr/0005`)
+- `src-tauri/src/settings/` — 設定(settings.json)。0.2.x までの名前 `config.json` は、初回の読み込みで改名して読む(0.4.0 で外す。持ち運びで版を飛ばす人がいるので、1つ先のマイナー版まで残す)
 - `src-tauri/src/` 直下 — `lifecycle`(reload・終了)、`window`、`shortcut`、`hotkey_capture`、`tray`、`system_theme`(タスクバーのテーマ。トレイアイコンの切り替え用)、`watcher`(ファイルの変更を `settings-file-changed` にするだけ。まとめて1回にし、中身がメモリ上の設定と同じ(アプリ自身の保存)なら reload しないのは `lifecycle`)、`json`(JSON の読み込みと一時ファイル経由の書き込み。settings / commands / usage の保存はここを通す)、`notices`(ユーザーのいない所で起きた問題の通知。ウィンドウが隠れている間は保存だけして、表示されたときにフロントが `get_notices` で受け取る) など
 - `design/logo/generate.mjs` — ロゴの SVG、`src-tauri/icons/` 一式(32px 以下は小サイズ用の形、トレイ用の単色アイコン)、UI が描くパス(`src/logo.ts`)を生成する。アイコンは手で編集せず、このスクリプトの寸法を変えて再生成する。`src-tauri/icons/` に残すのは Windows のビルドが読むものだけで、他のプラットフォーム向けの出力(Android・iOS・Microsoft Store・macOS・Linux)はスクリプトが消す
 
@@ -36,7 +36,7 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 - 検索欄に直接入力した URL/パスは `open_target` で開く。URL は許可スキーム(http/https/mailto/ftp)のみ
 - URL コマンドの引数はパーセントエンコードする。置換ロジックは Rust(`Command::substitute_args`)と TS(`substituteArgs`、プレビュー用)の2箇所にあるため、変更時は両方を揃える。両方が `src/__tests__/fixtures/substitute-cases.json` の同じケースを検証する
 - `source` は実行時のみ保持し、commands.json には保存しない
-- 外部ソースのコマンドに紐づく設定(`ignored` / `aliases`)は `command` 文字列をキーに settings.json へ保存する。外部コマンドの ID は `DefaultHasher` のハッシュで、Rust のバージョンをまたいで同じ値になる保証がないので、永続化には使わない(`docs/adr/0003`)
+- 外部ソースのコマンドに紐づく設定(`ignored` / `aliases`)は `command` 文字列をキーに settings.json へ保存する。外部コマンドの ID は `DefaultHasher` のハッシュで、Rust のバージョンをまたいで同じ値になる保証がないので、永続化には使わない
 - 実行履歴(`usage.json`)は検索結果の並べ替えにだけ使い、キーは `command` 文字列(ID は外部コマンドで安定しないので使わない)。順位は `fuseScore - boost + penalty`(小さいほど上)で、`boost = 0.05 * w / (w + 3)`、`w = 回数 * 0.5^(最終使用からの日数 / 30)`。上限があるので、履歴だけで良く一致する候補を逆転させない。`penalty` は Source が `local` のときだけ固定 `0.02`(ファイル名はスコアが良く出やすく、自前のコマンドを押し出すため。はっきり良く一致するファイルは逆転できる)。式は `src/search.ts` にあるので、変えるときは `search.test.ts` と揃える
 
 ## UI
@@ -58,10 +58,18 @@ Windows 向けのシンプルなコマンドランチャーアプリ。
 
 グローバル設定(`~/.claude/CLAUDE.md`)に従う。
 
+## スコープ
+
+軽さとシンプルさが売り。基準は「呼び出す・探す・実行する」を助け、既存の仕組みで作れること。新しいサブシステムや重い依存が要る、他のツールの方が得意な仕事は入れない。
+
+- 範囲外: マシン全体のファイル検索、電卓・単位変換・クリップボード履歴・スニペット、プラグイン/スクリプト実行基盤、自発的なネットワーク通信(同期・更新確認・テレメトリ)、機能に見合わない重さの依存(Firefox ブックマーク用の SQLite 読み込みなど)、ユーザーが打っていない文字列をシェルに渡すこと
+- 見送り: 検索の0件時の Web 検索(`g <keyword>` があり、既定の閾値ではほぼ何かが一致する)。クリップボードを引数にする `{$clip}`(`command` コマンドでインジェクション経路になる。再検討するなら URL コマンドに限る)。修飾キーで「フォルダを開く」(必要になるまで)。シェル選択・コマンドごとの環境変数(シェル文字列に `cmd /c` や `$env:X='1';` を書けば足りる)
+- 管理者実行は修飾キーではなくコマンドごとの `runAsAdmin`(昇格はコマンドの性質で、キーは誤爆しやすく見つけにくい)。起動時の自動起動は設定ファイルではなくスタートアップフォルダのショートカットを正とする(ユーザーが見て消せる)
+- Local Path は、登録フォルダだけ・全体で5000件の上限(幅優先)・監視なし・新規依存なし、で成立している。この範囲を超える変更は範囲外として扱う
+
 ## ドキュメント
 
 - 用語集(下記で取り込み済み)。用語は `Avoid` に挙げた言い換えを使わない
-- 設計判断の記録は `docs/adr/`。関連する領域を触る前に読む
 - Issues は GitHub Issues(`github.com/oni0002/scoot`)
 
 @CONTEXT.md

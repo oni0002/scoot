@@ -5,7 +5,7 @@ use crate::settings::domain::Settings;
 // --- Infrastructure / Core Logic ---
 
 const SETTINGS_FILE: &str = "settings.json";
-/// The name before 0.3.0. Still read, and renamed to `SETTINGS_FILE`, until 0.4.0 (ADR 0005).
+/// The name before 0.3.0. Still read, and renamed to `SETTINGS_FILE`, until 0.4.0.
 const LEGACY_FILE: &str = "config.json";
 
 pub struct SettingsStore {
@@ -49,7 +49,7 @@ impl SettingsStore {
     }
 
     /// The file to read. settings.json wins; failing that, config.json from before the rename is
-    /// moved to settings.json, or read where it is if it cannot be moved (ADR 0005).
+    /// moved to settings.json, or read where it is if it cannot be moved.
     async fn settle_file(&self) -> String {
         let exists = |path: &str| tokio::fs::try_exists(path.to_string());
         let (settings_exists, legacy_exists) =

@@ -67,7 +67,7 @@ _Avoid_: App, shortcut
 _Avoid_: Link, md link
 
 **Local Path**:
-ユーザーが Settings に登録したフォルダの下で見つけたファイルまたはフォルダの Command。Category は `file`、Source は `local`。登録フォルダごとの深さ・拡張子・フォルダを含めるかと、全フォルダ共通の除外する名前で絞り、全フォルダ合わせた件数に上限がある(超えたら通知する)。登録フォルダには任意の Alias を付けられ、`<alias> <keyword>` でそのフォルダの下だけを探す(Alias を持つ登録フォルダごとに、`Search in <フォルダ名>` の行が検索結果に出て、選ぶと `<alias> ` に入る。同じ Alias のユーザー Command があれば行は出さず、引数を取る Command の Alias が先に効く)。「In search」を外した(`aliasOnly`)フォルダの項目は、通常の検索には出ず、その Alias からだけ探せる。ユーザーが File の Command として登録済みのパスは出さない。シンボリックリンク・ジャンクションはたどらず、隠し・システム属性のものと、名前がドットで始まるものは対象にしない。変更は監視せず、Reload で最新になる。マシン全体のファイル検索ではない(`docs/adr/0004`)。
+ユーザーが Settings に登録したフォルダの下で見つけたファイルまたはフォルダの Command。Category は `file`、Source は `local`。登録フォルダごとの深さ・拡張子・フォルダを含めるかと、全フォルダ共通の除外する名前で絞り、全フォルダ合わせた件数に上限がある(超えたら通知する)。登録フォルダには任意の Alias を付けられ、`<alias> <keyword>` でそのフォルダの下だけを探す(Alias を持つ登録フォルダごとに、`Search in <フォルダ名>` の行が検索結果に出て、選ぶと `<alias> ` に入る。同じ Alias のユーザー Command があれば行は出さず、引数を取る Command の Alias が先に効く)。「In search」を外した(`aliasOnly`)フォルダの項目は、通常の検索には出ず、その Alias からだけ探せる。ユーザーが File の Command として登録済みのパスは出さない。シンボリックリンク・ジャンクションはたどらず、隠し・システム属性のものと、名前がドットで始まるものは対象にしない。変更は監視せず、Reload で最新になる。マシン全体のファイル検索ではない(CLAUDE.md の「スコープ」)。
 _Avoid_: Local file(Category `file` やユーザーの file Command と紛らわしい), file search, indexed file
 
 ### 設定・ライフサイクル
