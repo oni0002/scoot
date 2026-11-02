@@ -20,8 +20,20 @@ describe('listenTo', () => {
         jest.mocked(listen).mockResolvedValueOnce(unlisten);
         const stop = listenTo('window-shown', jest.fn());
         await Promise.resolve();
+        expect(unlisten).not.toHaveBeenCalled(); // alive until stopped
         stop();
         expect(unlisten).toHaveBeenCalledTimes(1);
+    });
+
+    it('warns and stays quiet when the subscription fails', async () => {
+        const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        jest.mocked(listen).mockRejectedValueOnce(new Error('denied'));
+        const stop = listenTo('window-shown', jest.fn());
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(warn).toHaveBeenCalledWith('Failed to listen to "window-shown":', expect.any(Error));
+        expect(() => stop()).not.toThrow();
+        warn.mockRestore();
     });
 
     it('ends the subscription that finishes after it was stopped', async () => {
