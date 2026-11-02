@@ -96,6 +96,15 @@ export function useCommands() {
         setUsage({});
     }, []);
 
+    const removeUsage = useCallback(async (command: string) => {
+        await TauriAPI.removeUsage(command);
+        setUsage((prev) => {
+            const next = { ...prev };
+            delete next[command];
+            return next;
+        });
+    }, []);
+
     /** Resolves with keepWindowOpen; rejects with the backend's error when the command fails. */
     const executeCommand = useCallback(
         async (command: Command, args: string[] = []): Promise<boolean> => {
@@ -132,6 +141,7 @@ export function useCommands() {
             deleteCommand,
             executeCommand,
             clearUsage,
+            removeUsage,
         }),
         [
             commands,
@@ -144,6 +154,7 @@ export function useCommands() {
             deleteCommand,
             executeCommand,
             clearUsage,
+            removeUsage,
         ],
     );
 }

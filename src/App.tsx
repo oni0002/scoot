@@ -37,6 +37,7 @@ const AppContent = () => {
         updateCommand,
         deleteCommand,
         clearUsage,
+        removeUsage,
     } = useCommandContext();
 
     const { theme, fuzzyThreshold, maxResults, usageHistory, frequentFirst, loadSettings } =
@@ -130,6 +131,21 @@ const AppContent = () => {
         [showSuccess, reportError],
     );
 
+    const handleRemoveHistory = useCallback(
+        async (command: Command) => {
+            try {
+                await removeUsage(command.command);
+            } catch (err) {
+                reportError(
+                    `remove "${command.name}" from history`,
+                    err,
+                    NOTIFICATION_DURATION.LONG,
+                );
+            }
+        },
+        [removeUsage, reportError],
+    );
+
     const handleCancelAlias = useCallback(() => setAliasingCommand(undefined), []);
 
     // A rejection stays in the dialog, which shows the reason beside the field
@@ -221,6 +237,7 @@ const AppContent = () => {
                     onCopyCommand={handleCopyCommand}
                     onAliasCommand={setAliasingCommand}
                     onIgnoreCommand={handleIgnoreCommand}
+                    onRemoveHistory={handleRemoveHistory}
                     onReloadCommands={handleReloadCommands}
                     onOpenSettings={handleOpenSettings}
                     isDialogOpen={Boolean(deletingCommand || aliasingCommand)}

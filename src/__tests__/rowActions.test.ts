@@ -50,6 +50,31 @@ describe('rowActionsFor', () => {
         });
     });
 
+    it('offers removing from history only for a command that has some', () => {
+        expect(rowActionsFor(base)).not.toContain('forget');
+        expect(rowActionsFor(base, true)).toEqual([
+            'copy',
+            'edit',
+            'duplicate',
+            'delete',
+            'forget',
+        ]);
+        expect(rowActionsFor({ ...base, source: 'bookmark' }, true)).toEqual([
+            'copy',
+            'alias',
+            'ignore',
+            'forget',
+        ]);
+    });
+
+    it('never offers it on a typed-in target or a folder alias row', () => {
+        expect(rowActionsFor({ ...base, id: DIRECT_OPEN_ID }, true)).toEqual(['copy']);
+        expect(rowActionsFor({ ...base, category: 'scoot', source: 'local' }, true)).toEqual([
+            'copy',
+            'edit',
+        ]);
+    });
+
     it('offers Copy and Edit on the row of a folder alias, which opens its settings', () => {
         const entry = { ...base, category: 'scoot', source: 'local' };
         expect(rowActionsFor(entry)).toEqual(['copy', 'edit']);

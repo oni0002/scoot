@@ -2,7 +2,8 @@ import { Command } from './types';
 import { DIRECT_OPEN_ID } from './constants';
 import { hasPlaceholders, isScopeEntry } from './command';
 
-export type RowAction = 'copy' | 'reveal' | 'edit' | 'duplicate' | 'delete' | 'alias' | 'ignore';
+export type RowAction =
+    'copy' | 'reveal' | 'edit' | 'duplicate' | 'delete' | 'alias' | 'ignore' | 'forget';
 
 // Single source of truth for what can be done to a result row: the row menu renders from this
 // and the keyboard shortcuts resolve through it, so the two cannot drift apart.
@@ -15,6 +16,7 @@ export const ROW_ACTIONS: Record<RowAction, { label: string; shortcut: string; d
         delete: { label: 'Delete', shortcut: 'Ctrl+D', danger: true },
         alias: { label: 'Alias', shortcut: 'Ctrl+L' },
         ignore: { label: 'Ignore', shortcut: 'Ctrl+I' },
+        forget: { label: 'Forget', shortcut: 'Ctrl+H' },
     };
 
 // Ctrl+C is handled separately: it must leave a text selection in the input alone.
@@ -25,10 +27,11 @@ export const ROW_ACTION_BY_KEY: Record<string, Exclude<RowAction, 'copy'>> = {
     d: 'delete',
     l: 'alias',
     i: 'ignore',
+    h: 'forget',
 };
 
 /** Actions available for a result. Typed-in URLs and paths can only be copied. */
-export function rowActionsFor(command: Command): RowAction[] {
+export function rowActionsFor(command: Command, hasHistory = false): RowAction[] {
     if (command.id === DIRECT_OPEN_ID) return ['copy'];
     // A folder alias's row only starts a search, so it is not something to ignore or to show in a
     // folder; Copy takes its folder path, and Edit opens its settings
@@ -36,6 +39,7 @@ export function rowActionsFor(command: Command): RowAction[] {
     // A custom command carries its alias in the edit form; an external one has no form to edit
     const rest: RowAction[] =
         command.source === 'user' ? ['edit', 'duplicate', 'delete'] : ['alias', 'ignore'];
+    if (hasHistory) rest.push('forget');
     return canReveal(command) ? ['copy', 'reveal', ...rest] : ['copy', ...rest];
 }
 

@@ -133,6 +133,7 @@ pub fn run() {
             crate::commands::reveal::reveal_command,
             crate::commands::usage::get_usage,
             crate::commands::usage::clear_usage,
+            crate::commands::usage::remove_usage,
             crate::commands::ipc::open_commands_json,
             // Settings
             crate::settings::ipc::get_settings,

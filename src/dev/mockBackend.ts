@@ -182,6 +182,9 @@ export function createMockHandlers(): Record<string, Handler> {
         clear_usage: () => {
             for (const id of Object.keys(usage)) delete usage[id];
         },
+        remove_usage: ({ command }) => {
+            delete usage[command as string];
+        },
         add_command: ({ command }) => {
             const c = command as Command;
             if (c.alias && users.some((u) => u.alias === c.alias)) {

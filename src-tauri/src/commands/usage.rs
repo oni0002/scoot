@@ -67,6 +67,18 @@ impl UsageTracker {
         crate::json::write_atomic(&self.path, "{}").await
     }
 
+    /// Forget the runs of one command, in memory and on disk
+    pub async fn remove(&self, id: &str) -> Result<(), crate::error::AppError> {
+        let json = {
+            let mut entries = self.entries.lock().map_err(crate::error::AppError::lock)?;
+            entries.remove(id);
+            serde_json::to_string(&*entries).map_err(|e| {
+                crate::error::AppError::System(format!("Failed to serialize usage: {}", e))
+            })?
+        };
+        crate::json::write_atomic(&self.path, json).await
+    }
+
     fn update(&self, id: &str, now: u64) -> Result<String, crate::error::AppError> {
         let mut entries = self.entries.lock().map_err(crate::error::AppError::lock)?;
         let usage = entries.entry(id.to_string()).or_insert(Usage {
@@ -94,6 +106,15 @@ pub fn get_usage(
     state: tauri::State<'_, crate::state::CommandsState>,
 ) -> Result<HashMap<String, Usage>, crate::error::AppError> {
     state.usage.all()
+}
+
+/// Delete the run history of one command (Tauri command)
+#[tauri::command]
+pub async fn remove_usage(
+    command: String,
+    state: tauri::State<'_, crate::state::CommandsState>,
+) -> Result<(), crate::error::AppError> {
+    state.usage.remove(&command).await
 }
 
 /// Delete the run history (Tauri command)
@@ -144,6 +165,27 @@ mod tests {
         t.clear().await.unwrap();
         assert!(t.all().unwrap().is_empty());
         assert_eq!(std::fs::read_to_string(&t.path).unwrap(), "{}");
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn removing_forgets_only_that_command() {
+        let dir = std::env::temp_dir().join(format!("scoot-usage-{}", nanoid::nanoid!()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let t = UsageTracker {
+            path: dir.join("usage.json").to_string_lossy().into_owned(),
+            entries: Mutex::new(HashMap::new()),
+        };
+        t.update("a", 1).unwrap();
+        t.update("b", 2).unwrap();
+        t.remove("a").await.unwrap();
+        let all = t.all().unwrap();
+        assert!(!all.contains_key("a"));
+        assert_eq!(all["b"].count, 1);
+        assert_eq!(
+            std::fs::read_to_string(&t.path).unwrap(),
+            r#"{"b":{"count":1,"lastUsed":2}}"#
+        );
         std::fs::remove_dir_all(dir).unwrap();
     }
 

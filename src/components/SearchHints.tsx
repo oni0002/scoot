@@ -6,9 +6,14 @@ interface SearchHintsProps {
     mode: 'idle' | 'search' | 'argument';
     /** The selected result (search mode only). */
     command?: Command;
+    hasHistory?: boolean;
 }
 
-const hintsFor = ({ mode, command }: SearchHintsProps): Array<[keys: string, label: string]> => {
+const hintsFor = ({
+    mode,
+    command,
+    hasHistory,
+}: SearchHintsProps): Array<[keys: string, label: string]> => {
     if (mode === 'argument') {
         return [
             ['Enter', 'Run'],
@@ -19,7 +24,7 @@ const hintsFor = ({ mode, command }: SearchHintsProps): Array<[keys: string, lab
     if (mode === 'search' && command) {
         return [
             ['Enter', 'Run'],
-            ...rowActionsFor(command).map((a): [string, string] => [
+            ...rowActionsFor(command, hasHistory).map((a): [string, string] => [
                 ROW_ACTIONS[a].shortcut,
                 ROW_ACTIONS[a].label,
             ]),
@@ -34,7 +39,7 @@ export const SearchHints: React.FC<SearchHintsProps> = (props) => {
     if (hints.length === 0) return null;
 
     return (
-        <div className="shrink-0 pt-4 flex items-center gap-4 text-xs text-muted select-none">
+        <div className="shrink-0 pt-4 flex items-center gap-4 text-xs text-muted select-none whitespace-nowrap">
             {hints.map(([keys, label]) => (
                 <span key={label} className="flex items-center gap-1.5">
                     <kbd className="kbd kbd-xs">{keys}</kbd>

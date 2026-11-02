@@ -32,6 +32,10 @@ export const TauriAPI = {
         return await invoke('clear_usage');
     },
 
+    async removeUsage(command: string): Promise<void> {
+        return await invoke('remove_usage', { command });
+    },
+
     async openTarget(target: string): Promise<{ keepWindowOpen: boolean }> {
         return await invoke('open_target', { target });
     },

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Command, SearchResult } from '../types';
+import { Command, SearchResult, UsageMap } from '../types';
 import { RowAction } from '../rowActions';
 import { SearchResultItem } from './SearchResultItem';
 import { ArgumentPanel } from './ArgumentPanel';
@@ -17,6 +17,8 @@ interface SearchResultListProps {
     onMouseEnter: (index: number) => void;
     onMouseLeave: () => void;
     onAction?: (action: RowAction, command: Command, event: React.MouseEvent) => void;
+    /** Run history, to offer removing it from the rows that have some. */
+    usage?: UsageMap;
     /** An alias that takes arguments, for the first-run guide to use as its example. */
     aliasExample?: string;
     /** Copies the expanded command while in argument mode. */
@@ -37,6 +39,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
     onMouseEnter,
     onMouseLeave,
     onAction,
+    usage,
     aliasExample,
     onCopyExpanded,
     focusSearch,
@@ -102,6 +105,7 @@ export const SearchResultList: React.FC<SearchResultListProps> = ({
                                 onMouseLeave={onMouseLeave}
                                 onAction={onAction}
                                 totalCount={results.length}
+                                hasHistory={Boolean(usage?.[result.command.command])}
                                 focusSearch={focusSearch}
                             />
                         ))}

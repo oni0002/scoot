@@ -33,6 +33,7 @@ interface SearchWindowProps {
     onCopyCommand?: (command: Command) => void;
     onAliasCommand?: (command: Command) => void;
     onIgnoreCommand?: (command: Command) => void;
+    onRemoveHistory?: (command: Command) => void;
     onReloadCommands?: () => void;
     onOpenSettings?: () => void;
     isDialogOpen?: boolean;
@@ -50,6 +51,7 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     onCopyCommand,
     onAliasCommand,
     onIgnoreCommand,
+    onRemoveHistory,
     onReloadCommands,
     onOpenSettings,
     isDialogOpen = false,
@@ -87,11 +89,12 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
         [rawExecuteCommand, reportError, showProgress, showSuccess, onEditCommand],
     );
 
+    const activeUsage = usageHistory ? usage : undefined;
     const searchState = useSearchState(
         commands,
         fuzzyThreshold,
         maxResults,
-        usageHistory ? usage : undefined,
+        activeUsage,
         usageHistory && frequentFirst,
     );
     const {
@@ -191,16 +194,20 @@ export const SearchWindow: React.FC<SearchWindowProps> = ({
     // One path for every row action, whether picked from the row or by its shortcut
     const runRowAction = useCallback(
         (action: RowAction, command: Command) => {
-            if (!rowActionsFor(command).includes(action)) return;
+            if (!rowActionsFor(command, Boolean(activeUsage?.[command.command])).includes(action))
+                return;
             if (action === 'copy') onCopyCommand?.(command);
             else if (action === 'reveal') void handleReveal(command);
             else if (action === 'edit') onEditCommand?.(command);
             else if (action === 'duplicate') onDuplicateCommand?.(command);
             else if (action === 'delete') onDeleteCommand?.(command);
             else if (action === 'alias') onAliasCommand?.(command);
+            else if (action === 'forget') onRemoveHistory?.(command);
             else handleIgnore(command);
         },
         [
+            activeUsage,
+            onRemoveHistory,
             onCopyCommand,
             onEditCommand,
             onDuplicateCommand,
@@ -333,6 +340,7 @@ A fast and efficient command launcher for your desktop.`,
                 onMouseEnter={setHoveredIndex}
                 onMouseLeave={clearHover}
                 onAction={handleRowClickAction}
+                usage={activeUsage}
                 aliasExample={aliasExample}
                 onCopyExpanded={copyExpanded}
                 focusSearch={focusSearch}
@@ -344,6 +352,7 @@ A fast and efficient command launcher for your desktop.`,
                 command={
                     searchMode.mode !== 'argument' ? results[selectedIndex]?.command : undefined
                 }
+                hasHistory={Boolean(activeUsage?.[results[selectedIndex]?.command.command ?? ''])}
             />
         </div>
     );

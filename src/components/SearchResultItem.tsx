@@ -15,6 +15,8 @@ interface SearchResultItemProps {
     onMouseLeave: () => void;
     onAction?: (action: RowAction, command: Command, event: React.MouseEvent) => void;
     totalCount: number;
+    /** The command has a run history to remove. */
+    hasHistory?: boolean;
     /** Hands focus back to the search field (after Esc or an action in the row menu). */
     focusSearch?: () => void;
 }
@@ -51,10 +53,11 @@ export const SearchResultItem = React.memo(
         onMouseLeave,
         onAction,
         totalCount,
+        hasHistory,
         focusSearch,
     }: SearchResultItemProps) => {
         const { command } = result;
-        const actions = rowActionsFor(command);
+        const actions = rowActionsFor(command, hasHistory);
 
         const runMenuAction = (action: RowAction, event: React.MouseEvent) => {
             // Closes the row menu (it stays open while it has focus); focus then returns to the search
