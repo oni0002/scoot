@@ -154,6 +154,12 @@ describe('run history', () => {
         expect(names({})).toEqual(['Docs A', 'Docs B']);
     });
 
+    it('keeps the list order for an empty query, as a folder alias lists its contents', () => {
+        const usage = { Zebra: { count: 5, lastUsed: NOW } };
+        const listed = fuseSearch(fuse, '', commands, 10, usage, NOW);
+        expect(listed.map((r) => r.command.name)).toEqual(['Docs A', 'Docs B', 'Zebra']);
+    });
+
     it('puts the command run more often first among equal matches', () => {
         expect(names({ 'Docs B': { count: 5, lastUsed: NOW } })[0]).toBe('Docs B');
     });
